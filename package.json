@@ -11,5 +11,8 @@
   "license": "ISC",
   "devDependencies": {
     "electron": "^30.0.6"
+  },
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.3"
   }
 }
