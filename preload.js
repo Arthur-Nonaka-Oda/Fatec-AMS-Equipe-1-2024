@@ -13,4 +13,4 @@ contextBridge.exposeInMainWorld("electron", {
   permissionDialog: async () => {
     return await ipcRenderer.invoke("permission-dialog")
   },
-});
+}); 
