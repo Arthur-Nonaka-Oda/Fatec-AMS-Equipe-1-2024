@@ -11,17 +11,38 @@
     <header>
         <div class="barra-superior">
             <div class="esquerda">
-                <button class="btn-importar">Importar</button>
-                <button class="btn-salvar">Salvar</button>
+                <button class="btn-acao" data-acao="importar" aria-label="Importar">
+                    <img src="./imagens/importarIcone.png" alt="Importar">
+                    <span class="legenda">Importar</span>
+                </button>
+                <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto">
+                    <img src="./imagens/textoIcone.png" alt="Texto">
+                    <span class="legenda">Texto</span>
+                </button>
             </div>
             <div class="centro">
-                <button class="btn-desfazer">Icone Desfazer</button>
-                <button class="btn-desfazer">Icone Texto</button>
+                <button class="btn-acao" data-acao="desfazer" aria-label="Desfazer">
+                    <img src="./imagens/voltarIcone.png" alt="Desfazer">
+                    <span class="legenda">Desfazer</span>
+                </button>
+                <button class="btn-acao" data-acao="salvar" aria-label="Salvar">
+                    <img src="./imagens/salvarIcone.png" alt="Salvar">
+                    <span class="legenda">Salvar</span>
+                </button>
             </div>
             <div class="direita">
-                <button class="btn-gravar">Gravar</button>
-                <button class="btn-play">Play</button>
-                <button class="btn-pause">Pause</button>
+                <button class="btn-acao" data-acao="gravar" aria-label="Gravar">
+                    <img src="./imagens/gravarIcone.png" alt="Gravar">
+                    <span class="legenda">Gravar</span>
+                </button>
+                <button class="btn-acao" data-acao="play" aria-label="Play">
+                    <img src="./imagens/playIcone.png" alt="Play">
+                    <span class="legenda">Retomar</span>
+                </button>
+                <button class="btn-acao" data-acao="pause" aria-label="Pause">
+                    <img src="./imagens/pauseIcone.png" alt="Pause">
+                    <span class="legenda">Pausar</span>
+                </button>
             </div>
         </div>
     </header>
@@ -29,19 +50,14 @@
     <section class="secao-principal">
         <div class="area-visualizacao">
             <div class="esquerda">
-                <div class="miniatura-video">
-                    </div>
-                <div class="visualizacao-audio">
-                    </div>
+                <div class="miniatura-video"></div>
+                <div class="visualizacao-audio"></div>
             </div>
             <div class="direita">
-                <div class="area-video">
-                    </div>
+                <div class="area-video"></div>
             </div>
         </div>
-
-        <div class="linha-do-tempo">
-            </div>
+        <div class="linha-do-tempo"></div>
     </section>
 </body>
 </html>
