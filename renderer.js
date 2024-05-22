@@ -11,7 +11,7 @@ document.getElementById('stopButton').addEventListener('click', () => {
 
 // document.getElementById('test').addEventListener('click', () => {
 //     window.electron.test();
-// });
+// }); 
 
 async function startRecording() {
     try {
