@@ -79,4 +79,4 @@ ipcMain.handle('write-file', async (event, { chunks, filePath }) => {
         .on('error', console.error);
     }
   })
-});
+}); 
