@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-
 contextBridge.exposeInMainWorld("electron", {
+  MediaRecorder: window.MediaRecorder,
   startRecording: () => {
     try {
       const chunks = [];
@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld("electron", {
         mediaRecorder.onstop = async () => {
           const { filePath } = await ipcRenderer.invoke("save-dialog");
           if (ipcRenderer.emit("write-file", { chunks, filePath })) {
-              resolve();
+            resolve();
           }
         };
       });

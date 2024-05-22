@@ -1,10 +1,11 @@
 let mediaRecorder;
+const { MediaRecorder } = window.electron
 
 document.getElementById('startButton').addEventListener('click', async () => {
-    mediaRecorder = new MediaRecorder(
-        await navigator.mediaDevices.getDisplayMedia({ video: true })
-      );
-    window.electron.startRecording(mediaRecorder);
+    // const stream = await navigator.mediaDevices.getDisplayMedia({ video: true })
+    // mediaRecorder = new MediaRecorder(
+    //   );
+    // window.electron.startRecording(mediaRecorder);
 });
 
 document.getElementById('stopButton').addEventListener('click', () => {
