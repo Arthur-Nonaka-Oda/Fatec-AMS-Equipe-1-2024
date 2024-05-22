@@ -9,12 +9,14 @@ document.getElementById('stopButton').addEventListener('click', () => {
     stopRecording();
 });
 
-document.getElementById('test').addEventListener('click', () => {
-    window.electron.test();
-});
+// document.getElementById('test').addEventListener('click', () => {
+//     window.electron.test();
+// });
 
 async function startRecording() {
     try {
+        // const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: false,
             video: {

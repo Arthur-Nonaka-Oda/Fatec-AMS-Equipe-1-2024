@@ -34,12 +34,25 @@ ipcMain.handle('save-dialog', async () => {
   // dialog.showErrorBox("Save Dialog - index");
   const { filePath } = await dialog.showSaveDialog({
     title: 'Save recording',
-    defaultPath: `vid-${Date.now()}.webm`
+    defaultPath: `vid-${Date.now()}`
   });
   return { filePath };
 });
 
+ipcMain.handle('permission-dialog', async () => {
+
+  const response = dialog.showMessageBoxSync({
+    type: 'question',
+    buttons: ['OK', 'Cancel'],
+    title: 'Permissão do Microfone',
+    message: 'Este aplicativo precisa de permissão para usar o microfone. Por favor, conceda a permissão nas configurações do sistema.'
+  });
+
+  return { filePath };
+});
+
 ipcMain.handle('write-file', async (event, { chunks, filePath }) => {
+  const outputFilePath = `${filePath}.mp4`;
   const buffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
   const tempFilePath = `${filePath}.temp.webm`;
 
@@ -48,27 +61,22 @@ ipcMain.handle('write-file', async (event, { chunks, filePath }) => {
       console.log(err)
     } else {
       ffmpeg(tempFilePath)
-      .outputOptions('-c:v libx264', '-present ultrafast')
-      .save(filePath)
-      .on('end', () => {
-        fs.unlink(tempFilePath, err => {
-          if (err) {
-            console.log(err);
-          }
+        .outputOptions('-c:v', 'libx264', '-preset', 'ultrafast')
+        .save(outputFilePath)
+        .on('end', () => {
+          fs.unlink(tempFilePath, err => {
+            if (err) {
+              console.error("Error writing file", err);
+            } else {
+              dialog.showMessageBox({
+                type: 'info',
+                title: 'Sucesso',
+                message: 'Video salvo com sucesso!'
+              })
+            }
+          })
         })
-      })
-      .on('error', console.error);
+        .on('error', console.error);
     }
   })
-
-  // const blob = new Blob(chunks, { type: 'video/webm; codecs=vp9' });
-  // blob.arrayBuffer().then(buffer => {
-  //   fs.writeFile(filePath, Buffer.from(buffer), err => {
-  //     if (err) {
-  //       console.error('Error writing file', err);
-  //     } else {
-  //       console.log('File written successfully');
-  //     }
-  //   });
-  // });
 });
