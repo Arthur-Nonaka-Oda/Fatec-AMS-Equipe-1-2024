@@ -9,6 +9,14 @@ document.getElementById('stopButton').addEventListener('click', () => {
     stopRecording();
 });
 
+document.getElementById('pauseButton').addEventListener('click', async () => {
+    pauseRecording()
+});
+
+document.getElementById('resumeButton').addEventListener('click', () => {
+    resumeRecording();
+});
+
 // document.getElementById('test').addEventListener('click', () => {
 //     window.electron.test();
 // }); 
@@ -52,6 +60,13 @@ async function startRecording() {
     catch (err) {
         console.log(err)
     }
+}
+
+function resumeButton() {
+    mediaRecorder.resume();
+}
+function pauseButton() {
+    mediaRecorder.pause();
 }
 
 function stopRecording() {
