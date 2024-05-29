@@ -48,32 +48,43 @@
     </header>
 
     <section class="secao-principal">
-        <div class="area-visualizacao">
-            <div class="esquerda">
-                <div class="miniatura-video"></div>
-                <div class="texto-escrito-midia">
-                    <span class="legenda">Vídeo Teste</span>
-                    <video poster="./imagens/campo.png" controls>
-                        <source src="./imagens/videoTrigo.mp4" type="video/mp4">
-                    </video>
-                    <div class="informacoes-video">
-                        <span class="legendaVideo">Campos de trigo</span>
-                        <span class="tempo-video">00:10</span>
-                        <span class="tamanho-video">2 MB</span>
+        <section class="secao-principal">
+            <div class="area-visualizacao">
+                <div class="esquerda">
+                    <div class="miniatura-video">
+                        <div class="texto-escrito-midia">
+                            <span class="legendaPrincipal">Vídeos</span>
+                            <!-- As mídias vão ficar daqui pra baixo -->
+                            <video poster="./imagens/campo.png" controls>
+                                <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
+                            </video>
+                            <div class="informacoes-video">
+                                <span class="legendaVideo">nome dele.mp4</span>
+                                <span class="tempo-video">00:10</span> <span class="tamanho-video"> 2 MB</span>
+                            </div>
+                        </div>
+                        <div class="visualizacao-audio">
+                            <!-- Aqui vai ser onde irá ficar todos os áudios, não o áudio do vídeo em si -->
+                            <span class="legendaPrincipal">Audios</span> 
+                            <audio autoplay controls>
+                                <source src="./imagens/audioTeste.mp3" type="audio/mp3"> 
+                                Seu navegador não suporta HTML5.
+                            </audio>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="visualizacao-audio">
-                <span class="legenda">Áudio</span> 
-                <audio autoplay controls>
-                    <source src="./imagens/audioTeste.mp3" type="audio/mp3">
-                    Seu navegador não suporta HTML5.
-                </audio>
+            
+            
+            <div class="container">
+                <div class="video">
+                    <!-- Conteúdo do vídeo -->
+                </div>
+                <div class="rodape">
+                    <p>00:00:00<p>
+                </div>
             </div>
-        </div>        
-            <div class="direita">
-                <div class="area-video"></div>
-            </div>
+            
         </div>
         <div class="linha-do-tempo"></div>
     </section>
