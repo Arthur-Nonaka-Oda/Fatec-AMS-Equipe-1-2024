@@ -1,76 +1,88 @@
 let mediaRecorder;
 let chunks = [];
 
-document.getElementById('startButton').addEventListener('click', async () => {
-    startRecording()
+document.getElementById("startButton").addEventListener("click", async () => {
+  startRecording();
 });
 
-document.getElementById('stopButton').addEventListener('click', () => {
-    stopRecording();
+document.getElementById("stopButton").addEventListener("click", () => {
+  stopRecording();
 });
 
-document.getElementById('pauseButton').addEventListener('click', async () => {
-    pauseRecording()
+document.getElementById("pauseButton").addEventListener("click", async () => {
+  pauseRecording();
 });
 
-document.getElementById('resumeButton').addEventListener('click', () => {
-    resumeRecording();
+document.getElementById("resumeButton").addEventListener("click", () => {
+  resumeRecording();
 });
 
 // document.getElementById('test').addEventListener('click', () => {
 //     window.electron.test();
-// }); 
+// });
 
 async function startRecording() {
-    try {
-        // const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+  try {
+    // const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+    Notification.requestPermission().then(function (permission) {
+      console.log("Notification permission: ", permission);
+    });
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: {
-                mandatory: {
-                    chromeMediaSource: 'desktop',
-                }
-            }
-        });
+    const selectedScreen = await window.electron.selectScreen();
 
-        mediaRecorder = new MediaRecorder(stream);
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        mandatory: {
+          chromeMediaSource: "desktop",
+        },
+      },
+    // audio: false,
+      video: {
+        mandatory: {
+          chromeMediaSource: "desktop",
+          chromeMediaSourceId: selectedScreen.id,
+        },
+      },
+    });
 
-        mediaRecorder.ondataavailable = (e) => {
-            chunks.push(e.data);
-        }
-        mediaRecorder.onstop = async () => {
-            const { filePath } = await window.electron.saveDialog();
-            if (filePath) {
-                const arrayBuffers = await Promise.all(chunks.map(blob => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.onerror = reject;
-                        reader.readAsArrayBuffer(blob);
-                    });
-                }));
-                await window.electron.saveRecording({ chunks: arrayBuffers, filePath });
-            }
-            chunks = [];
-        };
+    mediaRecorder = new MediaRecorder(stream);
 
-        mediaRecorder.start();
-    }
-    catch (err) {
-        console.log(err)
-    }
+    mediaRecorder.ondataavailable = (e) => {
+      chunks.push(e.data);
+    };
+    mediaRecorder.onstop = async () => {
+      const { filePath } = await window.electron.saveDialog();
+      if (filePath) {
+        const arrayBuffers = await Promise.all(
+          chunks.map((blob) => {
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsArrayBuffer(blob);
+            });
+          })
+        );
+        await window.electron.saveRecording({ chunks: arrayBuffers, filePath });
+      }
+      chunks = [];
+    };
+
+    mediaRecorder.start();
+  } catch (err) {
+    console.log(err);
+  }
 }
 
-function resumeButton() {
-    mediaRecorder.resume();
+function resumeRecording() {
+  mediaRecorder.resume();
 }
-function pauseButton() {
-    mediaRecorder.pause();
+function pauseRecording() {
+  mediaRecorder.pause();
 }
 
 function stopRecording() {
-    if (mediaRecorder) {
-        mediaRecorder.stop();
-    }
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+  }
 }
