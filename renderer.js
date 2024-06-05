@@ -1,13 +1,26 @@
 let mediaRecorder;
 let chunks = [];
+let isRecording = false;
+const textPlay = document.getElementById("textPlay");
+const imagePlay = document.getElementById("imagePlay");
 
 document.getElementById("startButton").addEventListener("click", async () => {
-  startRecording();
+  if (!isRecording) {
+    startRecording();
+    textPlay.innerHTML = "Parar";
+    imagePlay.src = "imagens/pararIcone.png";
+    isRecording = true;
+  } else {
+    stopRecording();
+    imagePlay.src = "imagens/gravarIcone.png";
+    textPlay.innerHTML = "Gravar";
+    isRecording = false;
+  }
 });
 
-document.getElementById("stopButton").addEventListener("click", () => {
-  stopRecording();
-});
+// document.getElementById("stopButton").addEventListener("click", () => {
+//   stopRecording();
+// });
 
 document.getElementById("pauseButton").addEventListener("click", async () => {
   pauseRecording();
@@ -36,7 +49,7 @@ async function startRecording() {
           chromeMediaSource: "desktop",
         },
       },
-    // audio: false,
+      // audio: false,
       video: {
         mandatory: {
           chromeMediaSource: "desktop",
