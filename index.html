@@ -11,7 +11,7 @@
     <header>
         <div class="barra-superior">
             <div class="esquerda">
-                <button class="btn-acao" data-acao="importar" aria-label="Importar">
+                <button class="btn-acao" id="importButton" data-acao="importar" aria-label="Importar">
                     <img src="./imagens/importarIcone.png" alt="Importar">
                     <span class="legenda">Importar</span>
                 </button>
@@ -53,7 +53,7 @@
                 <div class="esquerda">
                     <div class="miniatura-video">
                         <div class="texto-escrito-midia">
-                            <span class="legendaPrincipal">Vídeos</span>
+                            <span class="legendaPrincipal" id="videos">Vídeos</span>
                             <!-- As mídias vão ficar daqui pra baixo -->
                             <video poster="./imagens/campo.png" controls>
                                 <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
@@ -78,7 +78,7 @@
             
             <div class="container">
                 <div class="video">
-                    <!-- Conteúdo do vídeo -->
+                    <video id="videoElement" width="640" height="480" controls></video>
                 </div>
                 <div class="rodape">
                     <p>00:00:00<p>

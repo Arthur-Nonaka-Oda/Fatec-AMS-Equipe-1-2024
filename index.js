@@ -18,20 +18,20 @@ function createWindow() {
   mainWindow.loadFile("index.html");
 
   session
-  .fromPartition("default")
-  .setPermissionRequestHandler((webContents, permission, callback) => {
-    let allowedPermissions = ["audioCapture", "desktopCapture"];
+    .fromPartition("default")
+    .setPermissionRequestHandler((webContents, permission, callback) => {
+      let allowedPermissions = ["audioCapture", "desktopCapture"];
 
-    if (allowedPermissions.includes(permission)) {
-      callback(true); 
-    } else {
-      console.error(
-        `Blocked '${permission}'.`
-      );
+      if (allowedPermissions.includes(permission)) {
+        callback(true);
+      } else {
+        console.error(
+          `Blocked '${permission}'.`
+        );
 
-      callback(false); 
-    }
-  });
+        callback(false);
+      }
+    });
 }
 
 app.whenReady().then(() => {
@@ -53,6 +53,18 @@ ipcMain.handle("save-dialog", async () => {
     defaultPath: `vid-${Date.now()}`,
   });
   return { filePath };
+});
+
+ipcMain.handle("import-dialog", async () => {
+  const { filePaths } = await dialog.showOpenDialog({
+    title: "Selecione o arquivo",
+    properties: ['openFile']
+  });
+  // fs.stat(filePaths[0], (err, stats) => {
+  //   const sizeBytes = stats.size;
+  //   const sizeMb = sizeBytes / (1024 * 1024);
+  // })
+  return { filePath: filePaths[0], name: path.basename(filePaths[0])};
 });
 
 ipcMain.handle("permission-dialog", async () => {
