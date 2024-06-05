@@ -101,3 +101,5 @@ ipcMain.handle("select-screen", async () => {
   const sources = await desktopCapturer.getSources({ types: ["window", "screen"] });
   return sources[0];
 });
+
+

@@ -116,37 +116,38 @@ header {
 
 
 
-.linha-do-tempo {
+/* .linha-do-tempo {
   position: absolute;
   bottom: 0%;
   width: 100%;
   height: 170px;
   background-color: blue;
+} */
+
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza o conteúdo horizontalmente */
+  margin-top: 10px; /* Reduz a margem superior */
 }
 
-
-
 .video {
-  position: relative;
-  bottom: 300px; /* Altura da linha do tempo + espaço extra */
-  left: 40%; /* Para centralizar horizontalmente */
- /* Para ajustar para a esquerda pela metade da largura do próprio elemento */
-  width: 60%; /* Largura do vídeo */
-  height: 100%; /* Altura do vídeo */
-  background-color: black; /* Cor de fundo temporária para visualização */
+  width: 100%;
+  max-width: 600px; /* Define a largura máxima do vídeo */
+  margin-bottom: 10px; /* Espaçamento entre o vídeo e o rodapé */
+}
+
+.video video {
+  width: 100%; /* O vídeo ocupa 100% da largura do contêiner */
+  height: auto; /* Mantém a proporção do vídeo */
 }
 
 .rodape {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: rgba(111, 111, 111, 0.5); /* cor de fundo do rodapé com transparência */
-  color: #fff; /* cor do texto */
-  padding: 10px; /* espaçamento interno */
-  text-align: center; /* centraliza o texto */
+  text-align: center; /* Centraliza o texto no rodapé */
+  font-size: 14px; /* Tamanho da fonte do texto no rodapé */
+  color: #333; /* Cor do texto no rodapé */
 }
-
 
 
 
