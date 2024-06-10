@@ -11,7 +11,7 @@
     <header>
         <div class="barra-superior">
             <div class="esquerda">
-                <button class="btn-acao" id="importButton" data-acao="importar" aria-label="Importar">
+                <button class="btn-acao" data-acao="importar" aria-label="Importar">
                     <img src="./imagens/importarIcone.png" alt="Importar">
                     <span class="legenda">Importar</span>
                 </button>
@@ -32,8 +32,8 @@
             </div>
             <div class="direita">
                 <button class="btn-acao" id="startButton" data-acao="gravar" aria-label="Gravar">
-                    <img src="./imagens/gravarIcone.png" alt="Gravar" id="imagePlay">
-                    <span class="legenda" id="textPlay">Gravar</span>
+                    <img src="./imagens/gravarIcone.png" alt="Gravar">
+                    <span class="legenda">Gravar</span>
                 </button>
                 <button class="btn-acao" id="resumeButton" data-acao="play" aria-label="Play">
                     <img src="./imagens/playIcone.png" alt="Play">
@@ -52,20 +52,43 @@
             <div class="area-visualizacao">
                 <div class="esquerda">
                     <div class="miniatura-video">
-                        <div class="texto-escrito-midia">
-                            <span class="legendaPrincipal" id="videos">Vídeos</span>
+                            <div id="tab" class="texto-escrito-midia">
+                            <span class="legendaPrincipal">Vídeos<br></span>
+                            <button class="botao-com-imagem">
+                                <video poster="./imagens/campo.png" controls>
+                            </button></video>
                             <!-- As mídias vão ficar daqui pra baixo -->
-                            <video poster="./imagens/campo.png" controls>
+                            <button class="botao-com-imagem">
+                                <video poster="./imagens/campo.png" controls>
+                            </button></video>
+                            
                                 <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
-                            </video>
                             <div class="informacoes-video">
+                                <span class="legendaVideo">nome dele.mp4<br></span>
+                                <span class="tempo-video">00:10</span>
+                                <span class="tamanho-video">2 MB</span>
                                 <span class="legendaVideo">nome dele.mp4</span>
-                                <span class="tempo-video">00:10</span> <span class="tamanho-video"> 2 MB</span>
+                                <span class="tempo-video">00:10</span>
+                                <span class="tamanho-video">2 MB</span>
                             </div>
-                        </div>
-                        <div class="visualizacao-audio">
+                            <button class="botao-com-imagem">
+                                <video poster="./imagens/campo.png" controls>
+                            </button></video>
+                            <button class="botao-com-imagem">
+                                <video poster="./imagens/campo.png" controls>
+                            </button></video>
+                                <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
+                            <div class="informacoes-video">
+                                <span class="legendaVideo">nome dele.mp4<br></span>
+                                <span class="tempo-video">00:10</span>
+                                <span class="tamanho-video">2 MB</span>
+                                <span class="legendaVideo">nome dele.mp4</span>
+                                <span class="tempo-video">00:10</span>
+                                <span class="tamanho-video">2 MB</span>
+                            </div>
+                             
                             <!-- Aqui vai ser onde irá ficar todos os áudios, não o áudio do vídeo em si -->
-                            <span class="legendaPrincipal">Audios</span> 
+                            <span class="legendaPrincipal"><br>Audios<br></span> 
                             <audio autoplay controls>
                                 <source src="./imagens/audioTeste.mp3" type="audio/mp3"> 
                                 Seu navegador não suporta HTML5.
@@ -73,12 +96,12 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            
+                    </div>
+                </div>
+            </div>              
             <div class="container">
                 <div class="video">
-                    <video id="videoElement" width="640" height="480" controls></video>
+                    <!-- Conteúdo do vídeo -->
                 </div>
                 <div class="rodape">
                     <p>00:00:00<p>
