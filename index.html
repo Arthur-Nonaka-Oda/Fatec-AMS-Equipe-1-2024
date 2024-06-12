@@ -110,7 +110,21 @@
             </div>
             
         </div>
-        <div class="linha-do-tempo"></div>
+        <div class="linha-do-tempo">
+
+            <div id="playarea">
+                <div id="play" onclick="playTrigger()"></div>
+              </div>
+              <div id="markerback">
+              </div>
+              <div id="timeline" onmousemove="grabMove(event)" onmouseup="grabDone()">
+                <div id="timecursor" class="noselect" onmousedown="grabTime()">00:00:00</div>
+                <div id="timemarker"></div>
+                <div id="layers"></div>
+              </div>
+              <div id="timeback"></div>
+          </div>
+        </div>
     </section>
     <script src="renderer.js" defer>
 
@@ -123,6 +137,9 @@
                 };
             }
         }).mount("#test");
+    </script>
+    <script src="linhadotempo.js" defer>
+
     </script>
 </body>
 </html>
