@@ -11,7 +11,7 @@
     <header>
         <div class="barra-superior">
             <div class="esquerda">
-                <button class="btn-acao" data-acao="importar" aria-label="Importar">
+                <button id="importButton" class="btn-acao" data-acao="importar" aria-label="Importar">
                     <img src="./imagens/importarIcone.png" alt="Importar">
                     <span class="legenda">Importar</span>
                 </button>
@@ -32,8 +32,8 @@
             </div>
             <div class="direita">
                 <button class="btn-acao" id="startButton" data-acao="gravar" aria-label="Gravar">
-                    <img src="./imagens/gravarIcone.png" alt="Gravar">
-                    <span class="legenda">Gravar</span>
+                    <img id="imagePlay" src="./imagens/gravarIcone.png" alt="Gravar">
+                    <span id="textPlay" class="legenda">Gravar</span>
                 </button>
                 <button class="btn-acao" id="resumeButton" data-acao="play" aria-label="Play">
                     <img src="./imagens/playIcone.png" alt="Play">
@@ -51,7 +51,7 @@
         <section class="secao-principal">
             <div class="area-visualizacao">
                 <div class="esquerda">
-                    <div class="miniatura-video">
+                    <div class="miniatura-video" id="videos">
                             <div id="tab" class="texto-escrito-midia">
                             <span class="legendaPrincipal">Vídeos<br></span>
                             <button class="botao-com-imagem">
