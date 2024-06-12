@@ -1,7 +1,16 @@
 let mediaRecorder;
+
+// const Recorder = require("./recorder");
+
+console.log(window.electron.recorder())
 let chunks = [];
 let imports = [];
 let videos = [];
+
+// import { Recorder } from "./recorder";
+// const {Recorder} = require('./recorder');
+// recorder = window.electron.recorder();
+// console.log(Object.getOwnPropertyNames(recorder.prototype));
 
 
 let isRecording = false;
@@ -13,28 +22,29 @@ const pauseButton = document.getElementById("pauseButton");
 pauseButton.addEventListener("click", async () => {
   pauseRecording();
   pauseButton.style.opacity = 0.5;
-  resumeButton.style.opacity = 1;
+  // resumeButton.style.opacity = 1;
 });
 
-const resumeButton = document.getElementById("resumeButton");
-resumeButton.addEventListener("click", () => {
-  resumeRecording();
-  pauseButton.style.opacity = 1;
-  resumeButton.style.opacity = 0.5;
-});
+// const resumeButton = document.getElementById("resumeButton");
+// resumeButton.addEventListener("click", () => {
+//   resumeRecording();
+//   pauseButton.style.opacity = 1;
+//   resumeButton.style.opacity = 0.5;
+// });
 
 pauseButton.style.opacity = 0.5;
-resumeButton.style.opacity = 0.5;
+// resumeButton.style.opacity = 0.5;
 
 document.getElementById("startButton").addEventListener("click", async () => {
   if (!isRecording) {
-    startRecording();
+    recorder.startRecording();
+    // recorder.teste();
     textPlay.innerHTML = "Parar";
     imagePlay.src = "imagens/pararIcone.png";
     pauseButton.style.opacity = 1;
     isRecording = true;
   } else {
-    stopRecording();
+    recorder.stopRecording();
     imagePlay.src = "imagens/gravarIcone.png";
     textPlay.innerHTML = "Gravar";
     pauseButton.style.opacity = 0.5;

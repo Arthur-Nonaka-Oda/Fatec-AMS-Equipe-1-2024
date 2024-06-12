@@ -1,11 +1,17 @@
 const { contextBridge, ipcRenderer } = require("electron");
-// const { startRecording, stopRecording, pauseRecording, resumeRecording } = require("./recorder.js");
+const Recorder = require("./recorder");
+// console.log(Object.getOwnPropertyNames(Recorder.prototype));
 
 contextBridge.exposeInMainWorld("electron", {
   // startRecording,
   // stopRecording,
   // pauseRecording,
   // resumeRecording,
+  recorder: () => {
+    const recorder = new Recorder();
+    return recorder;
+    // new Recorder()
+  },
 
   // test: () => console.log("teste"),
 
