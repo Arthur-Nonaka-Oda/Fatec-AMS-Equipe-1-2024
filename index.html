@@ -14,7 +14,8 @@
             <div class="esquerda">
                 <button id="importButton" class="btn-acao" data-acao="importar" aria-label="Importar">
                     <img src="./imagens/importarIcone.png" alt="Importar">
-                    <span class="legenda" id="test">{{ test }}</span>
+                    <!-- <span class="legenda" id="test">{{ test }}</span> -->
+                    <span class="legenda" id="importar">Importar</span>
                 </button>
                 <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto">
                     <img src="./imagens/textoIcone.png" alt="Texto">
@@ -31,18 +32,16 @@
                     <span class="legenda">Salvar</span>
                 </button>
             </div>
-            <div class="direita">
-                <button class="btn-acao" id="startButton" data-acao="gravar" aria-label="Gravar">
-                    <img id="imagePlay" src="./imagens/gravarIcone.png" alt="Gravar">
-                    <span id="textPlay" class="legenda">Gravar</span>
+            <div class="direita" id="recordButtons">
+
+                <button class="btn-acao" id="startButton" data-acao="gravar"  @click="toggleRecording" aria-label="Gravar">
+                    <img id="imagePlay" :src="recordImageSrc" alt="Gravar">
+                    <span id="textPlay" class="legenda">{{isRecording ? 'Parar' : 'Gravar'}}</span>
                 </button>
-                <!-- <button class="btn-acao" id="resumeButton" data-acao="play" aria-label="Play">
-                    <img src="./imagens/playIcone.png" alt="Play">
-                    <span class="legenda">Retomar</span>
-                </button> -->
-                <button class="btn-acao" id="pauseButton" data-acao="pause" aria-label="Pause">
-                    <img src="./imagens/pauseIcone.png" alt="Pause">
-                    <span class="legenda">Pausar</span>
+
+                <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording" data-acao="pause" aria-label="Pause">
+                    <img :src="pauseImageSrc" alt="Pause">
+                    <span class="legenda">{{isPaused ? 'Retomar' : 'Pausar'}}</span>
                 </button>
             </div>
         </div>
@@ -126,18 +125,10 @@
           </div>
         </div>
     </section>
-    <script src="renderer.js" defer>
-
+    <script src="front.js">
     </script>
-    <script>
-        Vue.createApp({
-            data(){
-                return {
-                    test: "ASKDJSAIkdajsdlksa",
-                };
-            }
-        }).mount("#test");
-    </script>
+    <!-- <script src="renderer.js">
+    </script> -->
     <script src="linhadotempo.js" defer>
 
     </script>

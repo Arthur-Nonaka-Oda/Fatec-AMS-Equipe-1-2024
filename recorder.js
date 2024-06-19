@@ -1,20 +1,13 @@
+const { ipcRenderer } = require("electron");
 
  function Recorder () {
     this.mediaRecorder = null;
     this.chunks = [];
     
-
-    this.teste = function () {
-        console.log("teste");
-    }
     this.startRecording = async function () {
         try {
-            // const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-            // Notification.requestPermission().then(function (permission) {
-            //     console.log("Notification permission: ", permission);
-            // });
     
-            const selectedScreen = await window.electron.selectScreen();
+            const selectedScreen = await ipcRenderer.invoke("select-screen");
     
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -37,7 +30,7 @@
                 this.chunks.push(e.data);
             };
             this.mediaRecorder.onstop = async () => {
-                const { filePath } = await window.electron.saveDialog();
+                const { filePath } = await ipcRenderer.invoke("save-dialog")
                 if (filePath) {
                     const arrayBuffers = await Promise.all(
                         this.chunks.map((blob) => {
@@ -49,7 +42,11 @@
                             });
                         })
                     );
-                    await window.electron.saveRecording({ chunks: arrayBuffers, filePath });
+                    try {
+                        await ipcRenderer.invoke('write-file', {arrayBuffers, filePath});
+                    } catch (error) {
+                        console.error('Error writing file:', error);
+                    }
                 }
                 this.chunks = [];
             };
@@ -74,5 +71,4 @@
     }
 }
 
-module.exports = Recorder
-;
+module.exports = Recorder;

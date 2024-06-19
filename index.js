@@ -1,4 +1,11 @@
-const { app, BrowserWindow, ipcMain, dialog, session, desktopCapturer } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  session,
+  desktopCapturer,
+} = require("electron");
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const fs = require("fs");
@@ -13,7 +20,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       sandbox: false,
-      nodeIntegration: true
+      nodeIntegration: true,
     },
   });
 
@@ -27,9 +34,7 @@ function createWindow() {
       if (allowedPermissions.includes(permission)) {
         callback(true);
       } else {
-        console.error(
-          `Blocked '${permission}'.`
-        );
+        console.error(`Blocked '${permission}'.`);
 
         callback(false);
       }
@@ -60,13 +65,13 @@ ipcMain.handle("save-dialog", async () => {
 ipcMain.handle("import-dialog", async () => {
   const { filePaths } = await dialog.showOpenDialog({
     title: "Selecione o arquivo",
-    properties: ['openFile']
+    properties: ["openFile"],
   });
   // fs.stat(filePaths[0], (err, stats) => {
   //   const sizeBytes = stats.size;
   //   const sizeMb = sizeBytes / (1024 * 1024);
   // })
-  return { filePath: filePaths[0], name: path.basename(filePaths[0])};
+  return { filePath: filePaths[0], name: path.basename(filePaths[0]) };
 });
 
 ipcMain.handle("permission-dialog", async () => {
@@ -81,9 +86,10 @@ ipcMain.handle("permission-dialog", async () => {
   return { filePath };
 });
 
-ipcMain.handle("write-file", async (event, { chunks, filePath }) => {
+ipcMain.handle("write-file", async (event, { arrayBuffers, filePath }) => {
+
   const outputFilePath = `${filePath}.mp4`;
-  const buffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+  const buffer = Buffer.concat(arrayBuffers.map((chunk) => Buffer.from(chunk)));
   const tempFilePath = `${filePath}.temp.webm`;
 
   fs.writeFile(tempFilePath, buffer, (err) => {
@@ -112,6 +118,12 @@ ipcMain.handle("write-file", async (event, { chunks, filePath }) => {
 });
 
 ipcMain.handle("select-screen", async () => {
-  const sources = await desktopCapturer.getSources({ types: ["window", "screen"] });
-  return sources[0];
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ["window", "screen"],
+    });
+    return sources[0];
+  } catch (err) {
+    console.log(err);
+  }
 });

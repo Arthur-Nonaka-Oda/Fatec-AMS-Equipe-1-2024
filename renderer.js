@@ -2,7 +2,6 @@ let mediaRecorder;
 
 // const Recorder = require("./recorder");
 
-console.log(window.electron.recorder())
 let chunks = [];
 let imports = [];
 let videos = [];
@@ -10,7 +9,6 @@ let videos = [];
 // import { Recorder } from "./recorder";
 // const {Recorder} = require('./recorder');
 // recorder = window.electron.recorder();
-// console.log(Object.getOwnPropertyNames(recorder.prototype));
 
 
 let isRecording = false;
@@ -37,14 +35,14 @@ pauseButton.style.opacity = 0.5;
 
 document.getElementById("startButton").addEventListener("click", async () => {
   if (!isRecording) {
-    recorder.startRecording();
+    startRecording();
     // recorder.teste();
     textPlay.innerHTML = "Parar";
     imagePlay.src = "imagens/pararIcone.png";
     pauseButton.style.opacity = 1;
     isRecording = true;
   } else {
-    recorder.stopRecording();
+    stopRecording();
     imagePlay.src = "imagens/gravarIcone.png";
     textPlay.innerHTML = "Gravar";
     pauseButton.style.opacity = 0.5;
