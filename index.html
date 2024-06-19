@@ -34,12 +34,12 @@
             </div>
             <div class="direita" id="recordButtons">
 
-                <button class="btn-acao" id="startButton" data-acao="gravar"  @click="toggleRecording" aria-label="Gravar">
+                <button class="btn-acao" id="startButton" data-acao="gravar"   @click="toggleRecording" aria-label="Gravar">
                     <img id="imagePlay" :src="recordImageSrc" alt="Gravar">
                     <span id="textPlay" class="legenda">{{isRecording ? 'Parar' : 'Gravar'}}</span>
                 </button>
 
-                <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording" data-acao="pause" aria-label="Pause">
+                <button :disabled="!isRecording"  class="btn-acao" id="pauseButton" @click="pauseRecording" :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
                     <img :src="pauseImageSrc" alt="Pause">
                     <span class="legenda">{{isPaused ? 'Retomar' : 'Pausar'}}</span>
                 </button>
