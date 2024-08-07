@@ -1,14 +1,15 @@
 const { ipcRenderer } = require("electron");
+const path = require("path");
 
- function Recorder () {
+function Recorder() {
     this.mediaRecorder = null;
     this.chunks = [];
-    
+
     this.startRecording = async function () {
         try {
-    
+
             const selectedScreen = await ipcRenderer.invoke("select-screen");
-    
+
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     mandatory: {
@@ -23,14 +24,16 @@ const { ipcRenderer } = require("electron");
                     },
                 },
             });
-    
+
             this.mediaRecorder = new MediaRecorder(stream);
-    
+
             this.mediaRecorder.ondataavailable = (e) => {
                 this.chunks.push(e.data);
             };
             this.mediaRecorder.onstop = async () => {
-                const { filePath } = await ipcRenderer.invoke("save-dialog")
+                const { fileName } = await ipcRenderer.invoke('save-dialog');
+                const filePath = path.join(__dirname, "../", "videos", fileName);
+
                 if (filePath) {
                     const arrayBuffers = await Promise.all(
                         this.chunks.map((blob) => {
@@ -43,14 +46,14 @@ const { ipcRenderer } = require("electron");
                         })
                     );
                     try {
-                        await ipcRenderer.invoke('write-file', {arrayBuffers, filePath});
+                        await ipcRenderer.invoke('write-file', { arrayBuffers, filePath });
                     } catch (error) {
                         console.error('Error writing file:', error);
                     }
                 }
                 this.chunks = [];
             };
-    
+
             this.mediaRecorder.start();
         } catch (err) {
             console.log(err);
@@ -63,7 +66,7 @@ const { ipcRenderer } = require("electron");
     this.pauseRecording = async function () {
         this.mediaRecorder.pause();
     }
-    
+
     this.stopRecording = async function () {
         if (this.mediaRecorder) {
             this.mediaRecorder.stop();

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Salvar</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    .dialog {
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+    .dialog h2 {
+      margin: 0;
+    }
+    .dialog-buttons {
+      margin-top: 20px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="dialog">
+    <h2>Salvar</h2>
+    <p>Nome para salvar o víeo:</p>
+    <input type="text" id="inputField" placeholder="Nome...">
+    <div class="dialog-buttons">
+      <button id="cancelButton">Cancelar</button>
+      <button id="okButton">Salvar</button>
+    </div>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    document.getElementById('okButton').addEventListener('click', () => {
+      const inputValue = document.getElementById('inputField').value;
+      ipcRenderer.send('dialog-ok', inputValue);
+    });
+
+    document.getElementById('cancelButton').addEventListener('click', () => {
+      ipcRenderer.send('dialog-cancel');
+    });
+  </script>
+</body>
+</html>

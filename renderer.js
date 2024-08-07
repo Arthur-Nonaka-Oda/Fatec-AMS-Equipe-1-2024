@@ -36,7 +36,6 @@ pauseButton.style.opacity = 0.5;
 document.getElementById("startButton").addEventListener("click", async () => {
   if (!isRecording) {
     startRecording();
-    // recorder.teste();
     textPlay.innerHTML = "Parar";
     imagePlay.src = "imagens/pararIcone.png";
     pauseButton.style.opacity = 1;
@@ -61,71 +60,69 @@ document.getElementById("startButton").addEventListener("click", async () => {
 // });
 
 
-async function startRecording() {
-  try {
-    // const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-    Notification.requestPermission().then(function (permission) {
-      console.log("Notification permission: ", permission);
-    });
+// async function startRecording() {
+//   try {
+//     // const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+//     Notification.requestPermission().then(function (permission) {
+//       console.log("Notification permission: ", permission);
+//     });
 
-    const selectedScreen = await window.electron.selectScreen();
+//     const selectedScreen = await window.electron.selectScreen();
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        mandatory: {
-          chromeMediaSource: "desktop",
-        },
-      },
-      // audio: true,
-      video: {
-        mandatory: {
-          chromeMediaSource: "desktop",
-          chromeMediaSourceId: selectedScreen.id,
-        },
-      },
-    });
+//     const stream = await navigator.mediaDevices.getUserMedia({
+//       audio: {
+//         mandatory: {
+//           chromeMediaSource: "desktop",
+//         },
+//       },
+//       // audio: true,
+//       video: {
+//         mandatory: {
+//           chromeMediaSource: "desktop",
+//           chromeMediaSourceId: selectedScreen.id,
+//         },
+//       },
+//     });
 
-    mediaRecorder = new MediaRecorder(stream);
+//     mediaRecorder = new MediaRecorder(stream);
 
-    mediaRecorder.ondataavailable = (e) => {
-      chunks.push(e.data);
-    };
-    mediaRecorder.onstop = async () => {
-      const { filePath } = await window.electron.saveDialog();
-      if (filePath) {
-        const arrayBuffers = await Promise.all(
-          chunks.map((blob) => {
-            return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.onerror = reject;
-              reader.readAsArrayBuffer(blob);
-            });
-          })
-        );
-        await window.electron.saveRecording({ chunks: arrayBuffers, filePath });
-      }
-      chunks = [];
-    };
+//     mediaRecorder.ondataavailable = (e) => {
+//       chunks.push(e.data);
+//     };
+//     mediaRecorder.onstop = async () => {
+//         const arrayBuffers = await Promise.all(
+//           chunks.map((blob) => {
+//             return new Promise((resolve, reject) => {
+//               const reader = new FileReader();
+//               reader.onloadend = () => resolve(reader.result);
+//               reader.onerror = reject;
+//               reader.readAsArrayBuffer(blob);
+//             });
+//           })
+//         );
+//         await window.electron.saveRecording({ chunks: arrayBuffers, filePath });
+//       }
+//       chunks = [];
+//     };
 
-    mediaRecorder.start();
-  } catch (err) {
-    console.log(err);
-  }
-}
+//     mediaRecorder.start();
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
 
-function resumeRecording() {
-  mediaRecorder.resume();
-}
-function pauseRecording() {
-  mediaRecorder.pause();
-}
+// function resumeRecording() {
+//   mediaRecorder.resume();
+// }
+// function pauseRecording() {
+//   mediaRecorder.pause();
+// }
 
-function stopRecording() {
-  if (mediaRecorder) {
-    mediaRecorder.stop();
-  }
-}
+// function stopRecording() {
+//   if (mediaRecorder) {
+//     mediaRecorder.stop();
+//   }
+// }
 
 
 const videoElement = document.getElementById("videoElement");

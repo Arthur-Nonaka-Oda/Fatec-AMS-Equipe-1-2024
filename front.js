@@ -1,8 +1,10 @@
+
 Vue.createApp({
     data() {
         return {
             isRecording: false,
             isPaused: false,
+            showModal: false,
         }
     },
     computed: {
@@ -15,6 +17,9 @@ Vue.createApp({
         }
     },
     methods: {
+        close() {
+            this.showModal = false;
+        },
         toggleRecording() {
             if (!this.isRecording) {
                 window.electron.recorder().startRecording();
@@ -25,7 +30,7 @@ Vue.createApp({
             this.isPaused = false;
         },
         pauseRecording() {
-            if(!this.isPaused) {
+            if (!this.isPaused) {
                 window.electron.recorder().pauseRecording();
             } else {
                 window.electron.recorder().resumeRecording();
