@@ -148,6 +148,7 @@ header {
 .controles {
   display: flex;
   align-items: center;
+  background-color: #616161;
 }
 
 .controles button {
