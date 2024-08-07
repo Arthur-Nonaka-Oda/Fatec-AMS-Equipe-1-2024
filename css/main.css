@@ -147,19 +147,18 @@ header {
 
 .controles {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
 }
 
 .controles button {
-  padding: 5px 10px;
+  background: none;
+  border: none;
   cursor: pointer;
 }
 
-.controles input[type="range"] {
-  width: 100%;
-  margin-left: 10px;
+.controles img {
+  width: 35px; /* Ajuste o tamanho do ícone conforme necessário */
+  height: auto;
 }
 
 .controles progress {
@@ -171,7 +170,3 @@ header {
   font-size: 14px;
   color: #000000;
 }
-
-
-
-

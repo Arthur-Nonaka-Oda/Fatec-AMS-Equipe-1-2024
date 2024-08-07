@@ -48,58 +48,50 @@
     </header>
 
     <section class="secao-principal">
-        <section class="secao-principal">
-            <div class="area-visualizacao">
-                <div class="esquerda">
-                    <div class="miniatura-video">
-                        <div class="texto-escrito-midia">
-                            <span class="legendaPrincipal">Vídeos</span>
-                            <!-- As mídias vão ficar daqui pra baixo -->
-                            <video poster="./imagens/campo.png" controls>
-                                <source src="./imagens/videoTrigo.mp4" type="video/mp4">
-                            </video>
-                            <div class="informacoes-video">
-                                <span class="tempo-video">00:10</span> <span class="tamanho-video"> 2 MB</span>
-                            </div>
+        <div class="area-visualizacao">
+            <div class="esquerda">
+                <div class="miniatura-video">
+                    <div class="texto-escrito-midia">
+                        <span class="legendaPrincipal">Vídeos</span>
+                        <!-- As mídias vão ficar daqui pra baixo -->
+                        <video poster="./imagens/campo.png" controls>
+                            <source src="./imagens/videoTrigo.mp4" type="video/mp4">
+                        </video>
+                        <div class="informacoes-video">
+                            <span class="tempo-video">00:10</span> <span class="tamanho-video">2 MB</span>
                         </div>
-                        <div class="visualizacao-audio">
-                            <!-- Aqui vai ser onde irá ficar todos os áudios, não o áudio do vídeo em si -->
-                            <span class="legendaPrincipal">Audios</span> 
-                            <audio autoplay controls>
-                                <source src="./imagens/audioTeste.mp3" type="audio/mp3"> 
-                                Seu navegador não suporta HTML5.
-                            </audio>
-                        </div>
+                    </div>
+                    <div class="visualizacao-audio">
+                        <span class="legendaPrincipal">Áudios</span> 
+                        <audio autoplay controls>
+                            <source src="./imagens/audioTeste.mp3" type="audio/mp3"> 
+                            Seu navegador não suporta HTML5.
+                        </audio>
                     </div>
                 </div>
-                <div class="container">
-                    <div class="video">
-                      <video id="videoPlayer" poster="./imagens/campo.png" controls>
+            </div>
+            <div class="container">
+                <div class="video">
+                    <video id="videoPlayer" poster="./imagens/campo.png" controls>
                         <source src="./imagens/videoTrigo.mp4" type="video/mp4">
                         Seu navegador não suporta a exibição de vídeos.
-                      </video>
-                      <div class="controles">
-                        <button id="playPauseButton">Reproduzir/Pausar</button>
-                        <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
-                        <progress id="progressBar" value="0" max="1"></progress>
-                      </div>
+                    </video>
+                    <div class="controles">
+                        <button id="playPauseButton" aria-label="Reproduzir/Pausar">
+                            <img id="playPauseIcon" src="./imagens/playIcone.png" alt="Play">
+                        </button>
+                        <p id="videoTime">00:00:00</p>
                     </div>
-                    <div class="rodape">
-                      <p id="videoTime">00:00:00</p>
-                    </div>
-                  </div>
+                                       
+                </div>
+                <div class="rodape">
+                    <p id="videoTime" id="volumeSlider">00:00:00</p>
+                </div>
             </div>
-            
-            
-            
-            
-            
-            
         </div>
         <div class="linha-do-tempo"></div>
     </section>
-    <script src="renderer.js" defer>
-    </script>
+    <script src="renderer.js" defer></script>
     <script src="front.js" defer></script>
 </body>
 </html>
