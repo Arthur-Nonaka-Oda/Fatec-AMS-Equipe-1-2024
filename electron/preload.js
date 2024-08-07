@@ -1,4 +1,6 @@
 const { contextBridge, ipcRenderer } = require("electron");
+const Importer = require('../APIs/Importer');
+const importer = new Importer();
 const Recorder = require('../APIs/Recorder');
 const recorder = new Recorder();
 // console.log(Object.getOwnPropertyNames(Recorder.prototype));
@@ -10,6 +12,9 @@ contextBridge.exposeInMainWorld("electron", {
   // resumeRecording,
   recorder: () => {
     return recorder;
+  },
+  importer: () => {
+    return importer;
   },
 
   // test: () => console.log("teste"),

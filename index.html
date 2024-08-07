@@ -11,8 +11,8 @@
 <body>
     <header>
         <div class="barra-superior">
-            <div class="esquerda">
-                <button id="importButton" class="btn-acao" data-acao="importar" aria-label="Importar">
+            <div class="esquerda" id="importButtons">
+                <button id="importButton" class="btn-acao" data-acao="importar" @click="importFile" aria-label="Importar">
                     <img src="./imagens/importarIcone.png" alt="Importar">
                     <!-- <span class="legenda" id="test">{{ test }}</span> -->
                     <span class="legenda" id="importar">Importar</span>

@@ -39,3 +39,11 @@ Vue.createApp({
         }
     }
 }).mount('#recordButtons');
+
+Vue.createApp({
+    methods: {
+        importfile() {
+            window.electron.Importer().importFile();
+        }
+    }
+}).mount('#importButtons');
