@@ -1,0 +1,462 @@
+body {
+  font-family: Inter, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+
+header {
+  background-color: #f0f0f0;
+  padding: 10px;
+}
+
+.barra-superior {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.barra-superior .esquerda,
+.barra-superior .centro,
+.barra-superior .direita {
+  display: flex;
+  align-items: center;
+}
+
+.btn-acao {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 10px;
+  width: 40px;
+  margin-top: none;
+}
+
+
+
+.btn-acao img {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 5px;
+}
+
+.campo-texto {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.secao-principal {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.area-visualizacao {
+  display: flex;
+  justify-content:space-between;
+  margin-top: 10px;
+  margin-left: 5px;
+}
+
+
+
+.texto-escrito-midia {
+  margin-top: 10px;
+  text-align: center; /* Centralizando o texto */
+}
+
+.texto-escrito-midia video {
+  display: block;
+  max-width: 100%;
+  max-height: 200px; /* Reduzindo a altura máxima do vídeo */
+  margin: 10px 0;
+}
+
+.informacoes-video {
+  display: flex;
+  justify-content:space-between;
+  margin-top: 10px;
+  margin-left: 5px;
+}
+
+.legendaPrincipal {
+  font-weight: bold;
+}
+
+.legendaVideo {
+  font-weight: bold;
+  text-align: center;
+  padding: -5px;
+}
+
+.visualizacao-audio {
+  margin-top: 20px;
+  text-align: center; /* Centralizando o texto */
+  
+}
+
+.visualizacao-audio .legenda {
+  display: inline-block; /* Alterando para display inline-block para permitir centralização */
+  margin-bottom: 5px;
+}
+
+.visualizacao-audio audio {
+  max-width: 100px; /* Definindo a largura máxima do reprodutor de áudio */
+  display: block; /* Garantindo que o reprodutor de áudio fique em uma linha separada */
+  margin-top: 10px;
+  margin-right: auto; /* Alinhando à direita */
+}
+
+
+
+.linha-do-tempo {
+  position: absolute;
+  bottom: 0%;
+  width: 100%;
+  height: 170px;
+  background-color: #0F153C;
+}
+
+#markerback {
+  position: absolute;
+  content: "";
+  border: 1px solid #E5E5E5;
+  width: 100%;
+  height: 37px;
+  background-color: #FFF;
+  top: 50;
+  left:0;
+  z-index: 0!important;
+}
+#playarea {
+  height: 50px;
+}
+
+/* area do play */
+#play {
+  width: 30px;
+  height: 30px;
+  background-color: black;
+  border-radius: 30px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 5px;
+}
+#timeline {
+  background-color: #303A7C;
+  height: 190px;
+  overflow-y: hidden;
+  width: 100%;
+  position: absolute;
+}
+#timeback {
+  position: absolute;
+  height: 190px;
+  bottom: 0;
+  width: 100%;
+  background-color: #F9F8FE;
+  z-index: -9999;
+}
+#grabcursor {
+  width:65px;
+  height:25px;
+  line-height: 25px;
+  position: absolute;
+  background-color: #ce2323;
+  border-radius: 0px 30px 30px 30px;
+  top: 0px;
+  left: 0px;
+  font-family: Inter;
+  font-size: 12px;
+  color: white;
+  z-index: 999999999!important;
+  text-align: center;
+  margin-top: 8px;
+  margin-left: 18px;
+  opacity: 0;
+  z-index: 999999999!important;
+}
+.showcursor {
+  z-index: 999999!important;
+  margin-top: 8px;
+  margin-left: 18px;
+  font-size: 12px;
+  transition: opacity .2s cubic-bezier(.05,.03,.35,1);
+}
+#timecursor {
+  width:65px;
+  height:25px;
+  line-height: 25px;
+  position: absolute;
+  background-color: black;
+  border-radius: 30px;
+  top: 0px;
+  left: 0px;
+  font-family: Inter;
+  font-size: 12px;
+  color: white;
+  z-index: 999999999!important;
+  text-align: center;
+  margin-top: 8px;
+  margin-left: 18px;
+}
+#timecursor:hover {
+  cursor: pointer;
+}
+#timecursor:before {
+  content: "";
+  transition-property: transform;
+  transition-duration: .2s;
+  transition-timing-function: cubic-bezier(.05,.03,.35,1);
+  display:block;
+  width:65px;
+  height:25px;
+  position: absolute;
+  border-radius: 30px;
+  background-color: #ce2323;
+  z-index: -1;
+}
+#timecursor:hover:before {
+    transform: scale(1.12);
+  cursor: pointer;
+}
+#timecursor:after {
+  transition-property: transform, margin-top;
+  transition-duration: .25s;
+  transition-timing-function: cubic-bezier(.05,.03,.35,1);
+  content: "";
+  display: block;
+  height: 100vh;
+  width: 2px;
+  background-color: #ce2323;
+  margin-left: 32.5px;
+  position: absolute;
+  z-index: 999999999!important;
+}
+#holdtime {
+  border: 1px solid #E5E5E5;
+  height: 37px;
+  background-color: #FFF;
+  width: auto;
+}
+#timemarker {
+  height: 37px;
+  display: inline-flex;
+  flex-flow: column wrap;
+  z-index: 2!important;
+  position: absolute;
+}
+
+/* marcação de tempo */
+.marker {
+  width: 100px;
+  text-align:center;
+  font-family: Inter;
+  font-size: 12px;
+  display: inline-block;
+}
+.marker:after {
+  content: "";
+  width: 2px;
+  height: 6px;
+  margin-left: 50%;
+  display: block;
+  background-color: white;
+  text-align: center;
+  margin-top: 5px;
+}
+/* layer video */
+#layers {
+  position: absolute;
+  top: 50px;
+  display: inline-flex;
+}
+#layers .layercont:first-child {
+  border-radius: 0px 60px 60px 0px!important;
+  margin-left: 0px!important;
+  min-width: 50px!important;
+}
+.layercont {
+  display: inline-block;
+  width: 400px;
+  height: 50px;
+  background-image: url();
+  background-color: #ce2323;
+  background-size: cover;
+  border-radius: 60px;
+  margin-left: 0px;
+  box-shadow: 0px 2px 20px rgba(0, 0, 0, 0.1);
+  min-width: 32px;
+}
+.grab {
+  z-index: 100!important;
+  width: 20px;
+  height: 20px;
+  background-color: black;
+  border-radius: 300px;
+  text-align: center;
+  margin-top: 15px;
+  margin-left: 390px;
+  position: absolute;
+  text-align: center;
+  transition-property: transform;
+  transition-duration: .25s;
+  transition-timing-function: cubic-bezier(.05,.03,.35,1);
+}
+.gohigh {
+  z-index: 999999999!important;
+}
+.grab:after {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border-radius: 300px;
+  background-color: black;
+  display: block;
+  position: absolute;
+  z-index: 0;
+  transition: all .25s cubic-bezier(.05,.03,.35,1);
+}
+.grab.activegrab:after {
+  transform: scale(1.4);
+}
+.grab.activegrab:before {
+  width: 20px!important;
+  height: 20px!important;
+  margin-left: 0px!important;
+  margin-top: 0px!important;
+}
+.grab svg {
+  z-index: 1!important;
+  position: absolute;
+  margin-left: -6px;
+  margin-top: 4px;
+}
+.grab:before {
+  content: "";
+  margin-left: -6px;
+  margin-top: -5px;
+  width: 32px;
+  height: 32px;
+  border-radius: 300px;
+  background-color: black;
+  display: block;
+  opacity: .3;
+  position: absolute;
+  z-index: 0;
+  transition: all .25s cubic-bezier(.05,.03,.35,1);
+}
+.grab:hover:before {
+  width: 40px;
+  height: 40px;
+  margin-left: -10px;
+  margin-top:-9px;
+}
+.grab:hover {
+  cursor: pointer!important;
+}
+.grab svg:hover {
+  cursor: pointer!important;  
+}
+/* width */
+::-webkit-scrollbar {
+  width: 20px;
+  height: 25px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #F9F8FE!important;
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #DAD9DE;
+  border-radius: 30px;
+  box-sizing: border-box;
+  border: 8px solid #F9F8FE;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #DAD9DE
+;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Opera and Firefox */
+}
+
+/*arrastar e soltar video */
+
+.neutralArea {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+  max-height: 200px;
+  max-width: 300px;
+  padding: 10px;
+  display: flex;
+  background-color: #ffffff;
+  color: #000;
+  justify-content: space-around;
+  align-items: center;
+  overflow-y: auto;
+  overflow-x: unset;
+  border: 2px solid #FFF;
+}
+.item {
+  width: 100px;
+  height: 100px;
+  background-color: #000;
+  color: #FFF;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+}
+.item.dragging {
+  opacity: 0.5;
+}
+.areas {
+  width: 450px;
+  display: flex;
+  margin-top: 20px;
+}
+.areas.correct .area {
+  border: 2px solid #00FF00;
+}
+.area {
+  width: 150px;
+  height: 150px;
+  border: 2px solid #FFF;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+.item {
+  width: 200px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;  
+  display: inline-flex;
+  align-items: center;
+  cursor: grab;
+}
+

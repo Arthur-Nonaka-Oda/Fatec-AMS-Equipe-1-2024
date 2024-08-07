@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gravar e Editar Vídeo</title>
+        <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet">
+        <link href="./css/main.css" rel="stylesheet">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <header>
+        <div class="barra-superior">
+            <div class="esquerda">
+                <button id="importButton" class="btn-acao" data-acao="importar" aria-label="Importar">
+                    <img src="./imagens/importarIcone.png" alt="Importar">
+                    <!-- <span class="legenda" id="test">{{ test }}</span> -->
+                    <span class="legenda" id="importar">Importar</span>
+                </button>
+                <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto">
+                    <img src="./imagens/textoIcone.png" alt="Texto">
+                    <span class="legenda">Texto</span>
+                </button>
+            </div>
+            <div class="centro">
+                <button class="btn-acao" data-acao="desfazer" aria-label="Desfazer">
+                    <img src="./imagens/voltarIcone.png" alt="Desfazer">
+                    <span class="legenda">Desfazer</span>
+                </button>
+                <button class="btn-acao" data-acao="salvar" aria-label="Salvar">
+                    <img src="./imagens/salvarIcone.png" alt="Salvar">
+                    <span class="legenda">Salvar</span>
+                </button>
+            </div>
+            <div class="direita" id="recordButtons">
+
+                <button class="btn-acao" id="startButton" data-acao="gravar"   @click="toggleRecording" aria-label="Gravar">
+                    <img id="imagePlay" :src="recordImageSrc" alt="Gravar">
+                    <span id="textPlay" class="legenda">{{isRecording ? 'Parar' : 'Gravar'}}</span>
+                </button>
+
+                <button :disabled="!isRecording"  class="btn-acao" id="pauseButton" @click="pauseRecording" :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
+                    <img :src="pauseImageSrc" alt="Pause">
+                    <span class="legenda">{{isPaused ? 'Retomar' : 'Pausar'}}</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section class="secao-principal">
+        <section class="secao-principal">
+            <div class="area-visualizacao">
+                <div class="esquerda">
+                    <!-- As mídias da sessão de upload vão ficar daqui pra baixo -->
+                    <div class="neutralArea" id="videos">
+                            <div id="tab" class="texto-escrito-midia">
+                            <span class="legendaPrincipal"><br><br><br>Vídeos<br></span>
+                            <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
+                                <video poster="./imagens/campo.png" controls class="item" draggable="true"></video>
+                            <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
+                                <video poster="./imagens/campo.png" controls class="item" draggable="true"></video>
+                            <div class="informacoes-video"></div>
+                            <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
+                                <video poster="./imagens/campo.png" controls class="item" draggable="true"></video>
+                            <!-- <source src="./imagens/videoTrigo.mp4" type="video/mp4"> -->
+                                <video poster="./imagens/campo.png" controls class="item" draggable="true"></video>
+                            <!-- Aqui vai ser onde irá ficar todos os áudios, não o áudio do vídeo em si -->
+                            <span class="legendaPrincipal"><br>Áudios<br><br></span> 
+                            <audio autoplay controls>
+                                <source src="./imagens/audioTeste.mp3" type="audio/mp3" class="item" draggable="true"> 
+                                Seu navegador não suporta HTML5.
+                            </audio>
+                        </div>
+                    </div>
+                </div>
+                    </div>
+                </div>
+            </div>              
+            <div class="container">
+                <div class="video">
+                    <!-- Conteúdo do vídeo -->
+                </div>
+                <div class="rodape">
+                    <p>00:00:00<p>
+                </div>
+            </div>
+            
+        </div>
+        <div class="linha-do-tempo">
+
+            <div id="playarea">
+                <div id="play" onclick="playTrigger()"></div>
+              </div>
+              <div id="markerback">
+              </div>
+              <div id="timeline" onmousemove="grabMove(event)" onmouseup="grabDone()">
+                <div id="timecursor" class="noselect" onmousedown="grabTime()">00:00:00</div>
+                <div id="timemarker"></div>
+                <div id="layers"></div>
+              </div>
+              <div id="timeback"></div>
+          </div>
+        </div>
+    </section>
+    <script src="front.js">
+    </script>
+    <!-- <script src="renderer.js">
+    </script> -->
+    <script src="linhadotempo.js" defer>
+    </script>
+    <script src="draganddrop.js">
+    </script>
+</body>
+</html>
