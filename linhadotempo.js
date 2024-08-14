@@ -1,7 +1,7 @@
 var timemarker = 0;
 var framey = 0;
 // Add time markers
-for (var i = 0; i<=25; i++) {
+for (var i = 0; i<=500; i += 5) {
   var minutes = Math.floor(i / 60);
   var seconds = i % 60;
   document.getElementById("timemarker").innerHTML += '<p class="marker noselect">'+("0"+minutes).slice(-2)+':'+("0"+seconds).slice(-2)+'</p>';
@@ -131,3 +131,9 @@ function iterate() {
     setTimeout(iterate,16.66);
   }
 }
+
+document.getElementById('timeline').addEventListener('mousemove', grabMove);
+document.getElementById('timeline').addEventListener('mousedown', startDragging);
+document.getElementById('timeline').addEventListener('mouseup', grabDone);
+
+// Outras funções existentes (ex.: grabMove, grabDone)

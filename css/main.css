@@ -61,7 +61,32 @@ header {
 .area-visualizacao {
   display: flex;
 }
+/* VIDEO ARASTAVEL */
+ .video-thumbnail {
+    margin: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    cursor: grab;
+}
 
+.video-thumbnail video {
+    display: block;
+    max-width: 100%;
+}
+
+.video-layer {
+    position: absolute;
+    cursor: grab;
+    border: 1px solid #ccc;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    z-index: 1;
+}
+
+.video-layer.dragging {
+    opacity: 0.5;
+} 
+/* VIDEO ARASTAVEL */
 .miniatura-video {
   display: flex;
   width: 100%;
@@ -131,18 +156,31 @@ header {
 
 
 
-.linha-do-tempo {
+/* LINHA DO TEMPO ============================================================================*/
+
+.video-layer {
   position: absolute;
-  bottom: 0%;
-  width: 100%;
-  height: 170px;
-  background-color: #0F153C;
+  cursor: grab;
 }
+
+.video-layer.dragging {
+  opacity: 0.5;
+}
+
+.linha-do-tempo {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background-color: rgb(50, 50, 50);
+  overflow-x: auto;
+  border: 1px solid #ccc;
+}
+
 
 #markerback {
   position: absolute;
   content: "";
-  border: 1px solid #E5E5E5;
+  border: 1px solid #01ff62;
   width: 100%;
   height: 37px;
   background-color: #FFF;
@@ -150,41 +188,44 @@ header {
   left:0;
   z-index: 0!important;
 }
+/*
 #playarea {
   height: 50px;
 }
 
-/* area do play */
+ */
+
+ */
 #play {
   width: 30px;
   height: 30px;
-  background-color: black;
+  background-color: rgb(241, 241, 241);
   border-radius: 30px;
   margin-left: auto;
   margin-right: auto;
   margin-top: 5px;
 }
+
 #timeline {
-  background-color: #303A7C;
+  background-color: #0d185e;
   height: 190px;
   overflow-y: hidden;
   width: 100%;
   position: absolute;
 }
-#timeback {
-  position: absolute;
-  height: 190px;
-  bottom: 0;
+#timeline::after {
+  margin-top: 45px;
   width: 100%;
-  background-color: #F9F8FE;
-  z-index: -9999;
+  height: 60px;
+  background-color: #3141a7;
+  position: absolute
 }
 #grabcursor {
   width:65px;
   height:25px;
   line-height: 25px;
   position: absolute;
-  background-color: #ce2323;
+  background-color: #000000;
   border-radius: 0px 30px 30px 30px;
   top: 0px;
   left: 0px;
@@ -256,7 +297,7 @@ header {
   z-index: 999999999!important;
 }
 #holdtime {
-  border: 1px solid #E5E5E5;
+  border: 0px solid #E5E5E5;
   height: 37px;
   background-color: #FFF;
   width: auto;
@@ -271,11 +312,14 @@ header {
 
 /* marcação de tempo */
 .marker {
-  width: 100px;
+  width: 50px;
   text-align:center;
   font-family: Inter;
+  color: white;
   font-size: 12px;
   display: inline-block;
+  margin-top: 3px;
+ 
 }
 .marker:after {
   content: "";
@@ -283,33 +327,56 @@ header {
   height: 6px;
   margin-left: 50%;
   display: block;
-  background-color: white;
+  background-color: rgb(255, 255, 255);
   text-align: center;
-  margin-top: 5px;
+  margin-top: 0px;
 }
+
 /* layer video */
 #layers {
   position: absolute;
   top: 50px;
   display: inline-flex;
+
 }
+/* videos */
 #layers .layercont:first-child {
-  border-radius: 0px 60px 60px 0px!important;
+  border-radius: 0px 8px 8px 0px!important;
   margin-left: 0px!important;
   min-width: 50px!important;
+
 }
 .layercont {
   display: inline-block;
   width: 400px;
   height: 50px;
   background-image: url();
-  background-color: #ce2323;
+  background-color: #ce232300;
   background-size: cover;
-  border-radius: 60px;
+  border-radius: 8px;
   margin-left: 0px;
   box-shadow: 0px 2px 20px rgba(0, 0, 0, 0.1);
   min-width: 32px;
 }
+
+.video-layer {
+  display: inline-block;
+  height: 50px;
+  background-color: #ce2323;
+  border-radius: 8px;
+  box-shadow: 0px 2px 20px rgba(0, 0, 0, 0.1);
+  min-width: 32px;
+  position: absolute;
+  cursor: grab;
+  overflow: hidden; /* Garante que o vídeo não exceda a borda da camada */
+}
+
+.video-layer video {
+  height: 100%;
+  width: auto; /* Mantém a proporção do vídeo */
+}
+
+/* 
 .grab {
   z-index: 100!important;
   width: 20px;
@@ -328,6 +395,7 @@ header {
 .gohigh {
   z-index: 999999999!important;
 }
+
 .grab:after {
   content: "";
   width: 20px;
@@ -348,16 +416,22 @@ header {
   margin-left: 0px!important;
   margin-top: 0px!important;
 }
+*/
+/* triangulo da divisão de video desing*/
+/*  
 .grab svg {
   z-index: 1!important;
   position: absolute;
   margin-left: -6px;
   margin-top: 4px;
 }
+*/
+/* sombra da divisão de video */
+/* 
 .grab:before {
   content: "";
   margin-left: -6px;
-  margin-top: -5px;
+  margin-top: -6px;
   width: 32px;
   height: 32px;
   border-radius: 300px;
@@ -380,11 +454,14 @@ header {
 .grab svg:hover {
   cursor: pointer!important;  
 }
+*/
 /* width */
+/* 
 ::-webkit-scrollbar {
   width: 20px;
   height: 25px;
 }
+*/
 
 /* Track */
 ::-webkit-scrollbar-track {
@@ -412,36 +489,4 @@ header {
         -ms-user-select: none; /* Internet Explorer/Edge */
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome, Opera and Firefox */
-}
-
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 5px;
-  position: relative;
-  z-index: 10;
-}
-
-.modal-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: transparent;
-  border: none;
-  font-size: 1.5em;
-  cursor: pointer;
 }
