@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gravar e Editar Vídeo</title>
     <link href="https://fonts.googleapis.com/css?family=Inter&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="./css/main.css" rel="stylesheet">
 </head>
 <body>
@@ -49,51 +50,46 @@
 
     <section class="secao-principal">
         <div class="area-visualizacao">
-            <div class="esquerda">
-                <div class="miniatura-video">
-                    <div class="texto-escrito-midia">
-                        <span class="legendaPrincipal">Vídeos</span>
-                        <!-- As mídias vão ficar daqui pra baixo -->
-                        <video poster="./imagens/campo.png" controls>
-                            <source src="./imagens/videoTrigo.mp4" type="video/mp4">
-                        </video>
-                        <div class="informacoes-video">
-                            <span class="tempo-video">00:10</span> <span class="tamanho-video">2 MB</span>
-                        </div>
+            <div class="miniatura-video">
+                <div class="texto-escrito-midia">
+                    <span class="legendaPrincipal">Vídeos</span>
+                    <video poster="./imagens/campo.png" controls>
+                        <source src="./imagens/videoTrigo.mp4" type="video/mp4">
+                    </video>
+                    <div class="informacoes-video">
+                        <span class="tempo-video">00:10</span> <span class="tamanho-video">2 MB</span>
                     </div>
-                    <div class="visualizacao-audio">
-                        <span class="legendaPrincipal">Áudios</span> 
-                        <audio autoplay controls>
-                            <source src="./imagens/audioTeste.mp3" type="audio/mp3"> 
-                            Seu navegador não suporta HTML5.
-                        </audio>
-                    </div>
+                </div>
+                <div class="visualizacao-audio">
+                    <span class="legendaPrincipal">Áudios</span> 
+                    <audio autoplay controls>
+                        <source src="./imagens/audioTeste.mp3" type="audio/mp3"> 
+                        Seu navegador não suporta HTML5.
+                    </audio>
                 </div>
             </div>
             <div class="container">
                 <div class="video">
-                    <video id="videoPlayer" poster="./imagens/campo.png" controls>
-                        <source src="./imagens/videoTrigo.mp4" type="video/mp4">
+                    <video id="videoPlayer" poster="./imagens/pirataria.jpg" controls>
+                        <source src="./imagens/vteste.mp4" type="video/mp4">
                         Seu navegador não suporta a exibição de vídeos.
                     </video>
                     <div class="controles">
-                        <button id="futuralixeira" >
-                            <img id="futuralixeira" src="./imagens/lixoIcone.png" alt="Lixo">
-                             <!-- fazer a lixeira e pegar -->
-                        </button>
-                        <button id="futurorecortar">
-                            <img id="futurorecortar" src="./imagens/tesouraIcone.png" alt="Lixo">
-                            <!-- pegar o icone de vdd e testar dps -->
-                        </button>
-                        <button id="playPauseButton" aria-label="Reproduzir/Pausar">
-                            <img id="playPauseIcon" src="./imagens/playIcone.png" alt="Play">
-                        </button>
-                        <p id="videoTime">00:00:00</p>
-                    </div>
-                                       
-                </div>
-                <div class="rodape">
-                    <p id="videoTime" id="volumeSlider">00:00:00</p>
+                        <div class="left-controls">
+                            <button id="futuralixeira">
+                                <img id="futuralixeira" src="./imagens/lixoIcone.png" alt="Lixo">
+                            </button>
+                            <button id="futurorecortar">
+                                <img id="futurorecortar" src="./imagens/tesouraIcone.png" alt="Recortar">
+                            </button>
+                        </div>
+                        <div class="center-controls">
+                            <button id="playPauseButton">
+                                <i id="playPauseIcon" class="bx bx-play"></i>
+                            </button>                            
+                            <p id="videoTime">00:00:00 / 00:00:00</p>
+                        </div>
+                    </div>                                 
                 </div>
             </div>
         </div>

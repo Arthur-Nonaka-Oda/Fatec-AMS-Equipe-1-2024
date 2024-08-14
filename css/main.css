@@ -3,9 +3,7 @@ body {
   margin: 0;
   padding: 0;
   height: 100%;
-  
 }
-
 
 header {
   background-color: #f0f0f0;
@@ -34,10 +32,7 @@ header {
   flex-direction: column;
   align-items: center;
   margin: 0 10px;
-  margin-top: none;
 }
-
-
 
 .btn-acao img {
   width: 32px;
@@ -52,19 +47,19 @@ header {
 }
 
 .secao-principal {
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 .area-visualizacao {
   display: flex;
+  width: 100%;
 }
 
-
-
 .miniatura-video {
-  width: 70%;
+  width: 30%; /* Ajuste conforme necessário */
   background-color: #ccc;
   padding: 10px;
   min-height: 350px; /* Reduzindo a altura mínima */
@@ -72,7 +67,7 @@ header {
 
 .texto-escrito-midia {
   margin-top: 10px;
-  text-align: center; /* Centralizando o texto */
+  text-align: center;
 }
 
 .texto-escrito-midia video {
@@ -92,63 +87,66 @@ header {
   font-weight: bold;
 }
 
-.legendaVideo {
-  font-weight: bold;
-}
-
 .visualizacao-audio {
   margin-top: 20px;
-  text-align: center; /* Centralizando o texto */
-  
+  text-align: center;
 }
 
 .visualizacao-audio .legenda {
-  display: inline-block; /* Alterando para display inline-block para permitir centralização */
+  display: inline-block;
   margin-bottom: 5px;
 }
 
 .visualizacao-audio audio {
-  max-width: 200px; /* Definindo a largura máxima do reprodutor de áudio */
-  display: block; /* Garantindo que o reprodutor de áudio fique em uma linha separada */
+  max-width: 200px;
+  display: block;
   margin-top: 10px;
-  margin-right: auto; /* Alinhando à direita */
 }
-
-
-
-/* .linha-do-tempo {
-  position: absolute;
-  bottom: 0%;
-  width: 100%;
-  height: 170px;
-  background-color: blue;
-} */
-
 
 .container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 0px;
-  margin-left: 0px;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .video {
-  width: 100%;
-  max-width: 600px;
-  margin-bottom: 10px;
-  margin-left: 300px;
+  max-width: 600px; /* Define a largura máxima do contêiner de vídeo */
+  height: auto; /* Altura automática para manter a proporção */
+  aspect-ratio: 16 / 9; /* Mantém a proporção do vídeo */
+  margin-right: 0; /* Alinha o vídeo à direita */
+  display: flex;
+  flex-direction: column;
 }
 
 .video video {
   width: 100%;
-  height: auto; /* Permite que o vídeo mantenha sua proporção original */
+  height: auto; /* Garante que o vídeo se ajuste à largura do contêiner */
+  max-height: 100%; /* Impede que o vídeo cresça além da altura do contêiner */
+  object-fit: contain; /* Ajusta o vídeo dentro do contêiner sem distorção */
+  display: block;
 }
 
 .controles {
   display: flex;
   align-items: center;
   background-color: #616161;
+  justify-content: space-between;
+  height: 40px; /* Ajuste a altura dos controles conforme necessário */
+  padding: 5px; /* Adicione um padding para mais espaçamento */
+}
+
+.left-controls {
+  display: flex;
+  align-items: center; /* Alinha os ícones verticalmente */
+}
+
+.center-controls {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  justify-content: center;
 }
 
 .controles button {
@@ -158,9 +156,17 @@ header {
 }
 
 .controles img {
-  width: 35px; /* Ajuste o tamanho do ícone conforme necessário */
+  width: 30px;
   height: auto;
+  display: block; /* Garante que os ícones sejam renderizados */
+  padding: 5px; /* Adiciona um pouco de padding para os ícones */
+  border-radius: 5px; /* Bordas arredondadas */
 }
+
+.bx-play {
+  font-size: 40px; /* Aumenta o tamanho do ícone, ajuste conforme necessário */
+}
+
 
 .controles progress {
   width: 100%;
@@ -169,5 +175,5 @@ header {
 
 .rodape {
   font-size: 14px;
-  color: #000000;
+  color: #f316b8;
 }

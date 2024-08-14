@@ -1,40 +1,37 @@
 document.addEventListener("DOMContentLoaded", function() {
-  const video = document.getElementById("videoPlayer");
-  const playPauseButton = document.getElementById("playPauseButton");
-  const playPauseIcon = document.getElementById("playPauseIcon");
-  const progressBar = document.getElementById("progressBar");
-  const timeDisplay = document.getElementById("videoTime");
+    const video = document.getElementById("videoPlayer");
+    const playPauseButton = document.getElementById("playPauseButton");
+    const playPauseIcon = document.getElementById("playPauseIcon");
+    const timeDisplay = document.getElementById("videoTime");
 
-  function formatTime(seconds) {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }
+    let totalDuration = "00:00:00"; // Valor inicial padrão
 
-  playPauseButton.addEventListener("click", function() {
-      if (video.paused) {
-          video.play();
-          playPauseIcon.src = "./imagens/pauseIcone.png"; // Caminho para o ícone de pause
-      } else {
-          video.pause();
-          playPauseIcon.src = "./imagens/playIcone.png"; // Caminho para o ícone de play
-      }
-  });
+    function formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
 
-  video.addEventListener("timeupdate", function() {
-      const currentTime = video.currentTime;
-      const duration = video.duration;
+    playPauseButton.addEventListener("click", function() {
+        if (video.paused) {
+            video.play();
+            playPauseIcon.classList.remove("bx-play");
+            playPauseIcon.classList.add("bx-pause");
+        } else {
+            video.pause();
+            playPauseIcon.classList.remove("bx-pause");
+            playPauseIcon.classList.add("bx-play");
+        }
+    });
 
-      timeDisplay.textContent = formatTime(currentTime);
-      progressBar.value = (currentTime / duration);
-  });
+    video.addEventListener("timeupdate", function() {
+        const currentTime = video.currentTime;
+        timeDisplay.textContent = `${formatTime(currentTime)} / ${totalDuration}`;
+    });
 
-  video.addEventListener("loadedmetadata", function() {
-      progressBar.max = video.duration;
-  });
-
-  progressBar.addEventListener("input", function() {
-      video.currentTime = progressBar.value * video.duration;
-  });
+    video.addEventListener("loadedmetadata", function() {
+        totalDuration = formatTime(video.duration);
+        timeDisplay.textContent = `00:00:00 / ${totalDuration}`;
+    });
 });
