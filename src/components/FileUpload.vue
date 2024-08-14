@@ -45,9 +45,9 @@
         // formData.append('file', this.file);
 
         const duration = await this.getVideoDuration(this.file);
-        console.log(duration);
+        const sizeInMB = (this.file.size / (1024 * 1024)).toFixed(2); 
 
-        this.$files.addFile({filePath: this.file.path, name: this.file.name,duration: duration, size: this.file.size, blob: this.file});
+        this.$files.addFile({filePath: this.file.path, name: this.file.name,duration: duration, size: sizeInMB, blob: this.file});
   
         
       }
