@@ -3,6 +3,7 @@
     <header>
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
+          <FileUpload />
           <!-- <button id="importButton" class="btn-acao" data-acao="importar" @click="importFile" aria-label="Importar">
             <img src="/importarIcone.png" alt="Importar">
             <span class="legenda" id="importar">Importar</span>
@@ -43,32 +44,13 @@
           <div class="miniatura-video" id="videos">
             <div id="tab" class="texto-escrito-midia">
               <div v-for="video in videosItems" :key="video.id">
-                <VideoItem :video="video" @add-video="handleVideoAdded"/>
+                <VideoItem :video="video" />
               </div>
-              <!-- <span class="legendaPrincipal">Vídeos<br></span>
-              <button class="botao-com-imagem">
-                <video poster="/campo.png" controls></video>
-              </button>
-              <div class="informacoes-video">
-                <span class="legendaVideo">nome dele.mp4<br></span>
-                <span class="tempo-video">00:10</span>
-                <span class="tamanho-video">2 MB</span>
-              </div>
-              <span class="legendaPrincipal"><br>Audios<br></span>
-              <audio autoplay controls>
-                <source src="/audioTeste.mp3" type="audio/mp3">
-                Seu navegador não suporta HTML5.
-              </audio> -->
             </div>
           </div>
         </div>
-      </div>
-      <div class="container">
-        <div class="video">
-          <!-- Conteúdo do vídeo -->
-        </div>
-        <div class="rodape">
-          <p>00:00:00</p>
+        <div class="container">
+          <VideoPreview />
         </div>
       </div>
       <TimeLine :videos="timeline.videos" :timeline="timeline"/>
@@ -81,6 +63,7 @@ import FileUpload from './components/FileUpload.vue';
 import VideoItem from './components/VideoItem.vue';
 import TimeLineComponent from './components/TimeLine.vue';
 import TimeLine from './models/TimeLine.js';
+import VideoPreview from './components/VideoPreview.vue';
 import './assets/main.css';
 
 export default {
@@ -89,6 +72,7 @@ export default {
     FileUpload,
     VideoItem,
     TimeLine: TimeLineComponent
+    VideoPreview
   },
   data() {
     return {
@@ -119,3 +103,6 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+</style>
