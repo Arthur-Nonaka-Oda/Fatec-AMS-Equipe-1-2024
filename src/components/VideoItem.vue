@@ -49,18 +49,18 @@ export default {
 .video-player {
   width: 100%; /* Ajusta o vídeo para ocupar toda a largura do container */
   height: auto; /* Mantém a proporção do vídeo */
-  display: block; /* Garante que o vídeo ocupe o espaço disponível e não adicione espaços extras */
 }
 
 .video-info {
   display: flex;
   flex-direction: column; /* Organiza as informações em coluna */
+  justify-content: space-between;
   margin-top: 10px; /* Espaço acima das informações do vídeo */
 }
 
 .video-name {
   display: block;
-  max-width: 100%; /* Ajusta o tamanho do título para não exceder o container */
+  max-width: 200px; /* Tamanho do título */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
