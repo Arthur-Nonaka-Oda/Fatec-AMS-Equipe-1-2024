@@ -1,6 +1,6 @@
 <template>
   <div class="video-item">
-    <video :src="video.url" controls></video>
+    <video :src="video.url" controls class="video-player"></video>
     <div class="video-info">
       <span class="video-name">{{ truncatedName }}</span>
       <span v-if="showDetails" class="video-duration">{{ formatedDuration }}</span>
@@ -9,71 +9,65 @@
   </div>
 </template>
 
-  
-  <script>
+<script>
 export default {
   props: {
     video: {
       type: Object,
       required: true
+    },
+    showDetails: {
+      type: Boolean,
+      default: false // Ocultar detalhes por padrão
     }
   },
   computed: {
-    formatedDuration() {
-      return this.formatDuration(this.video.duration);
-    },
     truncatedName() {
-      const maxLength = 20; // Comprimento máximo incluindo a extensão
+      const maxLength = 20;
       const name = this.video.name;
-      const extension = '.mp4';
-      let truncatedName = '';
-
-      if (name.length + extension.length > maxLength) {
-        // Calcular o comprimento máximo para o nome do vídeo, levando em conta a extensão
-        const truncatedLength = maxLength - extension.length;
-        // Truncar o nome do vídeo
-        truncatedName = name.substring(0, truncatedLength) + '...';
-        // Adicionar a extensão
-        truncatedName += extension;
-      } else {
-        // Nome não precisa ser truncado
-        truncatedName = name + extension;
+      if (name.length > maxLength) {
+        return name.substring(0, maxLength) + '...';
       }
-
-      return truncatedName;
-    }
-  },
-  methods: {
-    formatDuration(durationInSeconds) {
-      const hours = Math.floor(durationInSeconds / 3600);
-      const minutes = Math.floor((durationInSeconds % 3600) / 60);
-      const seconds = Math.floor(durationInSeconds % 60);
-
-      console.log("batata");
-      console.log(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-
+      return name;
+    },
+    formatedDuration() {
+      const hours = Math.floor(this.video.duration / 3600);
+      const minutes = Math.floor((this.video.duration % 3600) / 60);
+      const seconds = Math.floor(this.video.duration % 60);
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
   }
 };
+</script>
 
-  </script>
-  
-  <style scoped>
-  .video-item {
-    margin-bottom: 20px;
-    width: 250px;
-    height: 100;
-  }
-  .video-info {
-    display: flex;
-    justify-content: space-between;
-  }
-  .video-name {
+<style scoped>
+.video-item {
+  margin-bottom: 20px;
+  width: 250px;
+}
+
+.video-player {
+  width: 100%; /* Ajusta o vídeo para ocupar toda a largura do container */
+  height: auto; /* Mantém a proporção do vídeo */
+  display: block; /* Garante que o vídeo ocupe o espaço disponível e não adicione espaços extras */
+}
+
+.video-info {
+  display: flex;
+  flex-direction: column; /* Organiza as informações em coluna */
+  margin-top: 10px; /* Espaço acima das informações do vídeo */
+}
+
+.video-name {
   display: block;
-  max-width: 200px; /* tamanho do titulo */
+  max-width: 100%; /* Ajusta o tamanho do título para não exceder o container */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-  </style>
+
+.video-duration, .video-size {
+  display: block;
+  font-size: 0.9em; /* Tamanho menor para duração e tamanho */
+}
+</style>
