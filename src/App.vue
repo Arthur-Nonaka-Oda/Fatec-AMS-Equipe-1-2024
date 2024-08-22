@@ -3,11 +3,7 @@
     <header>
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
-          <!-- <button id="importButton" class="btn-acao" data-acao="importar" @click="importFile" aria-label="Importar">
-            <img src="/importarIcone.png" alt="Importar">
-            <span class="legenda" id="importar">Importar</span>
-          </button> -->
-          <FileUpload/>
+          <FileUpload />
           <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto">
             <img src="/textoIcone.png" alt="Texto">
             <span class="legenda">Texto</span>
@@ -42,32 +38,13 @@
           <div class="miniatura-video" id="videos">
             <div id="tab" class="texto-escrito-midia">
               <div v-for="video in videosItems" :key="video.id">
-              <VideoItem :video="video" />
-            </div>
-              <!-- <span class="legendaPrincipal">Vídeos<br></span>
-              <button class="botao-com-imagem">
-                <video poster="/campo.png" controls></video>
-              </button>
-              <div class="informacoes-video">
-                <span class="legendaVideo">nome dele.mp4<br></span>
-                <span class="tempo-video">00:10</span>
-                <span class="tamanho-video">2 MB</span>
+                <VideoItem :video="video" />
               </div>
-              <span class="legendaPrincipal"><br>Audios<br></span>
-              <audio autoplay controls>
-                <source src="/audioTeste.mp3" type="audio/mp3">
-                Seu navegador não suporta HTML5.
-              </audio> -->
             </div>
           </div>
         </div>
-      </div>
-      <div class="container">
-        <div class="video">
-          <!-- Conteúdo do vídeo -->
-        </div>
-        <div class="rodape">
-          <p>00:00:00</p>
+        <div class="container">
+          <VideoPreview />
         </div>
       </div>
       <div class="linha-do-tempo">
@@ -89,13 +66,15 @@
 <script>
 import FileUpload from './components/FileUpload.vue';
 import VideoItem from './components/VideoItem.vue';
+import VideoPreview from './components/VideoPreview.vue';
 import './assets/main.css';
 
 export default {
   name: 'App',
   components: {
     FileUpload,
-    VideoItem
+    VideoItem,
+    VideoPreview
   },
   data() {
     return {
@@ -107,7 +86,7 @@ export default {
     };
   },
   created() {
-    this.videosItems = this.$files.getFiles();
+    this.videosItems = this.$files.getFiles(); // Verifique se a função getFiles está disponível
   },
   methods: {
     toggleRecording() {
@@ -133,3 +112,6 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+</style>
