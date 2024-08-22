@@ -43,7 +43,7 @@ export default {
 <style scoped>
 .video-item {
   margin-bottom: 20px;
-  width: 250px;
+  width: 180px;
 }
 
 .video-player {
@@ -55,7 +55,7 @@ export default {
   display: flex;
   flex-direction: column; /* Organiza as informações em coluna */
   justify-content: space-between;
-  margin-top: 10px; /* Espaço acima das informações do vídeo */
+  margin-top: 5px; /* Espaço acima das informações do vídeo */
 }
 
 .video-name {
