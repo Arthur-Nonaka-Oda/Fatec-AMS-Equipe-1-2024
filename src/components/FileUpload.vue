@@ -9,7 +9,6 @@
   </template>
   
   <script>
-  
   export default {
     data() {
       return {
@@ -40,9 +39,6 @@
       async submitFile() {
         if (!this.file) return;
         console.log(this.file);
-  
-        // const formData = new FormData();
-        // formData.append('file', this.file);
 
         const duration = await this.getVideoDuration(this.file);
         const sizeInMB = (this.file.size / (1024 * 1024)).toFixed(2); 

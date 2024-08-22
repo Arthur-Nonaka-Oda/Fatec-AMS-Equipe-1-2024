@@ -7,7 +7,7 @@
             <img src="/importarIcone.png" alt="Importar">
             <span class="legenda" id="importar">Importar</span>
           </button> -->
-          <FileUpload/>
+          <FileUpload />
           <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto">
             <img src="/textoIcone.png" alt="Texto">
             <span class="legenda">Texto</span>
@@ -28,7 +28,8 @@
             <img id="imagePlay" :src="recordImageSrc" alt="Gravar">
             <span id="textPlay" class="legenda">{{ isRecording ? 'Parar' : 'Gravar' }}</span>
           </button>
-          <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording" :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
+          <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording"
+            :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
             <img :src="pauseImageSrc" alt="Pause">
             <span class="legenda">{{ isPaused ? 'Retomar' : 'Pausar' }}</span>
           </button>
@@ -42,8 +43,8 @@
           <div class="miniatura-video" id="videos">
             <div id="tab" class="texto-escrito-midia">
               <div v-for="video in videosItems" :key="video.id">
-              <VideoItem :video="video" />
-            </div>
+                <VideoItem :video="video" @add-video="handleVideoAdded"/>
+              </div>
               <!-- <span class="legendaPrincipal">Vídeos<br></span>
               <button class="botao-com-imagem">
                 <video poster="/campo.png" controls></video>
@@ -70,18 +71,7 @@
           <p>00:00:00</p>
         </div>
       </div>
-      <div class="linha-do-tempo">
-        <div id="playarea">
-          <div id="play" @click="playTrigger"></div>
-        </div>
-        <div id="markerback"></div>
-        <div id="timeline" @mousemove="grabMove" @mouseup="grabDone">
-          <div id="timecursor" class="noselect" @mousedown="grabTime">00:00:00</div>
-          <div id="timemarker"></div>
-          <div id="layers"></div>
-        </div>
-        <div id="timeback"></div>
-      </div>
+      <TimeLine :videos="timeline.videos" :timeline="timeline"/>
     </section>
   </div>
 </template>
@@ -89,13 +79,16 @@
 <script>
 import FileUpload from './components/FileUpload.vue';
 import VideoItem from './components/VideoItem.vue';
+import TimeLineComponent from './components/TimeLine.vue';
+import TimeLine from './models/TimeLine.js';
 import './assets/main.css';
 
 export default {
   name: 'App',
   components: {
     FileUpload,
-    VideoItem
+    VideoItem,
+    TimeLine: TimeLineComponent
   },
   data() {
     return {
@@ -103,11 +96,13 @@ export default {
       isPaused: false,
       recordImageSrc: '/recordIcon.png',
       pauseImageSrc: '/pauseIcon.png',
-      videosItems: []
+      videosItems: [],
+      timeline: null
     };
   },
   created() {
     this.videosItems = this.$files.getFiles();
+    this.timeline = new TimeLine();
   },
   methods: {
     toggleRecording() {
@@ -118,17 +113,8 @@ export default {
       this.isPaused = !this.isPaused;
       this.pauseImageSrc = this.isPaused ? '/playIcon.png' : '/pauseIcon.png';
     },
-    playTrigger() {
-      // Implementar lógica de reprodução
-    },
-    grabMove() {
-      // Implementar lógica de movimento
-    },
-    grabDone() {
-      // Implementar lógica de finalização de movimento
-    },
-    grabTime() {
-      // Implementar lógica de captura de tempo
+    handleVideoAdded(video) {
+      this.timeline.addVideoToEnd(video);
     }
   }
 };

@@ -1,0 +1,50 @@
+<template>
+    <div class="timeline-item" @click="handleClick">
+        <div class="item-content">
+            <h3>{{ title }}</h3>
+        </div>
+    </div>
+</template>
+
+<script>
+export default {
+    props: {
+        title: {
+            type: String,
+            required: true
+        },
+        index: {
+            type: Number,
+            required: true
+        }
+    },
+    methods: {
+        handleClick() {
+            this.$emit('item-clicked', this.index);
+        }
+    }
+};
+</script>
+
+<style scoped>
+.timeline-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.timeline-item:hover {
+    background-color: #f0f0f0;
+}
+
+.item-content {
+    display: flex;
+    flex-direction: column;
+}
+</style>
