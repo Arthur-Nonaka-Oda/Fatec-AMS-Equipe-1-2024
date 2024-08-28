@@ -27,6 +27,18 @@ header {
   align-items: center;
 }
 
+.area-visualizacao .esquerda {
+  padding: 10px;
+  display: flex;
+  overflow-y: auto;
+  width: 33%;
+  background-color: #ffffff;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: space-around;
+  max-height: 300px; /* Altura máxima */
+}
+
 .btn-acao {
   background: none;
   border: none;
@@ -70,9 +82,7 @@ header {
   background-color: #ffffff;
   min-height: 350px; /* Reduzindo a altura mínima */
   padding: 10px;
-  overflow-y: auto; /* Permitir rolagem vertical se necessário */
-  max-height: 50px; /* Altura máxima da div com rolagem */
-  
+  overflow-y: auto; /* Permitir rolagem vertical se necessário */  
 }
 
 .botao-com-imagem {
