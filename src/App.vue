@@ -38,7 +38,7 @@
         <div class="esquerda">
               <div v-for="video in videosItems" :key="video.id">
                 <VideoItem :video="video" />
-              </div>
+              </div> 
         </div>
         <div class="container">
           <VideoPreview />
