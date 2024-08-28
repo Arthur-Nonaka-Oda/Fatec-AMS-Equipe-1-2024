@@ -3,8 +3,6 @@
     <video :src="video.url" controls class="video-player"></video>
     <div class="video-info">
       <span class="video-name">{{ truncatedName }}</span>
-      <span v-if="showDetails" class="video-duration">{{ formatedDuration }}</span>
-      <span v-if="showDetails" class="video-size">{{ video.size }} MB</span>
     </div>
   </div>
 </template>
@@ -35,21 +33,21 @@ export default {
       // this.$timeline.addVideo(this.video);
       this.$emit('add-video', this.video);
     },
-    computed: {
-      truncatedName() {
-        const maxLength = 20;
-        const name = this.video.name;
-        if (name.length > maxLength) {
-          return name.substring(0, maxLength) + '...';
-        }
-        return name;
-      },
-      formatedDuration() {
-        const hours = Math.floor(this.video.duration / 3600);
-        const minutes = Math.floor((this.video.duration % 3600) / 60);
-        const seconds = Math.floor(this.video.duration % 60);
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  },
+  computed: {
+    truncatedName() {
+      const maxLength = 15;
+      const name = this.video.name;
+      if (name.length > maxLength) {
+        return name.substring(0, maxLength) + '...';
       }
+      return name;
+    },
+    formatedDuration() {
+      const hours = Math.floor(this.video.duration / 3600);
+      const minutes = Math.floor((this.video.duration % 3600) / 60);
+      const seconds = Math.floor(this.video.duration % 60);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
   }
 };
@@ -57,13 +55,21 @@ export default {
 
 <style scoped>
 .video-item {
-  margin-bottom: 20px;
-  width: 180px;
+  display: grid;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  width: 100%;
+  /* width: 400px; */
+  height: 100%;
 }
 
 .video-player {
-  width: 100%;
-  /* Ajusta o vídeo para ocupar toda a largura do container */
+  display: grid;
+  flex-direction: column;
+  justify-content: space-between;
+  /* width: 50%; */
+  width: 12vw;
   height: auto;
   /* Mantém a proporção do vídeo */
 }

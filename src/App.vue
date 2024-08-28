@@ -36,13 +36,9 @@
     <section class="secao-principal">
       <div class="area-visualizacao">
         <div class="esquerda">
-          <div class="miniatura-video" id="videos">
-            <div id="tab" class="texto-escrito-midia">
               <div v-for="video in videosItems" :key="video.id">
                 <VideoItem :video="video" />
               </div>
-            </div>
-          </div>
         </div>
         <div class="container">
           <VideoPreview />
