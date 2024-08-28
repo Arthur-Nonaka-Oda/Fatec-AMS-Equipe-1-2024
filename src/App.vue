@@ -4,11 +4,6 @@
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
-          <!-- <button id="importButton" class="btn-acao" data-acao="importar" @click="importFile" aria-label="Importar">
-            <img src="/importarIcone.png" alt="Importar">
-            <span class="legenda" id="importar">Importar</span>
-          </button> -->
-          <FileUpload />
           <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto">
             <img src="/textoIcone.png" alt="Texto">
             <span class="legenda">Texto</span>
@@ -71,7 +66,7 @@ export default {
   components: {
     FileUpload,
     VideoItem,
-    TimeLine: TimeLineComponent
+    TimeLine: TimeLineComponent,
     VideoPreview
   },
   data() {
