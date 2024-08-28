@@ -44,9 +44,7 @@
             </div>
           </div>
         </div>
-        <div class="container">
           <VideoPreview />
-        </div>
       </div>
       <TimeLine :videos="timeline.videos" :timeline="timeline"/>
     </section>
