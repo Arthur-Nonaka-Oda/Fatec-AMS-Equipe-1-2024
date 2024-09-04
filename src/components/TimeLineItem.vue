@@ -37,6 +37,7 @@ export default {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
+    height: 30%;
 }
 
 .timeline-item:hover {

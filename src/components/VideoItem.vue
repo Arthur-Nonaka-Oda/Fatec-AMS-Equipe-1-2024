@@ -1,5 +1,5 @@
 <template>
-  <div class="video-item" @click="handleAddButtonClick">
+  <div class="video-item" @click="handleAddButtonClick" draggable="true" @dragstart="handleDragStart" @dragend="handleDragEnd">
     <video :src="video.url" controls class="video-player"></video>
     <div class="video-info">
       <span class="video-name">{{ truncatedName }}</span>
@@ -14,10 +14,6 @@ export default {
       type: Object,
       required: true
     },
-    showDetails: {
-      type: Boolean,
-      default: false // Ocultar detalhes por padrão
-    }
   },
   methods: {
     formatDuration(durationInSeconds) {
@@ -33,6 +29,13 @@ export default {
       // this.$timeline.addVideo(this.video);
       this.$emit('add-video', this.video);
     },
+    handleDragStart(event) {
+      event.dataTransfer.setData('video', JSON.stringify(this.video));
+      this.$emit('drag-start', this.video);
+    },
+    handleDragEnd() {
+      this.$emit('drag-end', this.video);
+    }
   },
   computed: {
     truncatedName() {

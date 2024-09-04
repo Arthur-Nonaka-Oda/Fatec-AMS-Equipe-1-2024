@@ -3,6 +3,7 @@ import Video from "../models/Video";
 export default class TimeLine{
   constructor() {
     this.videos = [];
+    this.currentSecond = 0;
   }
 
   addVideo(videoData) {
@@ -13,7 +14,11 @@ export default class TimeLine{
   addVideoToEnd(fileData) {
     const file = new Video(fileData);
     this.files.push(file);
-}
+  }
+
+  setCurrentSecond(second) {
+    this.currentSecond = second;
+  }
 
   removeVideo(index) {
     if (index >= 0 && index < this.videos.length) {
