@@ -2,11 +2,12 @@
   <div class="video">
     <div class="video-container">
       <video ref="videoPlayer" poster="/pirataria.jpg" @timeupdate="updateTime" @loadedmetadata="updateDuration">
-        <source src="/videoTrigo.mp4" type="video/mp4" />
+        <source src="/vteste.mp4" type="video/mp4" />
         Seu navegador não suporta a exibição de vídeos.
       </video>
     </div>
-    <input type="range" min="0" :max="videoDuration" step="0.1" v-model="currentTime" @input="seekVideo" class="time-slider">
+    <input type="range" min="0" :max="videoDuration" step="0.1" v-model="currentTime" @input="seekVideo"
+      class="time-slider">
     <div class="controles">
       <div class="left-controls">
         <button @click="deleteVideo">
@@ -24,17 +25,21 @@
       <div class="right-controls">
         <p>{{ formattedTime }}</p>
         <button @click="toggleVolumeControl" class="audio-button">
-          <img src="/volume.png" alt="Audio" class="audio-icon">
+        <img :src="volumeIcon" alt="Audio" class="audio-icon"> 
         </button>
         <div v-if="showVolumeControl" class="volume-control">
-          <input type="range" min="0" max="1" step="0.01" v-model="volume" @input="updateVolume" class="vertical-slider">
+          <input type="range" min="0" max="1" step="0.01" v-model="volume" @input="updateVolume"
+            class="vertical-slider">
         </div>
+        <button @click="toggleFullscreen" class="fullscreen-button">
+          <img src="/full.png" alt="Fullscreen" class="fullscreen-icon">
+          </button>
       </div>
     </div>
   </div>
 </template>
- 
- 
+
+
 
 <script>
 export default {
@@ -44,7 +49,9 @@ export default {
       videoDuration: 0,
       currentTime: 0,
       volume: 1,
-      showVolumeControl: false
+      showVolumeControl: false,
+      volumeIcon: "/volume.png"
+
     };
   },
   computed: {
@@ -57,15 +64,16 @@ export default {
       const video = this.$refs.videoPlayer;
       if (video.paused) {
         video.play();
-        this.playPauseIcon = "/pauseIcone.png"; // Caminho para o ícone de pause
+        this.playPauseIcon = "/pauseIcone.png"; // Atualiza o ícone para "Pause"
       } else {
         video.pause();
-        this.playPauseIcon = "/playIcone.png"; // Caminho para o ícone de play
+        this.playPauseIcon = "/playIcone.png"; // Atualiza o ícone para "Play"
       }
     },
     updateVolume() {
       const video = this.$refs.videoPlayer;
       video.volume = this.volume;
+      this.volumeIcon = this.volume === 0 ? "/mudo.jpg" : "/volume.png"; //esta dando erro 
     },
     toggleVolumeControl() {
       this.showVolumeControl = !this.showVolumeControl;
@@ -81,10 +89,16 @@ export default {
     updateTime() {
       const video = this.$refs.videoPlayer;
       this.currentTime = video.currentTime;
+      const slider = this.$el.querySelector('.time-slider');
+      slider.style.setProperty('--value', this.currentTime);
+      slider.style.setProperty('--max', this.videoDuration);
     },
     updateDuration() {
       const video = this.$refs.videoPlayer;
       this.videoDuration = video.duration;
+      const slider = this.$el.querySelector('.time-slider');
+      slider.style.setProperty('--value', this.currentTime);
+      slider.style.setProperty('--max', this.videoDuration);
     },
     seekVideo() {
       const video = this.$refs.videoPlayer;
@@ -96,12 +110,28 @@ export default {
       const secs = Math.floor(seconds % 60);
       return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
     },
+    toggleFullscreen() {
+      const video = this.$refs.videoPlayer;
+      if (!document.fullscreenElement) {
+        video.requestFullscreen().catch(err => {
+          console.error(`Erro ao tentar entrar no modo fullscreen: ${err.message} (${err.name})`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+
+
+
+
   },
   mounted() {
     const video = this.$refs.videoPlayer;
     video.addEventListener("timeupdate", this.updateTime);
     video.addEventListener("loadedmetadata", this.updateDuration);
   },
+
 };
 </script>
 
@@ -167,7 +197,7 @@ export default {
 
 .right-controls p {
   margin: 0;
-  color: #64c6f0;
+  color: #ffffff;
   text-align: right;
   width: 100%;
 }
@@ -184,53 +214,112 @@ export default {
   cursor: pointer;
 }
 
-.play-pause-icon, .audio-icon {
+.play-pause-icon,
+.audio-icon {
   width: 24px;
   height: 24px;
 }
 
-.volume-control {
-  position: absolute;
-  right: 10px;
-  bottom: 50px;
-  background: white;
-  padding: 10px;
-  border: 1px solid #ccc;
+.volume-control input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #ff0199;
+}
+
+.volume-control input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  background: #ff0199; /* Cor da linha do controle de volume */
   border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.vertical-slider {
-  width: 8px;
-  height: 100px;
-  writing-mode: bt-lr;
-  -webkit-appearance: slider-vertical;
+.volume-control input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: 1px solid #000000; /* Contorno da bolinha */
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ffffff; /* Cor da bolinha */
+  cursor: pointer;
 }
 
- 
+.volume-control input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  background: #ff0199; /* Cor da linha do controle de volume */
+  border-radius: 5px;
+}
+
+.volume-control input[type=range]::-moz-range-thumb {
+  border: 1px solid #1a0735; /* Contorno da bolinha */
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #A1D0FF; /* Cor da bolinha */
+  cursor: pointer;
+}
+
+.volume-control input[type=range]::-ms-track {
+  width: 100%;
+  height: 8px;
+  background: #ff0199;
+  border-color: #ff0199;
+  color: #ff0199;
+}
+
+.volume-control input[type=range]::-ms-fill-lower {
+  background: #ff0199; /* Cor da linha do controle de volume */
+  border-radius: 5px;
+}
+
+.volume-control input[type=range]::-ms-fill-upper {
+  background: #ff0199; /* Cor da linha do controle de volume */
+  border-radius: 5px;
+}
+
+.volume-control input[type=range]::-ms-thumb {
+  border: 1px solid #1a0735; /* Contorno da bolinha */
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #A1D0FF; /* Cor da bolinha */
+  cursor: pointer;
+}
+
+
+
 input[type=range] {
-  height: 2px;
+  height: 4px;
   z-index: 1;
   -webkit-appearance: none;
-  margin:  0;
+  margin: 0;
   width: 100%;
+  background: linear-gradient(to right, #01ff1f 0%, #01ff1f calc((100% * var(--value)) / var(--max)),
+      #2497E3 calc((100% * var(--value)) / var(--max)),
+      #2497E3 100%);
 }
+
 input[type=range]:focus {
   outline: none;
 }
+
 input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 5px;
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000;
-  background: #2497E3;
+  background: transparent;
+  /*linha principal do video */
   border-radius: 1px;
   border: 0px solid #000000;
 }
+
 input[type=range]::-webkit-slider-thumb {
   box-shadow: 0px 0px 0px #000000;
-  border: 1px solid #2497E3;
+  border: 1px solid #1a0735;
+  /*contorno da bolinha*/
   height: 18px;
   width: 18px;
   border-radius: 25px;
@@ -239,28 +328,35 @@ input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   margin-top: -7px;
 }
+
 input[type=range]:focus::-webkit-slider-runnable-track {
-  background: #2497E3;
+  background: linear-gradient(to right, #01ff1f 0%, #01ff1f calc((100% * var(--value)) / var(--max)),
+      #2497E3 calc((100% * var(--value)) / var(--max)),
+      #2497E3 100%);
+  ;
 }
+
 input[type=range]::-moz-range-track {
   width: 100%;
   height: 5px;
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000;
-  background: #2497E3;
+  background: transparent;
   border-radius: 1px;
   border: 0px solid #000000;
 }
+
 input[type=range]::-moz-range-thumb {
   box-shadow: 0px 0px 0px #000000;
-  border: 1px solid #2497E3;
+  border: 1px solid #c2ff27;
   height: 18px;
   width: 18px;
   border-radius: 25px;
   background: #A1D0FF;
   cursor: pointer;
 }
+
 input[type=range]::-ms-track {
   width: 100%;
   height: 5px;
@@ -270,34 +366,48 @@ input[type=range]::-ms-track {
   border-color: transparent;
   color: transparent;
 }
+
 input[type=range]::-ms-fill-lower {
-  background: #2497E3;
+  background: #e3aa24;
   border: 0px solid #000000;
   border-radius: 2px;
   box-shadow: 0px 0px 0px #000000;
 }
+
 input[type=range]::-ms-fill-upper {
-  background: #2497E3;
+  background: #e324c6;
   border: 0px solid #000000;
   border-radius: 2px;
   box-shadow: 0px 0px 0px #000000;
 }
+
 input[type=range]::-ms-thumb {
   margin-top: 1px;
   box-shadow: 0px 0px 0px #000000;
-  border: 1px solid #2497E3;
+  border: 1px solid #98c1dc;
   height: 18px;
   width: 18px;
   border-radius: 25px;
   background: #A1D0FF;
   cursor: pointer;
 }
+
 input[type=range]:focus::-ms-fill-lower {
   background: #2497E3;
 }
+
 input[type=range]:focus::-ms-fill-upper {
   background: #2497E3;
 }
 
+.fullscreen-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.fullscreen-icon {
+  width: 24px;
+  height: 24px;
+}
 </style>
- 
