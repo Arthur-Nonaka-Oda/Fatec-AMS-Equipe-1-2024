@@ -36,6 +36,11 @@
     <section class="secao-principal">
       <div class="area-visualizacao">
         <div class="esquerda">
+          <div class="button-container">
+            <button class="button" @click="filterByMediaType('video')">Vídeos</button>
+            <button class="button" @click="filterByMediaType('imagem')">Imagens</button>
+            <button class="button" @click="filterByMediaType('audio')">Áudios</button>
+          </div>
               <div v-for="video in videosItems" :key="video.id">
                 <VideoItem :video="video" />
               </div> 
@@ -94,4 +99,16 @@ export default {
 </script>
 
 <style scoped>
+.button{
+  background-color: #FFFFFF; /* White background */
+  color: #000000; /* Black text */
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.button:hover, .button:active {
+  background-color: #303A7C; /* Blue background */
+  color: #FFFFFF; /* White text */
+}
 </style>
