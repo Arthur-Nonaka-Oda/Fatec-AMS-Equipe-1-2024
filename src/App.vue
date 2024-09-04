@@ -36,11 +36,10 @@
     <section class="secao-principal">
       <div class="area-visualizacao">
         <div class="esquerda">
-              <div v-for="video in videosItems" :key="video.id">
-                <VideoItem :video="video" />
-              </div> 
+          <!-- Aqui o componente MediaTabs é adicionado -->
+          <MediaTabs @add-video="handleVideoAdded" />
         </div>
-          <VideoPreview />
+        <VideoPreview />
       </div>
       <TimeLine :videos="timeline.videos" :timeline="timeline"/>
     </section>
@@ -49,7 +48,7 @@
 
 <script>
 import FileUpload from './components/FileUpload.vue';
-import VideoItem from './components/VideoItem.vue';
+import MediaTabs from './components/MediaTabs.vue';
 import TimeLineComponent from './components/TimeLine.vue';
 import TimeLine from './models/TimeLine.js';
 import VideoPreview from './components/VideoPreview.vue';
@@ -59,7 +58,7 @@ export default {
   name: 'App',
   components: {
     FileUpload,
-    VideoItem,
+    MediaTabs,
     TimeLine: TimeLineComponent,
     VideoPreview
   },
@@ -69,12 +68,10 @@ export default {
       isPaused: false,
       recordImageSrc: '/recordIcon.png',
       pauseImageSrc: '/pauseIcon.png',
-      videosItems: [],
       timeline: null
     };
   },
   created() {
-    this.videosItems = this.$files.getFiles();
     this.timeline = new TimeLine();
   },
   methods: {
