@@ -98,7 +98,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped> 
 .button{
   background-color: #FFFFFF; /* White background */
   color: #000000; /* Black text */
