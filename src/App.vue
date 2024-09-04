@@ -33,16 +33,18 @@
     </div>
   </header>
 
-  <section class="secao-principal">
-    <div class="area-visualizacao">
-      <div class="esquerda">
-        <MediaTabs @add-video="handleVideoAdded" />
+    <section class="secao-principal">
+      <div class="area-visualizacao">
+        <div class="esquerda">
+              <div v-for="video in videosItems" :key="video.id">
+                <VideoItem :video="video" />
+              </div> 
+        </div>
+          <VideoPreview />
       </div>
-      <VideoPreview />
-    </div>
-    <TimeLine :videos="timeline.videos" :timeline="timeline"/>
-  </section>
-</div>
+      <TimeLine :videos="timeline.videos" :timeline="timeline"/>
+    </section>
+  </div>
 </template>
 
 <script>
@@ -89,5 +91,17 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped> 
+.button{
+  background-color: #FFFFFF; /* White background */
+  color: #000000; /* Black text */
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.button:hover, .button:active {
+  background-color: #303A7C; /* Blue background */
+  color: #FFFFFF; /* White text */
+}
 </style>
