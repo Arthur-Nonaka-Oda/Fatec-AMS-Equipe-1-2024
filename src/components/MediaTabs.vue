@@ -78,10 +78,18 @@
   .tabs button {
     padding: 10px;
     cursor: pointer;
+    background-color: #FFFFFF; /* White background */
+    color: #000000; /* Black text */
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
   }
   
   .tabs button.active {
     font-weight: bold;
+    background-color: #303A7C; /* Blue background */
+    color: #FFFFFF; /* White text */
   }
   </style>
   
