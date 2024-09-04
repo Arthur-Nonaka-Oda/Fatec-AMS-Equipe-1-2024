@@ -36,11 +36,12 @@
     <section class="secao-principal">
       <div class="area-visualizacao">
         <div class="esquerda">
+          
           <div class="button-container">
             <button class="button" @click="filterByMediaType('video')">Vídeos</button>
             <button class="button" @click="filterByMediaType('imagem')">Imagens</button>
             <button class="button" @click="filterByMediaType('audio')">Áudios</button>
-          </div>
+        </div>
               <div v-for="video in videosItems" :key="video.id">
                 <VideoItem :video="video" />
               </div> 
