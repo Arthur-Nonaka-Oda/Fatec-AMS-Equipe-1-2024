@@ -73,7 +73,9 @@ export default {
     updateVolume() {
       const video = this.$refs.videoPlayer;
       video.volume = this.volume;
-      this.volumeIcon = this.volume === 0 ? "/mudo.jpg" : "/volume.png"; //esta dando erro 
+      
+      // 
+      this.volumeIcon = this.volume <= 0.0 ? "/mudo.jpg" : "/volume.png";
     },
     toggleVolumeControl() {
       this.showVolumeControl = !this.showVolumeControl;
@@ -138,6 +140,7 @@ export default {
 <style scoped>
 .video {
   width: 67vw;
+  height: 59vh;
   margin: 0;
   display: flex;
   flex-direction: column;

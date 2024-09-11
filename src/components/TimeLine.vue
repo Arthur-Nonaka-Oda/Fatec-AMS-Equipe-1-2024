@@ -3,7 +3,7 @@
         <div class="time" @mousemove="grabMove" @mouseup="grabDone">
             <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
             <div class="time-markers">
-                <div v-for="second in totalSeconds" :key="second" class="time-marker">
+                <div v-for="second in totalSeconds" :key="second" class="time-marker" v-if="second %5 ===0">
                     {{ formatTime(second) }}
                 </div>
             </div>
