@@ -95,10 +95,10 @@ export default {
   color: #FFFFFF;
 }
 
-/* Estilo para o container de vídeos */
 .video-container {
   display: flex;
   flex-wrap: wrap;
+  max-width: 330px;
   gap: 10px; /* Espaço entre os vídeos */
   justify-content: space-between;
 }

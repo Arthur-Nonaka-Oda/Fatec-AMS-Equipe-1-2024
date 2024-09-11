@@ -1,62 +1,59 @@
 <template>
-    <div class="audio-item">
-      <audio :src="audio.url" controls class="audio-player"></audio>
-      <div class="audio-info">
-        <span class="audio-name">{{ truncatedName }}</span>
-      </div>
+  <div class="audio-item">
+    <audio :src="audio.url" controls class="audio-player"></audio>
+    <div class="audio-info">
+      <span class="audio-name">{{ truncatedName }}</span>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'AudioItem',
-    props: {
-      audio: {
-        type: Object,
-        required: true
-      }
-    },
-    computed: {
-      truncatedName() {
-        const maxLength = 15;
-        const name = this.audio.name;
-        if (name.length > maxLength) {
-          return name.substring(0, maxLength) + '...';
-        }
-        return name;
-      }
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'AudioItem',
+  props: {
+    audio: {
+      type: Object,
+      required: true
     }
-  };
-  </script>
-  
-  <style scoped>
-  .audio-item {
-    display: grid;
-    flex-direction: column;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    width: 100%;
-    height: 100%;
+  },
+  computed: {
+    truncatedName() {
+      const maxLength = 15;
+      const name = this.audio.name;
+      if (name.length > maxLength) {
+        return name.substring(0, maxLength) + '...';
+      }
+      return name;
+    }
   }
-  
-  .audio-player {
-    width: 12vw;
-    height: auto;
-  }
-  
-  .audio-info {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    margin-top: 5px;
-  }
-  
-  .audio-name {
-    display: block;
-    max-width: 200px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  </style>
-  
+};
+</script>
+
+<style scoped>
+.audio-item {
+  display: flex;
+  flex-direction: column;
+  width: calc(50% - 10px); /* Ajusta para duas colunas com espaçamento */
+  box-sizing: border-box; /* Inclui padding e border no cálculo da largura */
+}
+
+.audio-player {
+  width: 100%;
+  height: auto;
+}
+
+.audio-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-top: 5px;
+}
+
+.audio-name {
+  display: block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>

@@ -44,8 +44,8 @@ export default {
 .video-item {
   display: flex;
   flex-direction: column;
-  margin-bottom: 10px;
-  width: calc(50% - 10px); /* Ajuste para duas colunas com espaçamento */
+  width: calc(50% - 10px); /* Ajusta para duas colunas com espaçamento */
+  box-sizing: border-box; /* Inclui padding e border no cálculo da largura */
 }
 
 .video-player {
