@@ -1,0 +1,137 @@
+<template>
+    <div class="text-editor-container">
+      <quill-editor
+        v-model="editorHtml"
+        :options="editorOptions"
+        ref="quillEditor"
+        placeholder="Digite aqui..."
+        class="quill-editor"
+      ></quill-editor>
+      <div class="controls">
+        <label for="corTexto">Cor do Texto:</label>
+        <input type="color" id="corTexto" v-model="corTexto" @input="updateTextColor" />
+  
+        <label for="tamanhoFonte">Tamanho da Fonte:</label>
+        <input
+          type="number"
+          id="tamanhoFonte"
+          v-model="tamanhoFonte"
+          min="8"
+          max="72"
+          @input="updateFontSize"
+        />
+  
+        <button @click="applyFormat('bold')">Negrito</button>
+        <button @click="applyFormat('italic')">Itálico</button>
+        <button @click="applyFormat('underline')">Sublinhado</button>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import { quillEditor } from 'vue3-quill'; // Certifique-se de que a importação está correta
+  
+  export default {
+    name: 'TextEditor',
+    components: {
+      quillEditor
+    },
+    data() {
+      return {
+        editorHtml: '',
+        corTexto: '#000000',
+        tamanhoFonte: '16px',
+        editorOptions: {
+          theme: 'snow',
+          modules: {
+            toolbar: [
+              [{ 'header': '1'}, { 'header': '2'}, { 'font': [] }],
+              [{ size: [] }],
+              ['bold', 'italic', 'underline'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              ['link', 'image'],
+              ['clean']
+            ],
+          },
+          formats: [
+            'header', 'font', 'size',
+            'bold', 'italic', 'underline',
+            'list', 'bullet',
+            'link', 'image'
+          ]
+        }
+      };
+    },
+    methods: {
+      updateTextColor() {
+        const quill = this.$refs.quillEditor.getEditor();
+        quill.format('color', this.corTexto);
+      },
+      updateFontSize() {
+        const quill = this.$refs.quillEditor.getEditor();
+        quill.format('size', this.tamanhoFonte);
+      },
+      applyFormat(format) {
+        const quill = this.$refs.quillEditor.getEditor();
+        const isActive = quill.getFormat()[format];
+        quill.format(format, !isActive);
+      }
+    }
+  };
+  </script>
+  
+  <style scoped>
+  .text-editor-container {
+    padding: 16px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .quill-editor {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 200px; /* Ajuste conforme necessário */
+    background: #fff;
+  }
+  
+  .ql-toolbar {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  
+  .controls {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .controls label {
+    margin-right: 10px;
+  }
+  
+  .controls input[type="color"] {
+    padding: 0;
+    border: none;
+    background: transparent;
+  }
+  
+  .controls input[type="number"] {
+    width: 80px;
+  }
+  
+  .controls button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+  }
+  
+  .controls button:hover {
+    background-color: #0056b3;
+  }
+  </style>
+  
