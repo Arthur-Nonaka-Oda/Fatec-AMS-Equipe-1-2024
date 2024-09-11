@@ -1,29 +1,14 @@
 import Video from "../models/Video";
-import Node from "../models/Node";
 
 export default class TimeLine{
   constructor() {
-    this.head = null;
-    this.end = null;
+    this.videos = [];
     this.currentSecond = 0;
   }
 
   addVideo(videoData) {
-    const newNode = new Node(new Video (videoData));
-    if(!this.isNull()){
-      this.head = newNode;
-      this.end = newNode;
-    } else {
-      this.head = newNode;
-      
-    }
-  }
-
-  isNull() {
-    if (this.head == null) {
-      return true;
-    }
-    return false;
+    const video = new Video(videoData);
+    this.videos.push(video);
   }
 
   addVideoToEnd(fileData) {

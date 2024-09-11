@@ -138,6 +138,7 @@ export default {
 <style scoped>
 .video {
   width: 67vw;
+  height: 100%;
   margin: 0;
   display: flex;
   flex-direction: column;

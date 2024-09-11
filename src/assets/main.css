@@ -174,12 +174,6 @@ header {
   margin-right: auto;
   margin-top: 5px;
 }
-#timeline {
-  background-color: #303A7C;
-  height: 30%;
-  overflow-y: hidden;
-  width: 100%;
-}
 #timeback {
   height: 30%;
   bottom: 0;

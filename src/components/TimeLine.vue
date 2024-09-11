@@ -1,21 +1,34 @@
 <template>
     <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-        <div class="time" @mousemove="grabMove" @mouseup="grabDone">
-            <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
+        <VideoEditingTimeline :config="config" class="time"/>
+        <div class="timecursor" :style="{ left: cursorPosition + 'px' }"  @mousedown="grabTime">{{ currentTime }}</div>
+        <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
             <div class="time-markers">
-                <div v-for="second in totalSeconds" :key="second" class="time-marker">
+                <div v-for="second in filteredSeconds" :key="second" class="time-marker">
                     {{ formatTime(second) }}
                 </div>
             </div>
-        </div>
+        </div> -->
         <div class="layers">
             <TimeLineItem v-for="(video, index) in videos" :key="index" :title="video.name" :index="index" @item-clicked="handleItemClicked"/>
+        </div>
+        <div class="zoom-controls">
+            <select id="zoom" v-model="selectedZoom" @change="updateZoom">
+                <option value="0.1">10%</option>
+                <option value="0.25">25%</option>
+                <option value="0.5">50%</option>
+                <option value="0.75">75%</option>
+                <option value="1">100%</option>
+                <option value="1.5">150%</option>
+                <option value="2">200%</option>
+            </select>
         </div>
     </div>
 </template>
 
 <script>
 import TimeLineItem from './TimeLineItem.vue';
+import VideoEditingTimeline from 'video-editing-timeline-vue';
 
 export default {
     props: {
@@ -28,15 +41,24 @@ export default {
         }
     },
     components: {
-        TimeLineItem
+        TimeLineItem,
+        VideoEditingTimeline
     },
     data() {
         return {
             isGrabbing: false,
             currentTime: '00:00:00',
             cursorPosition: 0,
-            totalSeconds: 300 // 5 minutos
+            totalSeconds: 300, // 5 minutos,
+            config: {
+                canvasWidth: 1920,
+                minimumScale: 10,
+                minimumScaleTime: 1, 
+            },
+            selectedZoom: 1, // Iniciando com 100%
         };
+    },
+    computed: {
     },
     mounted() {
         this.totalSeconds = 100;
@@ -82,22 +104,38 @@ export default {
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
         },
         updateCurrentTime() {
-            const timelineWidth = this.$el.querySelector('.time').clientWidth;
-            const secondsPerPixel = this.totalSeconds / timelineWidth;
+            // const timelineWidth = this.$el.querySelector('.time').clientWidth;
+            // this.config.canvasWidth / 100;
+            // this.config.minimumScaleTime * 10;
+            const secondsPerPixel =  (this.config.minimumScaleTime * 10) / 100;
             const currentTimeInSeconds = Math.round(this.cursorPosition * secondsPerPixel);
             this.timeline.setCurrentSecond(currentTimeInSeconds);
             this.currentTime = this.formatTime(currentTimeInSeconds);
         },
+
+        updateZoom() {
+        // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
+        const zoomMapping = {
+            0.1: 60,  // 10%
+            0.25: 24, // 25%
+            0.5: 12,  // 50%
+            0.75: 8,  // 75%
+            1: 6,     // 100% (referência padrão)
+            1.5: 4,   // 150%
+            2: 3      // 200%
+        };
+        this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
+    },
+
     }
 };
 </script>
 
 <style scoped>
 .timeline {
-    position: absolute;
+    position: relative;
     bottom: 0;
-    height: 33%;
-    border: 1px solid #ccc;
+    border: 1px solid #0d185e;
     background-color: #0d185e;
     height: 30%;
     overflow-y: hidden;
@@ -123,7 +161,7 @@ export default {
 .time {
     user-select: none;
     width: fit-content;
-    height: 15%;
+    /* height: 15%; */
     background-color: #cccccc00;
     display: flex;
     align-items: start;
@@ -135,7 +173,7 @@ export default {
     width: 65px;
     height: 25px;
     line-height: 25px;
-    position: absolute;
+    position:absolute;
     background-color: #ce2323;
     border-radius: 30px;
     top: 0px;
@@ -210,4 +248,21 @@ export default {
     align-items: center;
     flex-direction: row;
 }
+
+.zoom-controls {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.zoom-controls select {
+    padding: 5px;
+    font-size: 14px;
+    border-radius: 4px;
+    border: 1px solid #133a8d;
+}
+
 </style>
