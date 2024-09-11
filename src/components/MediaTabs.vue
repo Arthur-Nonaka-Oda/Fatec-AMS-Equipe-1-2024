@@ -44,7 +44,7 @@ export default {
   name: 'MediaTabs',
   components: {
     VideoItem,
-    AudioItem,
+    AudioItem, 
     ImagemItem
   },
   data() {

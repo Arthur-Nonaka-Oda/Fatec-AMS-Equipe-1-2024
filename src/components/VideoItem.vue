@@ -53,7 +53,7 @@ export default {
   height: auto;
 }
 
-.video-info {
+.video-info { 
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
