@@ -13,20 +13,10 @@ export default {
     video: {
       type: Object,
       required: true
-    },
+    }
   },
   methods: {
-    formatDuration(durationInSeconds) {
-      const hours = Math.floor(durationInSeconds / 3600);
-      const minutes = Math.floor((durationInSeconds % 3600) / 60);
-      const seconds = Math.floor(durationInSeconds % 60);
-      console.log("batata");
-      console.log(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    },
     handleAddButtonClick() {
-      // this.$timeline.addVideo(this.video);
       this.$emit('add-video', this.video);
     },
     handleDragStart(event) {
@@ -45,12 +35,6 @@ export default {
         return name.substring(0, maxLength) + '...';
       }
       return name;
-    },
-    formatedDuration() {
-      const hours = Math.floor(this.video.duration / 3600);
-      const minutes = Math.floor((this.video.duration % 3600) / 60);
-      const seconds = Math.floor(this.video.duration % 60);
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
   }
 };
@@ -58,47 +42,29 @@ export default {
 
 <style scoped>
 .video-item {
-  display: grid;
+  display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  width: 100%;
-  /* width: 400px; */
-  height: 100%;
+  width: calc(50% - 10px); /* Ajusta para duas colunas com espaçamento */
+  box-sizing: border-box; /* Inclui padding e border no cálculo da largura */
 }
 
 .video-player {
-  display: grid;
-  flex-direction: column;
-  justify-content: space-between;
-  /* width: 50%; */
-  width: 12vw;
+  width: 100%;
   height: auto;
-  /* Mantém a proporção do vídeo */
 }
 
-.video-info {
+.video-info { 
   display: flex;
   flex-direction: column;
-  /* Organiza as informações em coluna */
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-top: 5px;
-  /* Espaço acima das informações do vídeo */
 }
 
 .video-name {
   display: block;
   max-width: 200px;
-  /* Tamanho do título */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.video-duration,
-.video-size {
-  display: block;
-  font-size: 0.9em;
-  /* Tamanho menor para duração e tamanho */
 }
 </style>
