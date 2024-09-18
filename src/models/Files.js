@@ -1,13 +1,25 @@
 import Video from "./Video";
+import Image from "./Image";
+import Audio from "./Audio";
 
 export default class Files {
     constructor() {
-        this.files = [];
+        this.videos = [];
+        this.images = [];
+        this.audios = [];
     }
 
-    addFile(fileData) {
+    addVideo(fileData) {
         const file = new Video(fileData);
-        this.files.push(file);
+        this.videos.push(file);
+    }
+    addImage(fileData) {
+        const file = new Image(fileData);
+        this.images.push(file);
+    }
+    addAudio(fileData) {
+        const file = new Audio(fileData);
+        this.audios.push(file);
     }
 
     removeFile(fileName) {
@@ -15,7 +27,7 @@ export default class Files {
     }
 
     getFiles() {
-        return this.files;
+        return {videos: this.videos, images: this.images, audios: this.audios};
     }
 
 }

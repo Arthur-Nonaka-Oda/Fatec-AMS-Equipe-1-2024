@@ -41,7 +41,7 @@
         </div>
         <VideoPreview />
       </div>
-      <TimeLine :videos="timeline.videos" :timeline="timeline"/>
+      <TimeLine :videos="timeline.listVideos()" :timeline="timeline"/>
     </section>
   </div>
 </template>

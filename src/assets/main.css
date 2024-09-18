@@ -290,7 +290,7 @@ header {
   margin-top: 5px;
 }
 /* layer video */
-#layers {
+/* #layers {
   position: absolute;
   top: 50px;
   display: inline-flex;
@@ -299,7 +299,7 @@ header {
   border-radius: 0px 60px 60px 0px!important;
   margin-left: 0px!important;
   min-width: 50px!important;
-}
+} */
 .layercont {
   display: inline-block;
   width: 400px;

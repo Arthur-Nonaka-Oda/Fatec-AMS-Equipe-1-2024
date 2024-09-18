@@ -8,14 +8,35 @@ export default class TimeLine{
     this.currentSecond = 0;
   }
 
-  addVideo(videoData) {
-    const newNode = new Node(new Video (videoData));
-    if(!this.isNull()){
+  addVideoToStart(fileData) {
+    const newNode = new Node(new Video (fileData));
+    if(this.isNull()){
       this.head = newNode;
       this.end = newNode;
     } else {
+      newNode.next = this.head;
       this.head = newNode;
-      
+    }
+  }
+  
+  addVideoToEnd(fileData) {
+    const newNode = new Node(new Video (fileData));
+    if(this.isNull()){
+      this.head = newNode;
+      this.end = newNode;
+    } else {
+      this.end.next = newNode;
+      this.end = newNode;
+    }
+  }
+
+  addVideoToMiddle(fileData) {
+    const newNode = new Node(new Video (fileData));
+    if(this.isNull()){
+      this.head = newNode;
+      this.end = newNode;
+    } else {
+      //fazer
     }
   }
 
@@ -26,22 +47,36 @@ export default class TimeLine{
     return false;
   }
 
-  addVideoToEnd(fileData) {
-    const file = new Video(fileData);
-    this.files.push(file);
-  }
 
   setCurrentSecond(second) {
     this.currentSecond = second;
   }
 
-  removeVideo(index) {
-    if (index >= 0 && index < this.videos.length) {
-      this.videos.splice(index, 1);
+  removeVideo(item) {
+    if(!this.isNull()) {
+      let current = this.head;
+      let before = null;
+      if(current.item === item) {
+        this.head = current.next;
+      }
+      while(current != null) {
+        if(current.item === item) {
+          before.next = current.next;
+        }
+        before = current;
+        current = current.next;
+      }
     }
   }
 
   listVideos() {
-    return this.videos;
+
+    let videos = [];
+    let current = this.head;
+    while(current != null) {
+      videos.push(current.item);
+      current = current.next;
+    }
+    return videos;
   }
 }

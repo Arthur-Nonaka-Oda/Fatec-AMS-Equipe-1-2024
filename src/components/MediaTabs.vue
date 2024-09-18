@@ -50,9 +50,9 @@ export default {
   data() {
     return {
       activeTab: 'Vídeos',
-      videos: this.$files.getFiles('video'), // Método para obter vídeos
-      audios: this.$files.getFiles('audio'), // Método para obter áudios
-      images: this.$files.getFiles('image'), // Método para obter imagens
+      videos: this.$files.getFiles().videos, // Método para obter vídeos
+      audios: this.$files.getFiles().audios, // Método para obter áudios
+      images: this.$files.getFiles().images, // Método para obter imagens
     };
   },
   methods: {

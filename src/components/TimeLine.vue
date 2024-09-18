@@ -10,7 +10,15 @@
             </div>
         </div> -->
         <div class="layers">
-            <TimeLineItem v-for="(video, index) in videos" :key="index" :title="video.name" :index="index" @item-clicked="handleItemClicked"/>
+            <div class="videos">
+                <TimeLineItem v-for="(video, index) in videos" :key="index" :item="video" :title="video.name" :index="index" @item-clicked="handleItemClicked"/>
+            </div>
+            <div class="images">
+                <TimeLineItem v-for="(image, index) in images" :key="index" :item="image" :title="image.name" :index="index" @item-clicked="handleItemClicked"/>
+            </div>
+            <div class="audios">
+                <TimeLineItem v-for="(audio, index) in audios" :key="index" :item="audio" :title="audio.name" :index="index" @item-clicked="handleItemClicked"/>
+            </div>
         </div>
         <div class="zoom-controls">
             <select id="zoom" v-model="selectedZoom" @change="updateZoom">
@@ -91,10 +99,10 @@ export default {
         handleDrop(event) {
             const videoData = event.dataTransfer.getData('video');
             const video = JSON.parse(videoData);
-            this.timeline.addVideo(video);
+            this.timeline.addVideoToStart(video);
         },
-        handleItemClicked(index) {
-            this.timeline.removeVideo(index);
+        handleItemClicked(item) {
+            this.timeline.removeVideo(item);
             console.log(this.timeline.listVideos());
         },
         formatTime(seconds) {
@@ -209,6 +217,30 @@ export default {
     z-index: 2!important;
 }
 
+.layers {
+    top: 50px;
+    height: 20%;
+    display: flex;
+    flex-direction: column;
+    width:  fit-content;
+}
+
+.videos {
+    display: flex;
+    background-color: #b81313;
+    height: 100%;
+}
+.audios {
+    display: flex;
+    height: 100%;
+    background-color: #c7771c;
+}
+.images {
+    display: flex;
+    height: 100%;
+    background-color: #1ddb3c;
+}
+
 .time-markers {
     display: flex;
     flex-grow: 1;
@@ -241,14 +273,6 @@ export default {
     height: 10px; /* Altura da linha vertical */
     background-color: #ffffff; /* Cor da linha vertical */
 }
-
-.layers {
-    height: 85%;
-    display: flex;
-    align-items: center;
-    flex-direction: row;
-}
-
 .zoom-controls {
     position: absolute;
     bottom: 10px;
@@ -264,5 +288,7 @@ export default {
     border-radius: 4px;
     border: 1px solid #133a8d;
 }
+
+
 
 </style>
