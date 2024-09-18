@@ -75,7 +75,7 @@ export default {
   width: 100%;
   padding: 10px 20px;
   margin-bottom: 10px;
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .tabs button {
@@ -88,6 +88,9 @@ export default {
   padding: 5px 10px;
   font-size: 13px;
   margin-right: 5px;
+  border-radius: 8px; /* Bordas arredondadas */
+  cursor: pointer; /* Cursor de mão ao passar sobre */
+  transition: background-color 0.3s; 
 }
 
 .tabs button.active {
