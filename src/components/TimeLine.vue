@@ -1,14 +1,38 @@
 <template>
     <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
+<<<<<<< HEAD
         <VideoEditingTimeline :config="config" class="formattedTotalDuration"/>
         <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
+=======
+        <VideoEditingTimeline :config="config" class="time" />
+        <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
+        <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
+            <div class="time-markers">
+                <div v-for="second in filteredSeconds" :key="second" class="time-marker">
+                    {{ formatTime(second) }}
+                </div>
+            </div>
+        </div> -->
+>>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
         <div class="layers">
             <div class="videos">
-                <TimeLineItem v-for="(video, index) in videos" :key="index" :item="video" :title="video.name" :index="index" @item-clicked="handleItemClicked"/>
+                <TimeLineItem v-for="(video, index) in videos" :key="index" :item="video" :title="video.name"
+                :minimumScaleTime="config.minimumScaleTime" :index="index" @item-clicked="handleItemClicked" />
             </div>
+<<<<<<< HEAD
         </div>
         <div class="total-duration">
             Total Duration: {{ formattedTotalDuration }} <!-- Tentar utilizar para aumentar a minutagem da timeline conforme a quantidade de videos -->
+=======
+            <div class="images">
+                <TimeLineItem v-for="(image, index) in images" :key="index" :item="image" :minimumScaleTime="config.minimumScaleTime" :title="image.name"
+                    :index="index" @item-clicked="handleItemClicked" />
+            </div>
+            <div class="audios">
+                <TimeLineItem v-for="(audio, index) in audios" :key="index" :minimumScaleTime="config.minimumScaleTime" :item="audio" :title="audio.name"
+                    :index="index" @item-clicked="handleItemClicked" />
+            </div>
+>>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
         </div>
         <div class="zoom-controls">
             <select id="zoom" v-model="selectedZoom" @change="updateZoom">
@@ -19,6 +43,7 @@
                 <option value="1">100%</option>
                 <option value="1.5">150%</option>
                 <option value="2">200%</option>
+                <option value="3">300%</option>
             </select>
         </div>
     </div>
@@ -51,7 +76,11 @@ export default {
             config: {
                 canvasWidth: 1920,
                 minimumScale: 10,
+<<<<<<< HEAD
                 minimumScaleTime: 1 
+=======
+                minimumScaleTime: 6,
+>>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
             },
             selectedZoom: 1,
         };
@@ -106,12 +135,19 @@ export default {
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
         },
         updateCurrentTime() {
+<<<<<<< HEAD
+=======
+            // const timelineWidth = this.$el.querySelector('.time').clientWidth;
+            // this.config.canvasWidth / 100;
+            // this.config.minimumScaleTime * 10;
+>>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
             const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
             const currentTimeInSeconds = Math.round(this.cursorPosition * secondsPerPixel);
             this.timeline.setCurrentSecond(currentTimeInSeconds);
             this.currentTime = this.formatTime(currentTimeInSeconds);
         },
         updateZoom() {
+<<<<<<< HEAD
             const zoomMapping = {
                 0.1: 60,
                 0.25: 24,
@@ -123,6 +159,22 @@ export default {
             };
             this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
         },
+=======
+            // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
+            const zoomMapping = {
+                0.1: 60,  // 10%
+                0.25: 24, // 25%
+                0.5: 12,  // 50%
+                0.75: 8,  // 75%
+                1: 6,     // 100% (referência padrão)
+                1.5: 4,   // 150%
+                2: 3,       //200%
+                3: 2     
+            };
+            this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
+        },
+
+>>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
     }
 };
 </script>
@@ -141,12 +193,12 @@ export default {
     background-color: #0d185e;
     height: 30%;
     overflow-y: hidden;
-    overflow-x: scroll ;
+    overflow-x: scroll;
     width: 100%;
 }
 
 .timeline::-webkit-scrollbar {
-    height: 20px; 
+    height: 20px;
 }
 
 .timeline::-webkit-scrollbar-track {
@@ -175,21 +227,22 @@ export default {
     width: 65px;
     height: 25px;
     line-height: 25px;
-    position:absolute;
+    position: absolute;
     background-color: #ce2323;
     border-radius: 30px;
     top: 0px;
     font-family: Inter;
     font-size: 12px;
     color: white;
-    z-index: 2!important;
+    z-index: 2 !important;
     text-align: center;
     margin-top: 8px;
     transition-property: transform;
     transition-duration: .2s;
-    transition-timing-function: cubic-bezier(.05,.03,.35,1);
+    transition-timing-function: cubic-bezier(.05, .03, .35, 1);
     user-select: none;
-    transform: translateX(-50%); /* Centralizar o cursor */
+    transform: translateX(-50%);
+    /* Centralizar o cursor */
 }
 
 .timecursor:hover {
@@ -200,7 +253,7 @@ export default {
 .timecursor:after {
     transition-property: transform, margin-top;
     transition-duration: .25s;
-    transition-timing-function: cubic-bezier(.05,.03,.35,1);
+    transition-timing-function: cubic-bezier(.05, .03, .35, 1);
     content: "";
     display: block;
     height: 100vh;
@@ -208,7 +261,7 @@ export default {
     background-color: #ce2323;
     margin-left: 32.5px;
     position: absolute;
-    z-index: 2!important;
+    z-index: 2 !important;
 }
 
 .layers {
@@ -216,7 +269,7 @@ export default {
     height: 20%;
     display: flex;
     flex-direction: column;
-    width:  fit-content;
+    width: fit-content;
 }
 
 .videos {
@@ -224,11 +277,13 @@ export default {
     background-color: #b81313;
     height: 100%;
 }
+
 .audios {
     display: flex;
     height: 100%;
     background-color: #c7771c;
 }
+
 .images {
     display: flex;
     height: 100%;
@@ -239,7 +294,8 @@ export default {
     display: flex;
     flex-grow: 1;
     width: fit-content;
-    overflow-x: hidden; /* Remover overflow horizontal */
+    overflow-x: hidden;
+    /* Remover overflow horizontal */
     /* height: 40px; */
 }
 
@@ -260,13 +316,17 @@ export default {
 .time-marker::after {
     content: "";
     position: absolute;
-    bottom: 0px; /* Ajustar para alinhar com a borda inferior */
+    bottom: 0px;
+    /* Ajustar para alinhar com a borda inferior */
     left: 50%;
     transform: translateX(-50%);
     width: 2px;
-    height: 10px; /* Altura da linha vertical */
-    background-color: #ffffff; /* Cor da linha vertical */
+    height: 10px;
+    /* Altura da linha vertical */
+    background-color: #ffffff;
+    /* Cor da linha vertical */
 }
+
 .zoom-controls {
     position: absolute;
     bottom: 10px;
@@ -282,7 +342,4 @@ export default {
     border-radius: 4px;
     border: 1px solid #133a8d;
 }
-
-
-
 </style>
