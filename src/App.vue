@@ -5,17 +5,17 @@
         <div class="esquerda" id="importButtons">
           <FileUpload />
           <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto" @click="openTextEditor">
-            
+
             <img src="/textoIcone.png" alt="Texto">
             <span class="legenda">Texto</span>
           </button>
           <div v-if="isTextEditorOpen" class="modal">
-      <div class="modal-content">
-        <button class="close-button" @click="closeTextEditor">X</button>
-        <!-- Conteúdo do TextEditor -->
-        <TextEditor />
-      </div>
-    </div>
+            <div class="modal-content">
+              <button class="close-button" @click="closeTextEditor">X</button>
+              <!-- Conteúdo do TextEditor -->
+              <TextEditor />
+            </div>
+          </div>
         </div>
         <div class="centro">
           <button class="btn-acao" data-acao="desfazer" aria-label="Desfazer">
@@ -33,21 +33,23 @@
             <span id="textPlay" class="legenda">{{ isRecording ? 'Parar' : 'Gravar' }}</span>
           </button>
           <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording"
-          :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
-          <img :src="pauseImageSrc" alt="Pause">
-          <span class="legenda">{{ isPaused ? 'Retomar' : 'Pausar' }}</span>
-        </button>
+            :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
+            <img :src="pauseImageSrc" alt="Pause">
+            <span class="legenda">{{ isPaused ? 'Retomar' : 'Pausar' }}</span>
+          </button>
+        </div>
       </div>
-    </div>
-  </header>
-  
-  <section class="secao-principal">
-    <div class="area-visualizacao">
-      <div class="esquerda">
-        <!-- Aqui o componente MediaTabs é adicionado -->
-        <MediaTabs @add-video="handleVideoAdded" />
+    </header>
+
+    <section class="secao-principal">
+      <div class="area-visualizacao">
+        <div class="esquerda">
+          <!-- Aqui o componente MediaTabs é adicionado -->
+          <MediaTabs @add-video="handleVideoAdded" />
+        </div>
+        <VideoPreview />
       </div>
-      <TimeLine :videos="timeline.listVideos()" :timeline="timeline"/>
+        <TimeLine :videos="timeline.listVideos()" :timeline="timeline" />
     </section>
   </div>
 </template>
@@ -116,8 +118,10 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5); /* Fundo semitransparente */
-  z-index: 1000; /* Coloca o modal acima de tudo */
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Fundo semitransparente */
+  z-index: 1000;
+  /* Coloca o modal acima de tudo */
 }
 
 /* Conteúdo do modal (TextEditor) */
