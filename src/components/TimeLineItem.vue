@@ -20,10 +20,6 @@ export default {
         item: {
             type: Object,
             required: true,
-        },
-        minimumScaleTime: {
-            type: Number,
-            required: true
         }
     },
     methods: {
@@ -33,8 +29,8 @@ export default {
     },
     computed: {
         itemWidth() {
-            const secondsPerPixel = this.minimumScaleTime / 10; // Ajuste conforme necessário
-            return this.item.duration / secondsPerPixel;
+            const pixelsPerSecond = 10;
+            return this.item.duration * pixelsPerSecond;
         }
     }
 };
