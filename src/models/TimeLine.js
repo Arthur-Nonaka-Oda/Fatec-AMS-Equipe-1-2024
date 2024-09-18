@@ -1,7 +1,9 @@
 import Video from "../models/Video";
+import Audio from "./Audio";
+import Image from "./Image";
 import Node from "../models/Node";
 
-export default class TimeLine{
+export default class TimeLine {
   constructor() {
     this.head = null;
     this.end = null;
@@ -9,8 +11,9 @@ export default class TimeLine{
   }
 
   addVideoToStart(fileData) {
-    const newNode = new Node(new Video (fileData));
-    if(this.isNull()){
+
+    const newNode = this.createNode(fileData);
+    if (this.isNull()) {
       this.head = newNode;
       this.end = newNode;
     } else {
@@ -19,9 +22,9 @@ export default class TimeLine{
     }
   }
   
-  addVideoToEnd(fileData) {
-    const newNode = new Node(new Video (fileData));
-    if(this.isNull()){
+  addFileToEnd(fileData) {
+    const newNode = this.createNode(fileData);
+    if (this.isNull()) {
       this.head = newNode;
       this.end = newNode;
     } else {
@@ -31,8 +34,8 @@ export default class TimeLine{
   }
 
   addVideoToMiddle(fileData) {
-    const newNode = new Node(new Video (fileData));
-    if(this.isNull()){
+    const newNode = this.createNode(fileData);
+    if (this.isNull()) {
       this.head = newNode;
       this.end = newNode;
     } else {
@@ -53,14 +56,14 @@ export default class TimeLine{
   }
 
   removeVideo(item) {
-    if(!this.isNull()) {
+    if (!this.isNull()) {
       let current = this.head;
       let before = null;
-      if(current.item === item) {
+      if (current.item === item) {
         this.head = current.next;
       }
-      while(current != null) {
-        if(current.item === item) {
+      while (current != null) {
+        if (current.item === item) {
           before.next = current.next;
         }
         before = current;
@@ -73,10 +76,21 @@ export default class TimeLine{
 
     let videos = [];
     let current = this.head;
-    while(current != null) {
+    while (current != null) {
       videos.push(current.item);
       current = current.next;
     }
     return videos;
+  }
+
+  createNode({file, type}) {
+    switch (type) {
+      case "video":
+        return new Node(new Video(file));
+      case "audio":
+        return new Node(new Audio(file));
+      case "image":
+        return new Node(new Image(file));
+    }
   }
 }

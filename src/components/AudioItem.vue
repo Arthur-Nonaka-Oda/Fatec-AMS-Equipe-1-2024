@@ -1,5 +1,5 @@
 <template>
-  <div class="audio-item">
+  <div class="audio-item" @click="handleAddButtonClick" draggable="true" @dragstart="handleDragStart" @dragend="handleDragEnd">
     <audio :src="audio.url" controls class="audio-player"></audio>
     <div class="audio-info">
       <span class="audio-name">{{ truncatedName }}</span>
@@ -25,7 +25,19 @@ export default {
       }
       return name;
     }
-  }
+  },
+  methods: {
+    handleAddButtonClick() {
+      this.$emit('add-audio', this.audio);
+    },
+    handleDragStart(event) {
+      event.dataTransfer.setData('audio', JSON.stringify(this.audio));
+      this.$emit('drag-start', this.audio);
+    },
+    handleDragEnd() {
+      this.$emit('drag-end', this.audio);
+    }
+  },
 };
 </script>
 

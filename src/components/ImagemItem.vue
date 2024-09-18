@@ -1,5 +1,5 @@
 <template>
-  <div class="image-item">
+  <div class="image-item" @click="handleAddButtonClick" draggable="true" @dragstart="handleDragStart" @dragend="handleDragEnd">
     <img :src="image.url" alt="Imagem" class="image-display" />
     <div class="image-info">
       <span class="image-name">{{ truncatedName }}</span>
@@ -25,7 +25,19 @@ export default {
       }
       return name;
     }
-  }
+  },
+  methods: {
+    handleAddButtonClick() {
+      this.$emit('add-image', this.image);
+    },
+    handleDragStart(event) {
+      event.dataTransfer.setData('image', JSON.stringify(this.image));
+      this.$emit('drag-start', this.image);
+    },
+    handleDragEnd() {
+      this.$emit('drag-end', this.image);
+    }
+  },
 };
 </script>
 

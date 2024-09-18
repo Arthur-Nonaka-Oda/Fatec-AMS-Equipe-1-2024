@@ -57,13 +57,13 @@ export default {
   },
   methods: {
     addVideo(video) {
-      this.$emit('add-video', video);
+      this.$emit('add-file', {file: video, type: "video"});
     },
     addAudio(audio) {
-      this.$emit('add-audio', audio);
+      this.$emit('add-file', {file: audio, type: "audio"});
     },
     addImage(image) {
-      this.$emit('add-image', image);
+      this.$emit('add-file', {file: image, type: "image"});
     }
   }
 };

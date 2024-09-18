@@ -45,11 +45,11 @@
       <div class="area-visualizacao">
         <div class="esquerda">
           <!-- Aqui o componente MediaTabs é adicionado -->
-          <MediaTabs @add-video="handleVideoAdded" />
+          <MediaTabs @add-file="handleFileAdded" />
         </div>
         <VideoPreview />
       </div>
-        <TimeLine :videos="timeline.listVideos()" :timeline="timeline" />
+      <TimeLine :videos="timeline.listVideos()" :timeline="timeline" />
     </section>
   </div>
 </template>
@@ -94,8 +94,8 @@ export default {
       this.isPaused = !this.isPaused;
       this.pauseImageSrc = this.isPaused ? '/playIcon.png' : '/pauseIcon.png';
     },
-    handleVideoAdded(video) {
-      this.timeline.addVideoToEnd(video);
+    handleFileAdded(fileData) {
+      this.timeline.addFileToEnd(fileData);
     },
     openTextEditor() {
       this.isTextEditorOpen = true;

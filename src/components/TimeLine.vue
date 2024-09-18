@@ -47,6 +47,12 @@ export default {
         videos: {
             type: Array,
         },
+        images: {
+            type: Array,
+        },
+        audios: {
+            type: Array,
+        },
         timeline: {
             type: Object,
             required: true
@@ -224,10 +230,13 @@ export default {
 
 .layers {
     top: 50px;
-    height: 20%;
+    height: 50%;
     display: flex;
     flex-direction: column;
     width: fit-content;
+    /* overflow-y: scroll;
+    overflow-x: hidden;
+    background-color: #0d185e00; */
 }
 
 .videos {

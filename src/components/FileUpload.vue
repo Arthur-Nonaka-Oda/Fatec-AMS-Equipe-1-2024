@@ -80,7 +80,7 @@ export default {
       if (!file) return;
       console.log(file);
 
-      const duration = await this.getVideoDuration(file);
+      const duration = await this.getAudioDuration(file);
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
 
       this.$files.addAudio({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: file });
