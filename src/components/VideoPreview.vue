@@ -263,8 +263,8 @@ width: 1.04vw;  /* Largura em vw */
 
 .volume-control input[type=range]::-moz-range-thumb {
   border: 1px solid #1a0735; /* Contorno da bolinha */
-  height: 5vh;
-width: 5vw;
+  height: 15px;
+  width: 15px;
   border-radius: 50%;
   background: #A1D0FF; /* Cor da bolinha */
   cursor: pointer;
@@ -292,8 +292,8 @@ width: 5vw;
 
 .volume-control input[type=range]::-ms-thumb {
   border: 1px solid #1a0735; /* Contorno da bolinha */
-  height: 5vh;
-  width: 5vw;
+  height: 50px;
+  width: 50px;
   border-radius: 50%;
   background: #A1D0FF; /* Cor da bolinha */
   cursor: pointer;
@@ -332,8 +332,8 @@ input[type=range]::-webkit-slider-thumb {
   box-shadow: 0px 0px 0px #000000;
   border: 1px solid #1a0735;
   /*contorno da bolinha*/
-  height: 2vh;
-  width: 1vw;
+  height: 15px;
+  width: 15px;
   border-radius: 25px;
   background: #A1D0FF;
   cursor: pointer;
