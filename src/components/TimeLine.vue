@@ -1,9 +1,5 @@
 <template>
     <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-<<<<<<< HEAD
-        <VideoEditingTimeline :config="config" class="formattedTotalDuration"/>
-        <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
-=======
         <VideoEditingTimeline :config="config" class="time" />
         <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
         <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
@@ -13,17 +9,11 @@
                 </div>
             </div>
         </div> -->
->>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
         <div class="layers">
             <div class="videos">
                 <TimeLineItem v-for="(video, index) in videos" :key="index" :item="video" :title="video.name"
                 :minimumScaleTime="config.minimumScaleTime" :index="index" @item-clicked="handleItemClicked" />
             </div>
-<<<<<<< HEAD
-        </div>
-        <div class="total-duration">
-            Total Duration: {{ formattedTotalDuration }} <!-- Tentar utilizar para aumentar a minutagem da timeline conforme a quantidade de videos -->
-=======
             <div class="images">
                 <TimeLineItem v-for="(image, index) in images" :key="index" :item="image" :minimumScaleTime="config.minimumScaleTime" :title="image.name"
                     :index="index" @item-clicked="handleItemClicked" />
@@ -32,7 +22,6 @@
                 <TimeLineItem v-for="(audio, index) in audios" :key="index" :minimumScaleTime="config.minimumScaleTime" :item="audio" :title="audio.name"
                     :index="index" @item-clicked="handleItemClicked" />
             </div>
->>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
         </div>
         <div class="zoom-controls">
             <select id="zoom" v-model="selectedZoom" @change="updateZoom">
@@ -82,11 +71,7 @@ export default {
             config: {
                 canvasWidth: 1920,
                 minimumScale: 10,
-<<<<<<< HEAD
-                minimumScaleTime: 1 
-=======
                 minimumScaleTime: 6,
->>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
             },
             selectedZoom: 1,
         };
@@ -141,31 +126,15 @@ export default {
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
         },
         updateCurrentTime() {
-<<<<<<< HEAD
-=======
             // const timelineWidth = this.$el.querySelector('.time').clientWidth;
             // this.config.canvasWidth / 100;
             // this.config.minimumScaleTime * 10;
->>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
             const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
             const currentTimeInSeconds = Math.round(this.cursorPosition * secondsPerPixel);
             this.timeline.setCurrentSecond(currentTimeInSeconds);
             this.currentTime = this.formatTime(currentTimeInSeconds);
         },
         updateZoom() {
-<<<<<<< HEAD
-            const zoomMapping = {
-                0.1: 60,
-                0.25: 24,
-                0.5: 12,
-                0.75: 8,
-                1: 6,
-                1.5: 4,
-                2: 3
-            };
-            this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
-        },
-=======
             // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
             const zoomMapping = {
                 0.1: 60,  // 10%
@@ -180,7 +149,6 @@ export default {
             this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
         },
 
->>>>>>> 8037fd7ccd39c89818edd734ffb47b852f2df442
     }
 };
 </script>
