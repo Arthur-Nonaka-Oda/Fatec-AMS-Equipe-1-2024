@@ -1,186 +1,235 @@
 <template>
     <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-        <VideoEditingTimeline :config="config" class="time" />
+        <VideoEditingTimeline :config="{ canvasWidth: dynamicCanvasWidth, minimumScale: 10, minimumScaleTime: config.minimumScaleTime }" class="time"/>
         <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
         <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
             <div class="time-markers">
                 <div v-for="second in filteredSeconds" :key="second" class="time-marker">
                     {{ formatTime(second) }}
                 </div>
-            </div>
+            </div>rgrgrg
         </div> -->
-        <div class="layers">
-            <div class="videos">
-                <TimeLineItem v-for="(video, index) in videos" :key="index" :item="video" :title="video.name"
-                :minimumScaleTime="config.minimumScaleTime" :index="index" @item-clicked="handleItemClicked" />
-            </div>
-            <div class="images">
-                <TimeLineItem v-for="(image, index) in images" :key="index" :item="image" :minimumScaleTime="config.minimumScaleTime" :title="image.name"
-                    :index="index" @item-clicked="handleItemClicked" />
-            </div>
-            <div class="audios">
-                <TimeLineItem v-for="(audio, index) in audios" :key="index" :minimumScaleTime="config.minimumScaleTime" :item="audio" :title="audio.name"
-                    :index="index" @item-clicked="handleItemClicked" />
-            </div>
+    <div class="layers">
+      <div
+        v-for="(layer, layerIndex) in layers"
+        :key="layerIndex"
+        class="layer"
+      >
+        <div class="items">
+          <TimeLineItem
+            v-for="(item, index) in layer.items"
+            :key="index"
+            :layerIndex="layerIndex" 
+            :item="item"
+            :title="item.name"
+            :minimumScaleTime="config.minimumScaleTime"
+            :index="index"
+            @item-clicked="handleItemClicked"
+          />
         </div>
-        <div class="zoom-controls">
-            <select id="zoom" v-model="selectedZoom" @change="updateZoom">
-                <option value="0.1">10%</option>
-                <option value="0.25">25%</option>
-                <option value="0.5">50%</option>
-                <option value="0.75">75%</option>
-                <option value="1">100%</option>
-                <option value="1.5">150%</option>
-                <option value="2">200%</option>
-                <option value="3">300%</option>
-            </select>
-        </div>
+      </div>
     </div>
+    <div class="zoom-controls">
+      <select id="zoom" v-model="selectedZoom" @change="updateZoom">
+        <option value="0.1">10%</option>
+        <option value="0.25">25%</option>
+        <option value="0.5">50%</option>
+        <option value="0.75">75%</option>
+        <option value="1">100%</option>
+        <option value="1.5">150%</option>
+        <option value="2">200%</option>
+        <option value="3">300%</option>
+      </select>
+    </div>
+  </div>
 </template>
 
 <script>
-import TimeLineItem from './TimeLineItem.vue';
-import VideoEditingTimeline from 'video-editing-timeline-vue';
+import TimeLineItem from "./TimeLineItem.vue";
+import VideoEditingTimeline from "video-editing-timeline-vue";
 
 export default {
-    props: {
-        videos: {
-            type: Array,
-            default: () => []
-        },
-        images: {
-            type: Array,
-        },
-        audios: {
-            type: Array,
-        },
-        timeline: {
-            type: Object,
-            required: true
-        }
+  props: {
+    // videos: {
+    //     type: Array,
+    //     default: () => []
+    // },
+    // images: {
+    //     type: Array,
+    //     default: () => []
+    // },
+    layers: {
+      type: Array,
     },
-    components: {
-        TimeLineItem,
-        VideoEditingTimeline
+    timeline: {
+      type: Object,
+      required: true,
     },
-    data() {
-        return {
-            isGrabbing: false,
-            currentTime: '00:00:00',
-            cursorPosition: 0,
-            config: {
-                canvasWidth: 1920,
-                minimumScale: 10,
-                minimumScaleTime: 6,
-            },
-            selectedZoom: 1,
-        };
+    updateLayers: {
+      type: Function,
     },
-    computed: {
-        totalVideoDuration() {
-            return this.videos.reduce((total, video) => total + (video.duration || 0), 0); 
-        },
-        formattedTotalDuration() {
-            return this.formatTime(this.totalVideoDuration);
-        }
+  },
+  components: {
+    TimeLineItem,
+    VideoEditingTimeline,
+  },
+  data() {
+    return {
+      isGrabbing: false,
+      currentTime: "00:00:00",
+      cursorPosition: 0,
+      config: {
+        minimumScale: 10,
+        minimumScaleTime: 6,
+      },
+      selectedZoom: 1,
+    };
+  },
+  computed: {
+    totalVideoDuration() {
+      return this.layers[0].items.reduce(
+        (total, video) => total + (video.duration || 0),
+        0
+      );
     },
-    mounted() {
-        document.addEventListener('mousemove', this.grabMove);
-        document.addEventListener('mouseup', this.grabDone);
+    formattedTotalDuration() {
+      return this.formatTime(this.totalVideoDuration);
     },
-    beforeDestroy() {
-        document.removeEventListener('mousemove', this.grabMove);
-        document.removeEventListener('mouseup', this.grabDone);
-    },
-    methods: {
-        grabMove(event) {
-            if (this.isGrabbing) {
-                const timelineRect = this.$el.querySelector('.time').getBoundingClientRect();
-                let newPosition = event.clientX - timelineRect.left;
-                newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
-                this.cursorPosition = newPosition;
-                this.updateCurrentTime();
-            }
-        },
-        grabDone() {
-            this.isGrabbing = false;
-        },
-        grabTime() {
-            this.isGrabbing = true;
-        },
-        handleDragOver(event) {
-            event.preventDefault();
-        },
-        handleDrop(event) {
-            const videoData = event.dataTransfer.getData('video');
-            const video = JSON.parse(videoData);
-            this.timeline.addVideoToStart(video);
-        },
-        handleItemClicked(item) {
-            this.timeline.removeVideo(item);
-        },
-        formatTime(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const remainingSeconds = seconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-        },
-        updateCurrentTime() {
-            // const timelineWidth = this.$el.querySelector('.time').clientWidth;
-            // this.config.canvasWidth / 100;
-            // this.config.minimumScaleTime * 10;
-            const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
-            const currentTimeInSeconds = Math.round(this.cursorPosition * secondsPerPixel);
-            this.timeline.setCurrentSecond(currentTimeInSeconds);
-            this.currentTime = this.formatTime(currentTimeInSeconds);
-        },
-        updateZoom() {
-            // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
-            const zoomMapping = {
-                0.1: 60,  // 10%
-                0.25: 24, // 25%
-                0.5: 12,  // 50%
-                0.75: 8,  // 75%
-                1: 6,     // 100% (referência padrão)
-                1.5: 4,   // 150%
-                2: 3,       //200%
-                3: 2     
-            };
-            this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
-        },
-
+    dynamicCanvasWidth() {
+        const scaleFactor = 10;
+        const width = this.totalVideoDuration * scaleFactor * this.selectedZoom;
+        return width; 
     }
+  },
+  mounted() {
+    document.addEventListener("mousemove", this.grabMove);
+    document.addEventListener("mouseup", this.grabDone);
+  },
+  beforeDestroy() {
+    document.removeEventListener("mousemove", this.grabMove);
+    document.removeEventListener("mouseup", this.grabDone);
+  },
+  methods: {
+    grabMove(event) {
+      if (this.isGrabbing) {
+        const timelineRect = this.$el
+          .querySelector(".time")
+          .getBoundingClientRect();
+        let newPosition = event.clientX - timelineRect.left;
+        newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
+        this.cursorPosition = newPosition;
+        this.updateCurrentTime();
+      }
+    },
+    grabDone() {
+      this.isGrabbing = false;
+    },
+    grabTime() {
+      this.isGrabbing = true;
+    },
+    handleDragOver(event) {
+      event.preventDefault();
+    },
+    handleDrop(event) {
+      let fileData = "";
+      let type = "";
+
+      if (event.dataTransfer.types.includes("video")) {
+        fileData = event.dataTransfer.getData("video");
+        type = "video";
+      } else if (event.dataTransfer.types.includes("audio")) {
+        fileData = event.dataTransfer.getData("audio");
+        type = "audio";
+      } else if (event.dataTransfer.types.includes("image")) {
+        fileData = event.dataTransfer.getData("image");
+        type = "image";
+      }
+
+      if (fileData) {
+        const file = JSON.parse(fileData);
+        let layerIndex;
+        if(type === "video") {
+            layerIndex = 0;
+        }
+        else if(type === "audio") {
+            layerIndex = 1;
+        }
+        else if(type === "image") {
+            layerIndex = 2;
+        }
+        this.timeline.addFileToLayer({ file, layerIndex, type });
+        this.updateLayers();
+      }
+    },
+    handleItemClicked(item) {
+      this.timeline.removeFileFromLayer({file: item.item, layerIndex: item.layerIndex});
+      this.updateLayers();
+    },
+    formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const remainingSeconds = seconds % 60;
+      return `${hours.toString().padStart(2, "0")}:${minutes
+        .toString()
+        .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    },
+    updateCurrentTime() {
+      // const timelineWidth = this.$el.querySelector('.time').clientWidth;
+      // this.config.canvasWidth / 100;
+      // this.config.minimumScaleTime * 10;
+      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
+      const currentTimeInSeconds = Math.round(
+        this.cursorPosition * secondsPerPixel
+      );
+      this.timeline.setCurrentSecond(currentTimeInSeconds);
+      this.currentTime = this.formatTime(currentTimeInSeconds);
+    },
+    updateZoom() {
+      // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
+      const zoomMapping = {
+        0.1: 60, // 10%
+        0.25: 24, // 25%
+        0.5: 12, // 50%
+        0.75: 8, // 75%
+        1: 6, // 100% (referência padrão)
+        1.5: 4, // 150%
+        2: 3, //200%
+        3: 2,
+      };
+      this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
+    },
+  },
 };
 </script>
 
-
 <style scoped>
 .total-duration {
-    margin-top: 10px;
-    font-size: 14px;
-    color: white;
+    margin-top: 0.625rem; /* Espaçamento superior */
+    font-size: 0.875rem;   /* Tamanho da fonte */
+    color: white;          /* Cor do texto */
 }
+
 .timeline {
-    position: relative;
-    bottom: 0;
-    border: 1px solid #0d185e;
-    background-color: #0d185e;
-    height: 30%;
-    overflow-y: hidden;
-    overflow-x: scroll;
-    width: 100%;
+  position: relative;
+  bottom: 0;
+  border: 1px solid #0d185e;
+  background-color: #0d185e;
+  height: 30%;
+  overflow-y: hidden;
+  overflow-x: scroll;
+  width: 100%;
 }
 
 .timeline::-webkit-scrollbar {
-    height: 20px;
+    height: 2.22vh;
 }
 
 .timeline::-webkit-scrollbar-track {
-    background: #5a6ac2 !important;
+  background: #5a6ac2 !important;
 }
 
 .timeline::-webkit-scrollbar-thumb {
-    height: 17px;
+    height: 1.89vh;
     background-color: #133a8d;
     border-radius: 0px;
     border: 2px solid #5a6ac2;
@@ -189,7 +238,6 @@ export default {
 .time {
     user-select: none;
     width: fit-content;
-    /* height: 15%; */
     background-color: #cccccc00;
     display: flex;
     align-items: start;
@@ -198,30 +246,31 @@ export default {
 }
 
 .timecursor {
-    width: 65px;
-    height: 25px;
-    line-height: 25px;
+    width: 4.51vw;          /* Largura */
+    height: 2.78vh;        /* Altura */
+    line-height: 2.78vh;   /* Altura da linha */
     position: absolute;
     background-color: #ce2323;
     border-radius: 30px;
-    top: 0px;
+    top: 0px;               /* Mantido */
     font-family: Inter;
-    font-size: 12px;
+    font-size: 0.75rem;     /* Tamanho da fonte */
     color: white;
     z-index: 2 !important;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 0.5rem;    /* Espaço superior */
     transition-property: transform;
     transition-duration: .2s;
     transition-timing-function: cubic-bezier(.05, .03, .35, 1);
     user-select: none;
+
     transform: translateX(-50%);
     /* Centralizar o cursor */
 }
 
 .timecursor:hover {
-    transform: scale(1.12) translateX(-50%);
-    cursor: pointer;
+  transform: scale(1.12) translateX(-50%);
+  cursor: pointer;
 }
 
 .timecursor:after {
@@ -231,15 +280,15 @@ export default {
     content: "";
     display: block;
     height: 100vh;
-    width: 2px;
+    width: 0.14vw;          /* Largura */
     background-color: #ce2323;
-    margin-left: 32.5px;
+    margin-left: 2.26vw;    /* Margem à esquerda */
     position: absolute;
     z-index: 2 !important;
 }
 
 .layers {
-    top: 50px;
+    top: 3.125rem; 
     height: 50%;
     display: flex;
     flex-direction: column;
@@ -249,44 +298,53 @@ export default {
     background-color: #0d185e00; */
 }
 
+.layer {
+  margin-bottom: 3px;
+}
+
 .videos {
-    display: flex;
-    background-color: #b81313;
-    height: 100%;
+  display: flex;
+  background-color: #b81313;
+  height: 100%;
+}
+
+.items {
+  display: flex;
+  height: 100%;
 }
 
 .audios {
-    display: flex;
-    height: 100%;
-    background-color: #c7771c;
+  display: flex;
+  height: 100%;
+  background-color: #c7771c;
 }
 
 .images {
-    display: flex;
-    height: 100%;
-    background-color: #1ddb3c;
+  display: flex;
+  height: 100%;
+  background-color: #1ddb3c;
 }
 
 .time-markers {
-    display: flex;
-    flex-grow: 1;
-    width: fit-content;
-    overflow-x: hidden;
-    /* Remover overflow horizontal */
-    /* height: 40px; */
+  display: flex;
+  flex-grow: 1;
+  width: fit-content;
+  overflow-x: hidden;
+  /* Remover overflow horizontal */
+  /* height: 40px; */
 }
 
 .time-marker {
     user-select: none;
-    width: 70px;
+    width: 4.86vw;           /* Largura */
     text-align: center;
     font-family: Inter;
-    font-size: 12px;
+    font-size: 0.75rem;      /* Tamanho da fonte */
     color: rgb(255, 255, 255);
-    padding-top: 7px;
+    padding-top: 0.4375rem;  /* Espaço superior */
     box-sizing: border-box;
     position: relative;
-    padding-bottom: 10px;
+    padding-bottom: 0.625rem; /* Espaço inferior */
     /* height: auto; */
 }
 
@@ -305,18 +363,19 @@ export default {
 }
 
 .zoom-controls {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
+    position: fixed;
+    bottom: 1.11vh;        /* Distância do fundo */
+    right: 0.69vw;         /* Distância da direita */
     display: flex;
-    gap: 10px;
+    gap: 0.625rem;         /* Espaçamento entre os elementos */
     align-items: center;
 }
 
+
 .zoom-controls select {
-    padding: 5px;
-    font-size: 14px;
-    border-radius: 4px;
+    padding: 0.3125rem;      /* Preenchimento */
+    font-size: 0.875rem;     /* Tamanho da fonte */
+    border-radius: 0.25rem;  /* Arredondamento das bordas */
     border: 1px solid #133a8d;
 }
 </style>

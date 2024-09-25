@@ -5,85 +5,81 @@ import Node from "../models/Node";
 
 export default class TimeLine {
   constructor() {
-    this.head = null;
-    this.end = null;
+    this.layers = [{ head: null, end: null }, { head: null, end: null }, { head: null, end: null }];
     this.currentSecond = 0;
   }
 
-  addVideoToStart(fileData) {
-
-    const newNode = this.createNode(fileData);
-    if (this.isNull()) {
-      this.head = newNode;
-      this.end = newNode;
-    } else {
-      newNode.next = this.head;
-      this.head = newNode;
-    }
+  addLayer() {
+    this.layers.push({ head: null, end: null });
   }
-  
-  addFileToEnd(fileData) {
-    const newNode = this.createNode(fileData);
-    if (this.isNull()) {
-      this.head = newNode;
-      this.end = newNode;
-    } else {
-      this.end.next = newNode;
-      this.end = newNode;
+
+  removeLayer(index) {
+    if (index >= 0 && index < this.layers.length) {
+      this.layers.splice(index, 1);
     }
   }
 
-  addVideoToMiddle(fileData) {
-    const newNode = this.createNode(fileData);
-    if (this.isNull()) {
-      this.head = newNode;
-      this.end = newNode;
-    } else {
-      //fazer
+  addFileToLayer(fileData, position = 'end') {
+    if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
+      const newNode = this.createNode(fileData);
+      const layer = this.layers[fileData.layerIndex];
+
+      if (layer.head === null) {
+        layer.head = newNode;
+        layer.end = newNode;
+      } else {
+        if (position === 'start') {
+          newNode.next = layer.head;
+          layer.head = newNode;
+        } else if (position === 'end') {
+          layer.end.next = newNode;
+          layer.end = newNode;
+        } else if (position === 'middle') {
+          // Implementar lógica para adicionar no meio
+        }
+      }
     }
   }
 
-  isNull() {
-    if (this.head == null) {
-      return true;
+  removeFileFromLayer(fileData) {
+    if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
+      const layer = this.layers[fileData.layerIndex];
+      if (layer.head !== null) {
+        let current = layer.head;
+        let before = null;
+        if (current.item === fileData.file) {
+          layer.head = current.next;
+          return;
+        }
+        while (current !== null) {
+          if (current.item === fileData.file) {
+            before.next = current.next;
+          }
+          before = current;
+          current = current.next;
+        }
+      }
     }
-    return false;
   }
 
+  listFilesInLayer(layerIndex) {
+    if (layerIndex >= 0 && layerIndex < this.layers.length) {
+      let files = [];
+      let current = this.layers[layerIndex].head;
+      while (current !== null) {
+        files.push(current.item);
+        current = current.next;
+      }
+      return files;
+    }
+    return [];
+  }
 
   setCurrentSecond(second) {
     this.currentSecond = second;
   }
 
-  removeVideo(item) {
-    if (!this.isNull()) {
-      let current = this.head;
-      let before = null;
-      if (current.item === item) {
-        this.head = current.next;
-      }
-      while (current != null) {
-        if (current.item === item) {
-          before.next = current.next;
-        }
-        before = current;
-        current = current.next;
-      }
-    }
-  }
-
-  listVideos() {
-
-    let videos = [];
-    let current = this.head;
-    while (current != null) {
-      videos.push(current.item);
-      current = current.next;
-    }
-    return videos;
-  }
-
-  createNode({file, type}) {
+  createNode({ file, type }) {
     switch (type) {
       case "video":
         return new Node(new Video(file));

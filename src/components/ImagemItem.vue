@@ -63,7 +63,7 @@ export default {
 
 .image-name {
   display: block;
-  max-width: 200px;
+  max-width: 13.89vw;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

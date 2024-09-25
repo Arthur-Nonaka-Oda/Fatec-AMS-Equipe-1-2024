@@ -90,7 +90,7 @@ export default {
 
 .audio-name {
   display: block;
-  max-width: 100%;
+  max-width: 13.89vw;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
