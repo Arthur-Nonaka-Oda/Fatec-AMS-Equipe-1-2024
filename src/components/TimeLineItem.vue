@@ -44,7 +44,7 @@ export default {
     /* margin: 5px 0; */
     background-color: #fff;
     /* border: 1px solid #ccc; */
-    border-radius: 4px;
+    border-radius: 3px;
     cursor: pointer;
     transition: background-color 0.3s;
     height: auto;

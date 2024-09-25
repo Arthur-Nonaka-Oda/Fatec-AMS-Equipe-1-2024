@@ -4,9 +4,13 @@
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
-          <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto" @click="openTextEditor">
-
-            <img src="/textoIcone.png" alt="Texto">
+          <button
+            class="btn-acao"
+            data-acao="texto"
+            aria-label="Adicionar Texto"
+            @click="openTextEditor"
+          >
+            <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
           </button>
           <div v-if="isTextEditorOpen" class="modal">
@@ -19,23 +23,38 @@
         </div>
         <div class="centro">
           <button class="btn-acao" data-acao="desfazer" aria-label="Desfazer">
-            <img src="/voltarIcone.png" alt="Desfazer">
+            <img src="/voltarIcone.png" alt="Desfazer" />
             <span class="legenda">Desfazer</span>
           </button>
           <button class="btn-acao" data-acao="salvar" aria-label="Salvar">
-            <img src="/salvarIcone.png" alt="Salvar">
+            <img src="/salvarIcone.png" alt="Salvar" />
             <span class="legenda">Salvar</span>
           </button>
         </div>
         <div class="direita" id="recordButtons">
-          <button class="btn-acao" id="startButton" data-acao="gravar" @click="toggleRecording" aria-label="Gravar">
-            <img id="imagePlay" :src="recordImageSrc" alt="Gravar">
-            <span id="textPlay" class="legenda">{{ isRecording ? 'Parar' : 'Gravar' }}</span>
+          <button
+            class="btn-acao"
+            id="startButton"
+            data-acao="gravar"
+            @click="toggleRecording"
+            aria-label="Gravar"
+          >
+            <img id="imagePlay" :src="recordImageSrc" alt="Gravar" />
+            <span id="textPlay" class="legenda">{{
+              isRecording ? "Parar" : "Gravar"
+            }}</span>
           </button>
-          <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording"
-            :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
-            <img :src="pauseImageSrc" alt="Pause">
-            <span class="legenda">{{ isPaused ? 'Retomar' : 'Pausar' }}</span>
+          <button
+            :disabled="!isRecording"
+            class="btn-acao"
+            id="pauseButton"
+            @click="pauseRecording"
+            :style="{ opacity: isRecording ? 1 : 0.5 }"
+            data-acao="pause"
+            aria-label="Pause"
+          >
+            <img :src="pauseImageSrc" alt="Pause" />
+            <span class="legenda">{{ isPaused ? "Retomar" : "Pausar" }}</span>
           </button>
         </div>
       </div>
@@ -49,61 +68,77 @@
         </div>
         <VideoPreview />
       </div>
-      <TimeLine :videos="timeline.listVideos()" :timeline="timeline" />
+      <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers"/>
     </section>
   </div>
 </template>
 
 <script>
-import FileUpload from './components/FileUpload.vue';
-import MediaTabs from './components/MediaTabs.vue';
-import TimeLineComponent from './components/TimeLine.vue';
-import TimeLine from './models/TimeLine.js';
-import VideoPreview from './components/VideoPreview.vue';
-import TextEditor from './components/TextEditor.vue';
-import './assets/main.css';
+import FileUpload from "./components/FileUpload.vue";
+import MediaTabs from "./components/MediaTabs.vue";
+import TimeLineComponent from "./components/TimeLine.vue";
+import TimeLine from "./models/TimeLine.js";
+import VideoPreview from "./components/VideoPreview.vue";
+import TextEditor from "./components/TextEditor.vue";
+import "./assets/main.css";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
     FileUpload,
     MediaTabs,
     TextEditor,
     TimeLine: TimeLineComponent,
-    VideoPreview
+    VideoPreview,
   },
   data() {
     return {
       isRecording: false,
       isPaused: false,
-      recordImageSrc: '/recordIcon.png',
-      pauseImageSrc: '/pauseIcon.png',
+      recordImageSrc: "/recordIcon.png",
+      pauseImageSrc: "/pauseIcon.png",
       timeline: null,
       isTextEditorOpen: false,
+      layers: [],
     };
   },
   created() {
     this.timeline = new TimeLine();
+    this.layers = [
+      {items: this.timeline.listFilesInLayer(0)},
+      {items: this.timeline.listFilesInLayer(1)},
+      {items: this.timeline.listFilesInLayer(2)},
+    ]
   },
   methods: {
     toggleRecording() {
       this.isRecording = !this.isRecording;
-      this.recordImageSrc = this.isRecording ? '/stopIcon.png' : '/recordIcon.png';
+      this.recordImageSrc = this.isRecording
+        ? "/stopIcon.png"
+        : "/recordIcon.png";
     },
     pauseRecording() {
       this.isPaused = !this.isPaused;
-      this.pauseImageSrc = this.isPaused ? '/playIcon.png' : '/pauseIcon.png';
+      this.pauseImageSrc = this.isPaused ? "/playIcon.png" : "/pauseIcon.png";
     },
     handleFileAdded(fileData) {
-      this.timeline.addFileToEnd(fileData);
+      this.timeline.addFileToLayer(fileData);
+      this.updateLayers();
     },
     openTextEditor() {
       this.isTextEditorOpen = true;
     },
     closeTextEditor() {
       this.isTextEditorOpen = false;
-    }
-  }
+    },
+    updateLayers() {
+            this.layers = [
+                {items: this.timeline.listFilesInLayer(0)},
+                {items: this.timeline.listFilesInLayer(1)},
+                {items: this.timeline.listFilesInLayer(2)},
+            ]
+        }
+  },
 };
 </script>
 
