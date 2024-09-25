@@ -16,7 +16,7 @@
         @add-video="addVideo" 
       />
     </div>
-    <div v-if="activeTab === 'Áudios'">
+    <div v-if="activeTab === 'Áudios'" class="audio-container">
       <AudioItem 
         v-for="(audio, index) in audios" 
         :key="index" 
@@ -24,7 +24,7 @@
         @add-audio="addAudio" 
       />
     </div>
-    <div v-if="activeTab === 'Imagens'">
+    <div v-if="activeTab === 'Imagens'" class="imagem-container">
       <ImagemItem 
         v-for="(image, index) in images" 
         :key="index" 
@@ -99,6 +99,15 @@ export default {
 }
 
 .video-container {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 330px;
+  gap: 10px; /* Espaço entre os vídeos */
+  justify-content: space-between;
+}
+
+
+.imagem-container {
   display: flex;
   flex-wrap: wrap;
   max-width: 330px;
