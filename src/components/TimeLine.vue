@@ -156,10 +156,11 @@ export default {
 
 <style scoped>
 .total-duration {
-    margin-top: 10px;
-    font-size: 14px;
-    color: white;
+    margin-top: 0.625rem; /* Espaçamento superior */
+    font-size: 0.875rem;   /* Tamanho da fonte */
+    color: white;          /* Cor do texto */
 }
+
 .timeline {
     position: relative;
     bottom: 0;
@@ -172,7 +173,7 @@ export default {
 }
 
 .timeline::-webkit-scrollbar {
-    height: 20px;
+    height: 2.22vh;
 }
 
 .timeline::-webkit-scrollbar-track {
@@ -180,7 +181,7 @@ export default {
 }
 
 .timeline::-webkit-scrollbar-thumb {
-    height: 17px;
+    height: 1.89vh;
     background-color: #133a8d;
     border-radius: 0px;
     border: 2px solid #5a6ac2;
@@ -189,7 +190,6 @@ export default {
 .time {
     user-select: none;
     width: fit-content;
-    /* height: 15%; */
     background-color: #cccccc00;
     display: flex;
     align-items: start;
@@ -198,23 +198,24 @@ export default {
 }
 
 .timecursor {
-    width: 65px;
-    height: 25px;
-    line-height: 25px;
+    width: 4.51vw;          /* Largura */
+    height: 2.78vh;        /* Altura */
+    line-height: 2.78vh;   /* Altura da linha */
     position: absolute;
     background-color: #ce2323;
     border-radius: 30px;
-    top: 0px;
+    top: 0px;               /* Mantido */
     font-family: Inter;
-    font-size: 12px;
+    font-size: 0.75rem;     /* Tamanho da fonte */
     color: white;
     z-index: 2 !important;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 0.5rem;    /* Espaço superior */
     transition-property: transform;
     transition-duration: .2s;
     transition-timing-function: cubic-bezier(.05, .03, .35, 1);
     user-select: none;
+
     transform: translateX(-50%);
     /* Centralizar o cursor */
 }
@@ -231,15 +232,15 @@ export default {
     content: "";
     display: block;
     height: 100vh;
-    width: 2px;
+    width: 0.14vw;          /* Largura */
     background-color: #ce2323;
-    margin-left: 32.5px;
+    margin-left: 2.26vw;    /* Margem à esquerda */
     position: absolute;
     z-index: 2 !important;
 }
 
 .layers {
-    top: 50px;
+    top: 3.125rem; 
     height: 50%;
     display: flex;
     flex-direction: column;
@@ -278,15 +279,15 @@ export default {
 
 .time-marker {
     user-select: none;
-    width: 70px;
+    width: 4.86vw;           /* Largura */
     text-align: center;
     font-family: Inter;
-    font-size: 12px;
+    font-size: 0.75rem;      /* Tamanho da fonte */
     color: rgb(255, 255, 255);
-    padding-top: 7px;
+    padding-top: 0.4375rem;  /* Espaço superior */
     box-sizing: border-box;
     position: relative;
-    padding-bottom: 10px;
+    padding-bottom: 0.625rem; /* Espaço inferior */
     /* height: auto; */
 }
 
@@ -297,26 +298,28 @@ export default {
     /* Ajustar para alinhar com a borda inferior */
     left: 50%;
     transform: translateX(-50%);
-    width: 2px;
-    height: 10px;
+    width: 0.14vw;    /* Largura */
+    height: 1.11vh;   /* Altura */
+
     /* Altura da linha vertical */
     background-color: #ffffff;
     /* Cor da linha vertical */
 }
 
 .zoom-controls {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
+    position: fixed;
+    bottom: 1.11vh;        /* Distância do fundo */
+    right: 0.69vw;         /* Distância da direita */
     display: flex;
-    gap: 10px;
+    gap: 0.625rem;         /* Espaçamento entre os elementos */
     align-items: center;
 }
 
+
 .zoom-controls select {
-    padding: 5px;
-    font-size: 14px;
-    border-radius: 4px;
+    padding: 0.3125rem;      /* Preenchimento */
+    font-size: 0.875rem;     /* Tamanho da fonte */
+    border-radius: 0.25rem;  /* Arredondamento das bordas */
     border: 1px solid #133a8d;
 }
 </style>

@@ -57,12 +57,13 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  margin-top: 5px;
+  margin-top: 0.3125rem;  /* Margem superior */
+
 }
 
 .video-name {
   display: block;
-  max-width: 200px;
+  max-width: 13.89vw;  /* Largura máxima */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

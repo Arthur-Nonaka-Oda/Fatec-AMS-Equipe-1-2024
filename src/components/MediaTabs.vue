@@ -73,8 +73,8 @@ export default {
 .tabs {
   display: flex;
   width: 100%;
-  padding: 10px 20px;
-  margin-bottom: 10px;
+  padding: 1.11vh 2.22vh; /* ou 0.69vw 1.39vw, dependendo da orientação */
+  margin-bottom: 1.11vh; /* ou 0.69vw */
   justify-content: center;
 }
 
@@ -85,10 +85,11 @@ export default {
   background-color: #FFFFFF; 
   color: #000000; 
   border: none;
-  padding: 5px 10px;
-  font-size: 13px;
-  margin-right: 5px;
-  border-radius: 8px; /* Bordas arredondadas */
+  padding: 0.3125rem 0.625rem;
+font-size: 0.8125rem;
+margin-right: 0.3125rem;
+border-radius: 0.5rem;
+
   cursor: pointer; /* Cursor de mão ao passar sobre */
   transition: background-color 0.3s; 
 }
@@ -101,8 +102,8 @@ export default {
 .video-container {
   display: flex;
   flex-wrap: wrap;
-  max-width: 330px;
-  gap: 10px; /* Espaço entre os vídeos */
+  max-width: 22.92vw; /* Para max-width */
+  gap: 0.625rem;      /* Para o espaço entre os vídeos */
   justify-content: space-between;
 }
 </style>

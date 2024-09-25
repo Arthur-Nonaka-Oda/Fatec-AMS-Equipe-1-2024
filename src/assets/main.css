@@ -10,14 +10,14 @@ body {
 
 header {
   background-color: #f0f0f0;
-  padding: 10px;
+  padding: 0.625rem; 
 }
 
 .barra-superior {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 50px;
+  height: 7.5vh;
 }
 
 .barra-superior .esquerda,
@@ -28,7 +28,7 @@ header {
 }
 
 .area-visualizacao .esquerda {
-  padding: 10px;
+  padding: 0.625rem; 
   display: flex;
   overflow-y: auto;
   width: 33%;
@@ -36,7 +36,7 @@ header {
   flex-wrap: wrap;
   flex-direction: row;
   justify-content: space-around;
-  max-height: 300px; /* Altura máxima */
+  max-height: 37.5vh; /* Altura máxima */
 }
 
 .btn-acao {
@@ -48,18 +48,20 @@ header {
   flex-direction: column;
   align-items: center;
   margin: 0 10px;
-  width: 40px;
+  width: 3.33vw;
   margin-top: none;
 }
 
+
 .btn-acao img {
-  width: 32px;
-  height: 32px;
-  margin-bottom: 5px;
+  width: 3vw;
+  height: 5.5vh;
+  margin-bottom: 0.3125rem;
+
 }
 
 .campo-texto {
-  padding: 8px;
+  padding: 0.5rem;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
@@ -73,7 +75,7 @@ header {
 .area-visualizacao {
   display: flex;
   justify-content: space-between;
-  height: 67%;
+  height: 61.3vh;
 }
 
 .miniatura-video {
@@ -81,12 +83,12 @@ header {
   width: 100%;
   background-color: #ffffff;
   min-height: 350px; /* Reduzindo a altura mínima */
-  padding: 10px;
+  padding: 0.625rem; 
   overflow-y: auto; /* Permitir rolagem vertical se necessário */  
 }
 
 .botao-com-imagem {
-  width: 200px;
+  width: 16.67vw;
   display: inline-flex;
   align-items: center;
   border: none;
@@ -95,22 +97,24 @@ header {
 }
 
 .texto-escrito-midia {
-  margin-top: 10px;
+  margin-top: 0.625rem;
   text-align: center; /* Centralizando o texto */
 }
 
 .texto-escrito-midia video {
   display: block;
   max-width: 100%;
-  max-height: 200px; /* Reduzindo a altura máxima do vídeo */
-  margin: 10px 0;
+  max-height: 25vh;
+max-height: 25vh; /* Reduzindo a altura máxima do vídeo */
+margin: 0.625rem 0;
+
 }
 
 .informacoes-video {
   display: flex;
   justify-content:space-between;
-  margin-top: 10px;
-  margin-left: 5px;
+  margin-top: 0.625rem;
+  margin-left: 0.3125rem;
 }
 
 .legendaPrincipal {
@@ -124,20 +128,21 @@ header {
 }
 
 .visualizacao-audio {
-  margin-top: 20px;
+  margin-top: 1.25rem;
   text-align: center; /* Centralizando o texto */
   
 }
 
 .visualizacao-audio .legenda {
   display: inline-block; /* Alterando para display inline-block para permitir centralização */
-  margin-bottom: 5px;
+  margin-bottom: 0.3125rem;
+
 }
 
 .visualizacao-audio audio {
-  max-width: 100px; /* Definindo a largura máxima do reprodutor de áudio */
+  max-width: 8.33vw; /* Definindo a largura máxima do reprodutor de áudio */
   display: block; /* Garantindo que o reprodutor de áudio fique em uma linha separada */
-  margin-top: 10px;
+  margin-top: 0.625rem;
   margin-right: auto; /* Alinhando à direita */
 }
 
@@ -150,29 +155,15 @@ header {
   background-color: #0F153C;
 }
 
-/* #markerback {
-  content: "";
-  border: 1px solid #E5E5E5;
-  width: 100%;
-  height: 10%;
-  background-color: #FFF;
-  top: 50;
-  left:0;
-  z-index: 0!important;
-}
-#playarea {
-  height: 20%;
-}
-
-/* area do play */
 #play {
-  width: 30px;
+  width: 2.5vw;
   height: 10%;
   background-color: black;
-  border-radius: 30px;
+  border-radius: 1.875rem;
   margin-left: auto;
   margin-right: auto;
-  margin-top: 5px;
+  margin-top: 0.3125rem;
+
 }
 #timeback {
   height: 30%;
@@ -182,47 +173,47 @@ header {
   z-index: -9999;
 } */
 #grabcursor {
-  width:65px;
-  height:25px;
-  line-height: 25px;
+  width: 5.42vw;
+  height: 3.125vh;
+  line-height: 3.125vh;
   position: absolute;
   background-color: #ce2323;
   border-radius: 0px 30px 30px 30px;
   top: 0px;
   left: 0px;
   font-family: Inter;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: white;
   z-index: 999999999!important;
   text-align: center;
   margin-top: 8px;
-  margin-left: 18px;
+  margin-top: 0.5rem;
   opacity: 0;
   z-index: 999999999!important;
 }
 .showcursor {
   z-index: 999999!important;
   margin-top: 8px;
-  margin-left: 18px;
-  font-size: 12px;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
   transition: opacity .2s cubic-bezier(.05,.03,.35,1);
 }
 #timecursor {
-  width:65px;
-  height:25px;
-  line-height: 25px;
+  width: 5.42vw;
+  height: 3.125vh;
+  line-height: 3.125vh;
   position: absolute;
   background-color: black;
-  border-radius: 30px;
+  border-radius: 1.875rem;
   top: 0px;
   left: 0px;
   font-family: Inter;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: white;
   z-index: 999999999!important;
   text-align: center;
   margin-top: 8px;
-  margin-left: 18px;
+  margin-top: 0.5rem;
 }
 #timecursor:hover {
   cursor: pointer;
@@ -233,10 +224,10 @@ header {
   transition-duration: .2s;
   transition-timing-function: cubic-bezier(.05,.03,.35,1);
   display:block;
-  width:65px;
-  height:25px;
+  width: 5.42vw;
+  height: 3.125vh;
   position: absolute;
-  border-radius: 30px;
+  border-radius: 1.875rem;
   background-color: #ce2323;
   z-index: -1;
 }
@@ -259,12 +250,12 @@ header {
 }
 #holdtime {
   border: 1px solid #E5E5E5;
-  height: 37px;
+  height: 4.625vh;
   background-color: #FFF;
   width: auto;
 }
 #timemarker {
-  height: 37px;
+  height: 4.625vh;
   display: inline-flex;
   flex-flow: column wrap;
   z-index: 2!important;
@@ -273,10 +264,11 @@ header {
 
 /* marcação de tempo */
 .marker {
-  width: 100px;
+  width: 8.33vw;
+
   text-align:center;
   font-family: Inter;
-  font-size: 12px;
+  font-size: 0.75rem;
   display: inline-block;
 }
 .marker:after {
@@ -287,40 +279,31 @@ header {
   display: block;
   background-color: white;
   text-align: center;
-  margin-top: 5px;
+  margin-top: 0.3125rem;
+
 }
-/* layer video */
-/* #layers {
-  position: absolute;
-  top: 50px;
-  display: inline-flex;
-}
-#layers .layercont:first-child {
-  border-radius: 0px 60px 60px 0px!important;
-  margin-left: 0px!important;
-  min-width: 50px!important;
-} */
+
 .layercont {
   display: inline-block;
-  width: 400px;
-  height: 50px;
+  width: 33.33vw;
+  height: 6.25vh;
   background-image: url();
   background-color: #ce2323;
   background-size: cover;
-  border-radius: 60px;
+  border-radius: 3.75rem;
   margin-left: 0px;
   box-shadow: 0px 2px 20px rgba(0, 0, 0, 0.1);
-  min-width: 32px;
+  min-width: 8vw;
 }
 .grab {
   z-index: 100!important;
-  width: 20px;
-  height: 20px;
+  width: 1.67vw;
+  height: 2.5vh;
   background-color: black;
-  border-radius: 300px;
+  border-radius: 18.75rem;
   text-align: center;
-  margin-top: 15px;
-  margin-left: 390px;
+  margin-top: 0.9375rem;
+  margin-left: 24.375rem;
   position: absolute;
   text-align: center;
   transition-property: transform;
@@ -332,9 +315,9 @@ header {
 }
 .grab:after {
   content: "";
-  width: 20px;
-  height: 20px;
-  border-radius: 300px;
+  width: 1.67vw;
+  height: 2.5vh;
+  border-radius: 18.75rem;
   background-color: black;
   display: block;
   position: absolute;
@@ -350,19 +333,13 @@ header {
   margin-left: 0px!important;
   margin-top: 0px!important;
 }
-.grab svg {
-  z-index: 1!important;
-  position: absolute;
-  margin-left: -6px;
-  margin-top: 4px;
-}
 .grab:before {
   content: "";
   margin-left: -6px;
   margin-top: -5px;
-  width: 32px;
+  width: 8vw;
   height: 32px;
-  border-radius: 300px;
+  border-radius: 18.75rem;
   background-color: black;
   display: block;
   opacity: .3;
@@ -371,7 +348,7 @@ header {
   transition: all .25s cubic-bezier(.05,.03,.35,1);
 }
 .grab:hover:before {
-  width: 40px;
+  width: 3.33vw;
   height: 40px;
   margin-left: -10px;
   margin-top:-9px;
@@ -384,8 +361,8 @@ header {
 }
 /* width */
 ::-webkit-scrollbar {
-  width: 20px;
-  height: 25px;
+  width: 1.67vw;
+  height: 3.125vh;
 }
 
 /* Track */
@@ -395,7 +372,7 @@ header {
 /* Handle */
 ::-webkit-scrollbar-thumb {
   background: #DAD9DE;
-  border-radius: 30px;
+  border-radius: 1.875rem;
   box-sizing: border-box;
   border: 8px solid #F9F8FE;
 }
@@ -432,16 +409,16 @@ header {
 
 .modal-content {
   background: white;
-  padding: 20px;
-  border-radius: 5px;
+  padding: 1.25rem;
+  border-radius: 0.3125rem;
   position: relative;
   z-index: 10;
 }
 
 .modal-close {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 0.625rem;
+  right: 0.625rem;
   background: transparent;
   border: none;
   font-size: 1.5em;

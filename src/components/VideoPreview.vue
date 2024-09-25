@@ -141,7 +141,7 @@ export default {
 .video {
   width: 67vw;
   height: 100%;
-  height: 59vh;
+  height: 61.3vh;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -168,8 +168,9 @@ export default {
   display: flex;
   align-items: center;
   background-color: #616161;
-  height: 40px;
-  padding: 5px;
+  height: 5vh; /* Altura em vh, equivalente a aproximadamente 40px em uma tela padrão */
+padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
+
   margin-top: auto;
   position: relative;
 }
@@ -195,7 +196,7 @@ export default {
 
 .left-controls img,
 .center-controls .play-pause-icon {
-  width: 30px;
+  width: 2.5vw;
   height: auto;
 }
 
@@ -220,29 +221,34 @@ export default {
 
 .play-pause-icon,
 .audio-icon {
-  width: 24px;
-  height: 24px;
+  width: 2vw;   /* Largura em vw (aproximadamente 24px) */
+height: 4vh;  /* Altura em vh (aproximadamente 24px) */
+
 }
 
 .volume-control input[type=range] {
   -webkit-appearance: none;
   width: 100%;
-  height: 8px;
-  background: #ff0199;
+  height: 1vh;
+  background: #011fff;
+  border-radius: 0.5rem; /* Raio da borda em rem */
+
 }
 
 .volume-control input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
-  height: 8px;
-  background: #ff0199; /* Cor da linha do controle de volume */
-  border-radius: 5px;
+  height: 1vh;
+  background: #011fff; /* Cor da linha do controle de volume */
+  border-radius: 0.5rem; /* Raio da borda em rem */
+
 }
 
 .volume-control input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   border: 1px solid #000000; /* Contorno da bolinha */
-  height: 20px;
-  width: 20px;
+  height: 1.85vh; /* Altura em vh */
+width: 1.04vw;  /* Largura em vw */
+
   border-radius: 50%;
   background: #ffffff; /* Cor da bolinha */
   cursor: pointer;
@@ -250,15 +256,15 @@ export default {
 
 .volume-control input[type=range]::-moz-range-track {
   width: 100%;
-  height: 8px;
+  height: 0.74vh;
   background: #ff0199; /* Cor da linha do controle de volume */
-  border-radius: 5px;
+  border-radius: 0.5rem;
 }
 
 .volume-control input[type=range]::-moz-range-thumb {
   border: 1px solid #1a0735; /* Contorno da bolinha */
-  height: 20px;
-  width: 20px;
+  height: 5vh;
+width: 5vw;
   border-radius: 50%;
   background: #A1D0FF; /* Cor da bolinha */
   cursor: pointer;
@@ -266,7 +272,7 @@ export default {
 
 .volume-control input[type=range]::-ms-track {
   width: 100%;
-  height: 8px;
+  height: 2vh;
   background: #ff0199;
   border-color: #ff0199;
   color: #ff0199;
@@ -279,13 +285,15 @@ export default {
 
 .volume-control input[type=range]::-ms-fill-upper {
   background: #ff0199; /* Cor da linha do controle de volume */
-  border-radius: 5px;
+ 
+  border-radius: 10%;
+
 }
 
 .volume-control input[type=range]::-ms-thumb {
   border: 1px solid #1a0735; /* Contorno da bolinha */
-  height: 20px;
-  width: 20px;
+  height: 5vh;
+  width: 5vw;
   border-radius: 50%;
   background: #A1D0FF; /* Cor da bolinha */
   cursor: pointer;
@@ -310,7 +318,7 @@ input[type=range]:focus {
 
 input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
-  height: 5px;
+  height: 1vh;
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000;
@@ -324,8 +332,8 @@ input[type=range]::-webkit-slider-thumb {
   box-shadow: 0px 0px 0px #000000;
   border: 1px solid #1a0735;
   /*contorno da bolinha*/
-  height: 18px;
-  width: 18px;
+  height: 2vh;
+  width: 1vw;
   border-radius: 25px;
   background: #A1D0FF;
   cursor: pointer;
@@ -342,7 +350,7 @@ input[type=range]:focus::-webkit-slider-runnable-track {
 
 input[type=range]::-moz-range-track {
   width: 100%;
-  height: 5px;
+  height: 1vh;
   cursor: pointer;
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000;
@@ -354,8 +362,8 @@ input[type=range]::-moz-range-track {
 input[type=range]::-moz-range-thumb {
   box-shadow: 0px 0px 0px #000000;
   border: 1px solid #c2ff27;
-  height: 18px;
-  width: 18px;
+  height: 2vh;
+  width: 1vw;
   border-radius: 25px;
   background: #A1D0FF;
   cursor: pointer;
@@ -363,7 +371,8 @@ input[type=range]::-moz-range-thumb {
 
 input[type=range]::-ms-track {
   width: 100%;
-  height: 5px;
+  height: 0.5vh; /* Ajuste conforme necessário */
+
   cursor: pointer;
   animate: 0.2s;
   background: transparent;
@@ -389,8 +398,8 @@ input[type=range]::-ms-thumb {
   margin-top: 1px;
   box-shadow: 0px 0px 0px #000000;
   border: 1px solid #98c1dc;
-  height: 18px;
-  width: 18px;
+  height: 2vh;
+  width: 1vw;
   border-radius: 25px;
   background: #A1D0FF;
   cursor: pointer;
@@ -411,7 +420,7 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 .fullscreen-icon {
-  width: 24px;
-  height: 24px;
+  width: 3vw;
+  height: 3vh;
 }
 </style>
