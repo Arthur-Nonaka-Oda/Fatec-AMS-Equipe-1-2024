@@ -20,17 +20,25 @@ export default {
         item: {
             type: Object,
             required: true,
+        },
+        minimumScaleTime: {
+            type: Number,
+            required: true
+        },
+        layerIndex: {
+            type: Number,
+            required: true
         }
     },
     methods: {
         handleClick() {
-            this.$emit('item-clicked', this.item);
+            this.$emit('item-clicked', {item: this.item, layerIndex: this.layerIndex});
         }
     },
     computed: {
         itemWidth() {
-            const pixelsPerSecond = 10;
-            return this.item.duration * pixelsPerSecond;
+            const secondsPerPixel = this.minimumScaleTime / 10; // Ajuste conforme necessário
+            return this.item.duration / secondsPerPixel;
         }
     }
 };

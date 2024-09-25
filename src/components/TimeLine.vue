@@ -19,6 +19,7 @@
           <TimeLineItem
             v-for="(item, index) in layer.items"
             :key="index"
+            :layerIndex="layerIndex" 
             :item="item"
             :title="item.name"
             :minimumScaleTime="config.minimumScaleTime"
@@ -161,7 +162,7 @@ export default {
       }
     },
     handleItemClicked(item) {
-      this.timeline.removeVideo(item);
+      this.timeline.removeFileFromLayer({file: item.item, layerIndex: item.layerIndex});
       this.updateLayers();
     },
     formatTime(seconds) {

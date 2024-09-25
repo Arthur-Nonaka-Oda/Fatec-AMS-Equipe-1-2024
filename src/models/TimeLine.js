@@ -49,6 +49,7 @@ export default class TimeLine {
         let before = null;
         if (current.item === fileData.file) {
           layer.head = current.next;
+          return;
         }
         while (current !== null) {
           if (current.item === fileData.file) {
