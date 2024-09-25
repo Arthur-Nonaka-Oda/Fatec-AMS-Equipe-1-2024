@@ -1,19 +1,13 @@
 <template>
-  <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-    <VideoEditingTimeline :config="config" class="time" />
-    <div
-      class="timecursor"
-      :style="{ left: cursorPosition + 'px' }"
-      @mousedown="grabTime"
-    >
-      {{ currentTime }}
-    </div>
-    <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
+    <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
+        <VideoEditingTimeline :config="{ canvasWidth: dynamicCanvasWidth, minimumScale: 10, minimumScaleTime: config.minimumScaleTime }" />
+        <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
+        <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
             <div class="time-markers">
                 <div v-for="second in filteredSeconds" :key="second" class="time-marker">
                     {{ formatTime(second) }}
                 </div>
-            </div>
+            </div>rgrgrg
         </div> -->
     <div class="layers">
       <div
