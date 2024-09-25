@@ -1,6 +1,6 @@
 <template>
     <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-        <VideoEditingTimeline :config="config" class="time" />
+        <VideoEditingTimeline :config="{ canvasWidth: dynamicCanvasWidth, minimumScale: 10, minimumScaleTime: config.minimumScaleTime }" />
         <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
         <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
             <div class="time-markers">
@@ -65,24 +65,28 @@ export default {
     },
     data() {
         return {
-            isGrabbing: false,
-            currentTime: '00:00:00',
-            cursorPosition: 0,
-            config: {
-                canvasWidth: 1920,
-                minimumScale: 10,
-                minimumScaleTime: 6,
-            },
-            selectedZoom: 1,
-        };
+        isGrabbing: false,
+        currentTime: '00:00:00',
+        cursorPosition: 0,
+        selectedZoom: 1,
+        config: {
+            minimumScale: 10,
+            minimumScaleTime: 6,
+        }
+    };
     },
     computed: {
         totalVideoDuration() {
-            return this.videos.reduce((total, video) => total + (video.duration || 0), 0); 
-        },
-        formattedTotalDuration() {
-            return this.formatTime(this.totalVideoDuration);
-        }
+        return this.videos.reduce((total, video) => total + (video.duration || 0), 0); 
+    },
+    formattedTotalDuration() {
+        return this.formatTime(this.totalVideoDuration);
+    },
+    dynamicCanvasWidth() {
+        const scaleFactor = 10;  // Ajuste este fator para controlar a largura do canvas (pixels por segundo)
+        const width = this.totalVideoDuration * scaleFactor * this.selectedZoom;
+        return width;  // A largura se ajusta dinamicamente com base no tempo total e no zoom
+    }
     },
     mounted() {
         document.addEventListener('mousemove', this.grabMove);
@@ -135,7 +139,6 @@ export default {
             this.currentTime = this.formatTime(currentTimeInSeconds);
         },
         updateZoom() {
-            // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
             const zoomMapping = {
                 0.1: 60,  // 10%
                 0.25: 24, // 25%
@@ -143,14 +146,13 @@ export default {
                 0.75: 8,  // 75%
                 1: 6,     // 100% (referência padrão)
                 1.5: 4,   // 150%
-                2: 3,       //200%
-                3: 2     
-            };
-            this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
-        },
-
+                2: 3,     // 200%
+                3: 2      // 300%
+        };
+        this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
+        }
     }
-};
+}
 </script>
 
 
