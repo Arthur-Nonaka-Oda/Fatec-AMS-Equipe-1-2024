@@ -1,6 +1,6 @@
 <template>
     <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-        <VideoEditingTimeline :config="{ canvasWidth: dynamicCanvasWidth, minimumScale: 10, minimumScaleTime: config.minimumScaleTime }" />
+        <VideoEditingTimeline :config="{ canvasWidth: dynamicCanvasWidth, minimumScale: 10, minimumScaleTime: config.minimumScaleTime }" class="time"/>
         <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
         <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
             <div class="time-markers">
@@ -78,7 +78,6 @@ export default {
       currentTime: "00:00:00",
       cursorPosition: 0,
       config: {
-        canvasWidth: 1920,
         minimumScale: 10,
         minimumScaleTime: 6,
       },
@@ -87,7 +86,7 @@ export default {
   },
   computed: {
     totalVideoDuration() {
-      return this.videos.reduce(
+      return this.layers[0].items.reduce(
         (total, video) => total + (video.duration || 0),
         0
       );
@@ -95,6 +94,11 @@ export default {
     formattedTotalDuration() {
       return this.formatTime(this.totalVideoDuration);
     },
+    dynamicCanvasWidth() {
+        const scaleFactor = 10;
+        const width = this.totalVideoDuration * scaleFactor * this.selectedZoom;
+        return width; 
+    }
   },
   mounted() {
     document.addEventListener("mousemove", this.grabMove);
@@ -132,19 +136,27 @@ export default {
       if (event.dataTransfer.types.includes("video")) {
         fileData = event.dataTransfer.getData("video");
         type = "video";
-        console.log("video")
-        console.log("video")
-      } if (event.dataTransfer.types.includes("audio")) {
+      } else if (event.dataTransfer.types.includes("audio")) {
         fileData = event.dataTransfer.getData("audio");
         type = "audio";
-      } if (event.dataTransfer.types.includes("image")) {
+      } else if (event.dataTransfer.types.includes("image")) {
         fileData = event.dataTransfer.getData("image");
         type = "image";
       }
 
       if (fileData) {
         const file = JSON.parse(fileData);
-        this.timeline.addFileToLayer({ file, layerIndex: 0, type });
+        let layerIndex;
+        if(type === "video") {
+            layerIndex = 0;
+        }
+        else if(type === "audio") {
+            layerIndex = 1;
+        }
+        else if(type === "image") {
+            layerIndex = 2;
+        }
+        this.timeline.addFileToLayer({ file, layerIndex, type });
         this.updateLayers();
       }
     },
