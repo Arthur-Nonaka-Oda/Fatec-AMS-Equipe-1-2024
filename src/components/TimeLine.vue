@@ -1,8 +1,21 @@
 <template>
-    <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-        <VideoEditingTimeline :config="{ canvasWidth: dynamicCanvasWidth, minimumScale: 10, minimumScaleTime: config.minimumScaleTime }" class="time"/>
-        <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">{{ currentTime }}</div>
-        <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
+  <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
+    <VideoEditingTimeline
+      :config="{
+        canvasWidth: dynamicCanvasWidth,
+        minimumScale: 10,
+        minimumScaleTime: config.minimumScaleTime,
+      }"
+      class="time"
+    />
+    <div
+      class="timecursor"
+      :style="{ left: cursorPosition + 'px' }"
+      @mousedown="grabTime"
+    >
+      {{ currentTime }}
+    </div>
+    <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
             <div class="time-markers">
                 <div v-for="second in filteredSeconds" :key="second" class="time-marker">
                     {{ formatTime(second) }}
@@ -19,7 +32,7 @@
           <TimeLineItem
             v-for="(item, index) in layer.items"
             :key="index"
-            :layerIndex="layerIndex" 
+            :layerIndex="layerIndex"
             :item="item"
             :title="item.name"
             :minimumScaleTime="config.minimumScaleTime"
@@ -96,10 +109,11 @@ export default {
       return this.formatTime(this.totalVideoDuration);
     },
     dynamicCanvasWidth() {
-        const scaleFactor = 10;
-        const width = this.totalVideoDuration * scaleFactor * this.selectedZoom;
-        return width; 
-    }
+      const secondsPerPixel = this.config.minimumScaleTime / 10;
+
+      const width = this.totalVideoDuration / secondsPerPixel;
+      return width;
+    },
   },
   mounted() {
     document.addEventListener("mousemove", this.grabMove);
@@ -148,21 +162,22 @@ export default {
       if (fileData) {
         const file = JSON.parse(fileData);
         let layerIndex;
-        if(type === "video") {
-            layerIndex = 0;
-        }
-        else if(type === "audio") {
-            layerIndex = 1;
-        }
-        else if(type === "image") {
-            layerIndex = 2;
+        if (type === "video") {
+          layerIndex = 0;
+        } else if (type === "audio") {
+          layerIndex = 1;
+        } else if (type === "image") {
+          layerIndex = 2;
         }
         this.timeline.addFileToLayer({ file, layerIndex, type });
         this.updateLayers();
       }
     },
     handleItemClicked(item) {
-      this.timeline.removeFileFromLayer({file: item.item, layerIndex: item.layerIndex});
+      this.timeline.removeFileFromLayer({
+        file: item.item,
+        layerIndex: item.layerIndex,
+      });
       this.updateLayers();
     },
     formatTime(seconds) {
@@ -204,9 +219,9 @@ export default {
 
 <style scoped>
 .total-duration {
-    margin-top: 0.625rem; /* Espaçamento superior */
-    font-size: 0.875rem;   /* Tamanho da fonte */
-    color: white;          /* Cor do texto */
+  margin-top: 0.625rem; /* Espaçamento superior */
+  font-size: 0.875rem; /* Tamanho da fonte */
+  color: white; /* Cor do texto */
 }
 
 .timeline {
@@ -221,7 +236,7 @@ export default {
 }
 
 .timeline::-webkit-scrollbar {
-    height: 2.22vh;
+  height: 2.22vh;
 }
 
 .timeline::-webkit-scrollbar-track {
@@ -229,43 +244,42 @@ export default {
 }
 
 .timeline::-webkit-scrollbar-thumb {
-    height: 1.89vh;
-    background-color: #133a8d;
-    border-radius: 0px;
-    border: 2px solid #5a6ac2;
+  height: 1.89vh;
+  background-color: #133a8d;
+  border-radius: 0px;
+  border: 2px solid #5a6ac2;
 }
 
 .time {
-    user-select: none;
-    width: fit-content;
-    background-color: #cccccc00;
-    display: flex;
-    align-items: start;
-    position: relative;
-
+  user-select: none;
+  width: fit-content;
+  background-color: #cccccc00;
+  display: flex;
+  align-items: start;
+  position: relative;
 }
 
 .timecursor {
-    width: 4.51vw;          /* Largura */
-    height: 2.78vh;        /* Altura */
-    line-height: 2.78vh;   /* Altura da linha */
-    position: absolute;
-    background-color: #ce2323;
-    border-radius: 30px;
-    top: 0px;               /* Mantido */
-    font-family: Inter;
-    font-size: 0.75rem;     /* Tamanho da fonte */
-    color: white;
-    z-index: 2 !important;
-    text-align: center;
-    margin-top: 0.5rem;    /* Espaço superior */
-    transition-property: transform;
-    transition-duration: .2s;
-    transition-timing-function: cubic-bezier(.05, .03, .35, 1);
-    user-select: none;
+  width: 4.51vw; /* Largura */
+  height: 2.78vh; /* Altura */
+  line-height: 2.78vh; /* Altura da linha */
+  position: absolute;
+  background-color: #ce2323;
+  border-radius: 30px;
+  top: 0px; /* Mantido */
+  font-family: Inter;
+  font-size: 0.75rem; /* Tamanho da fonte */
+  color: white;
+  z-index: 2 !important;
+  text-align: center;
+  margin-top: 0.5rem; /* Espaço superior */
+  transition-property: transform;
+  transition-duration: 0.2s;
+  transition-timing-function: cubic-bezier(0.05, 0.03, 0.35, 1);
+  user-select: none;
 
-    transform: translateX(-50%);
-    /* Centralizar o cursor */
+  transform: translateX(-50%);
+  /* Centralizar o cursor */
 }
 
 .timecursor:hover {
@@ -274,26 +288,26 @@ export default {
 }
 
 .timecursor:after {
-    transition-property: transform, margin-top;
-    transition-duration: .25s;
-    transition-timing-function: cubic-bezier(.05, .03, .35, 1);
-    content: "";
-    display: block;
-    height: 100vh;
-    width: 0.14vw;          /* Largura */
-    background-color: #ce2323;
-    margin-left: 2.26vw;    /* Margem à esquerda */
-    position: absolute;
-    z-index: 2 !important;
+  transition-property: transform, margin-top;
+  transition-duration: 0.25s;
+  transition-timing-function: cubic-bezier(0.05, 0.03, 0.35, 1);
+  content: "";
+  display: block;
+  height: 100vh;
+  width: 0.14vw; /* Largura */
+  background-color: #ce2323;
+  margin-left: 2.26vw; /* Margem à esquerda */
+  position: absolute;
+  z-index: 2 !important;
 }
 
 .layers {
-    top: 3.125rem; 
-    height: 50%;
-    display: flex;
-    flex-direction: column;
-    width: fit-content;
-    /* overflow-y: scroll;
+  top: 3.125rem;
+  height: 50%;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  /* overflow-y: scroll;
     overflow-x: hidden;
     background-color: #0d185e00; */
 }
@@ -335,47 +349,46 @@ export default {
 }
 
 .time-marker {
-    user-select: none;
-    width: 4.86vw;           /* Largura */
-    text-align: center;
-    font-family: Inter;
-    font-size: 0.75rem;      /* Tamanho da fonte */
-    color: rgb(255, 255, 255);
-    padding-top: 0.4375rem;  /* Espaço superior */
-    box-sizing: border-box;
-    position: relative;
-    padding-bottom: 0.625rem; /* Espaço inferior */
-    /* height: auto; */
+  user-select: none;
+  width: 4.86vw; /* Largura */
+  text-align: center;
+  font-family: Inter;
+  font-size: 0.75rem; /* Tamanho da fonte */
+  color: rgb(255, 255, 255);
+  padding-top: 0.4375rem; /* Espaço superior */
+  box-sizing: border-box;
+  position: relative;
+  padding-bottom: 0.625rem; /* Espaço inferior */
+  /* height: auto; */
 }
 
 .time-marker::after {
-    content: "";
-    position: absolute;
-    bottom: 0px;
-    /* Ajustar para alinhar com a borda inferior */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 10px;
-    /* Altura da linha vertical */
-    background-color: #ffffff;
-    /* Cor da linha vertical */
+  content: "";
+  position: absolute;
+  bottom: 0px;
+  /* Ajustar para alinhar com a borda inferior */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 10px;
+  /* Altura da linha vertical */
+  background-color: #ffffff;
+  /* Cor da linha vertical */
 }
 
 .zoom-controls {
-    position: fixed;
-    bottom: 1.11vh;        /* Distância do fundo */
-    right: 0.69vw;         /* Distância da direita */
-    display: flex;
-    gap: 0.625rem;         /* Espaçamento entre os elementos */
-    align-items: center;
+  position: fixed;
+  bottom: 1.11vh; /* Distância do fundo */
+  right: 0.69vw; /* Distância da direita */
+  display: flex;
+  gap: 0.625rem; /* Espaçamento entre os elementos */
+  align-items: center;
 }
 
-
 .zoom-controls select {
-    padding: 0.3125rem;      /* Preenchimento */
-    font-size: 0.875rem;     /* Tamanho da fonte */
-    border-radius: 0.25rem;  /* Arredondamento das bordas */
-    border: 1px solid #133a8d;
+  padding: 0.3125rem; /* Preenchimento */
+  font-size: 0.875rem; /* Tamanho da fonte */
+  border-radius: 0.25rem; /* Arredondamento das bordas */
+  border: 1px solid #133a8d;
 }
 </style>

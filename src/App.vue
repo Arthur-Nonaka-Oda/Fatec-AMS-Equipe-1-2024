@@ -95,8 +95,8 @@ export default {
     return {
       isRecording: false,
       isPaused: false,
-      recordImageSrc: "/recordIcon.png",
-      pauseImageSrc: "/pauseIcon.png",
+      recordImageSrc: "/gravarIcone.png",
+      pauseImageSrc: "/pauseIcone.png",
       timeline: null,
       isTextEditorOpen: false,
       layers: [],
@@ -114,12 +114,12 @@ export default {
     toggleRecording() {
       this.isRecording = !this.isRecording;
       this.recordImageSrc = this.isRecording
-        ? "/stopIcon.png"
-        : "/recordIcon.png";
+        ? "/pararIcone.png"
+        : "/gravarIcone.png";
     },
     pauseRecording() {
       this.isPaused = !this.isPaused;
-      this.pauseImageSrc = this.isPaused ? "/playIcon.png" : "/pauseIcon.png";
+      this.pauseImageSrc = this.isPaused ? "/gravarIcone.png" : "/pauseIcone.png";
     },
     handleFileAdded(fileData) {
       this.timeline.addFileToLayer(fileData);

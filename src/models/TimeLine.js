@@ -53,6 +53,10 @@ export default class TimeLine {
         }
         while (current !== null) {
           if (current.item === fileData.file) {
+            if(layer.end.item === fileData.file) {
+              layer.end = before;
+              return;
+            }
             before.next = current.next;
           }
           before = current;
