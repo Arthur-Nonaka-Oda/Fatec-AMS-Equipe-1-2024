@@ -114,8 +114,9 @@ export default {
       console.log(file);
       const { xResolution, yResolution } = await this.getImageResolution(file);
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+      const thumbnailURL = URL.createObjectURL(file);
 
-      this.$files.addImage({ filePath: file.path, name: file.name, xResolution: xResolution, yResolution: yResolution, size: sizeInMB, blob: file });
+      this.$files.addImage({ filePath: file.path, name: file.name, xResolution: xResolution, yResolution: yResolution, size: sizeInMB, blob: file, url: thumbnailURL });
     },
     async handleVideoFile(file) {
       if (!file) return;
