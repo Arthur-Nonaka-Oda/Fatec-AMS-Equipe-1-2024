@@ -14,6 +14,7 @@
         :key="index" 
         :video="video" 
         @add-video="addVideo" 
+        @delete-video="handleDeleteVideo" 
       />
     </div>
     <div v-if="activeTab === 'Áudios'" class="audio-container">
@@ -41,6 +42,7 @@ import AudioItem from './AudioItem.vue';
 import ImagemItem from './ImagemItem.vue';
 
 export default {
+  props: 'videos',
   name: 'MediaTabs',
   components: {
     VideoItem,
@@ -55,6 +57,7 @@ export default {
       images: this.$files.getFiles().images, // Método para obter imagens
     };
   },
+
   methods: {
     addVideo(video) {
       this.$emit('add-file', {file: video, layerIndex: 0, type: 'video'});
@@ -64,10 +67,25 @@ export default {
     },
     addImage(image) {
       this.$emit('add-file', {file: image, layerIndex: 2, type: 'image'});
+    },
+    selectVideo(video) {
+      this.$emit('select-video', video);
+    },
+    handleDeleteVideo(video) {
+      const index = this.videos.indexOf(video);
+      if (index !== -1) {
+        this.videos.splice(index, 1); // Remove o vídeo da lista
+        this.timeline.removeFileFromLayer({ // Remove o vídeo da timeline
+          file: video,
+          layerIndex: 0, // Ajuste conforme necessário
+        });
+        this.updateLayers(); // Atualiza a visualização
+      }
     }
   }
 };
 </script>
+
 
 <style scoped>
 .tabs {

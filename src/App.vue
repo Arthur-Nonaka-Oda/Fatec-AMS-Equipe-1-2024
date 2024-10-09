@@ -40,9 +40,7 @@
             aria-label="Gravar"
           >
             <img id="imagePlay" :src="recordImageSrc" alt="Gravar" />
-            <span id="textPlay" class="legenda">{{
-              isRecording ? "Parar" : "Gravar"
-            }}</span>
+            <span id="textPlay" class="legenda">{{ isRecording ? "Parar" : "Gravar" }}</span>
           </button>
           <button
             :disabled="!isRecording"
@@ -64,11 +62,12 @@
       <div class="area-visualizacao">
         <div class="esquerda">
           <!-- Aqui o componente MediaTabs é adicionado -->
-          <MediaTabs @add-file="handleFileAdded" />
+          <MediaTabs @add-file="handleFileAdded" @delete-video="handleDeleteVideo"/>
         </div>
-        <VideoPreview />
+        <VideoPreview  @delete-video="handleDeleteVideo"/>
+
       </div>
-      <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers"/>
+      <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers" :select-video="selectedVideo" @item-selected="handleItemSelected"/>
     </section>
   </div>
 </template>
@@ -93,6 +92,8 @@ export default {
   },
   data() {
     return {
+      videos: [],
+      selectedVideo: null,
       isRecording: false,
       isPaused: false,
       recordImageSrc: "/gravarIcone.png",
@@ -105,17 +106,15 @@ export default {
   created() {
     this.timeline = new TimeLine();
     this.layers = [
-      {items: this.timeline.listFilesInLayer(0)},
-      {items: this.timeline.listFilesInLayer(1)},
-      {items: this.timeline.listFilesInLayer(2)},
-    ]
+      { items: this.timeline.listFilesInLayer(0) },
+      { items: this.timeline.listFilesInLayer(1) },
+      { items: this.timeline.listFilesInLayer(2) },
+    ];
   },
   methods: {
     toggleRecording() {
       this.isRecording = !this.isRecording;
-      this.recordImageSrc = this.isRecording
-        ? "/pararIcone.png"
-        : "/gravarIcone.png";
+      this.recordImageSrc = this.isRecording ? "/pararIcone.png" : "/gravarIcone.png";
     },
     pauseRecording() {
       this.isPaused = !this.isPaused;
@@ -125,6 +124,19 @@ export default {
       this.timeline.addFileToLayer(fileData);
       this.updateLayers();
     },
+    handleDeleteVideo() { 
+      // const index = this.videos.indexOf(video);
+      this.timeline.removeFileFromLayer({ file: this.selectedVideo.item, layerIndex: this.selectedVideo.layerIndex }); // Ajuste conforme necessário
+      this.updateLayers();
+      // if (index !== -1) {
+        // this.videos.splice(index, 1); // Remove o vídeo da lista
+        // Lógica para remover o vídeo da timeline se necessário
+      // }
+    },
+    handleItemSelected(item) {
+      this.selectedVideo = item; // Define o vídeo selecionado
+      console.log(item);
+    },
     openTextEditor() {
       this.isTextEditorOpen = true;
     },
@@ -132,15 +144,16 @@ export default {
       this.isTextEditorOpen = false;
     },
     updateLayers() {
-            this.layers = [
-                {items: this.timeline.listFilesInLayer(0)},
-                {items: this.timeline.listFilesInLayer(1)},
-                {items: this.timeline.listFilesInLayer(2)},
-            ]
-        }
+      this.layers = [
+        { items: this.timeline.listFilesInLayer(0) },
+        { items: this.timeline.listFilesInLayer(1) },
+        { items: this.timeline.listFilesInLayer(2) },
+      ];
+    }
   },
 };
 </script>
+
 
 <style scoped>
 /* Estilos para o modal */

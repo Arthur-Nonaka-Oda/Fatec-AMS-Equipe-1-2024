@@ -15,13 +15,6 @@
     >
       {{ currentTime }}
     </div>
-    <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
-            <div class="time-markers">
-                <div v-for="second in filteredSeconds" :key="second" class="time-marker">
-                    {{ formatTime(second) }}
-                </div>
-            </div>rgrgrg
-        </div> -->
     <div class="layers">
       <div
         v-for="(layer, layerIndex) in layers"
@@ -37,7 +30,10 @@
             :title="item.name"
             :minimumScaleTime="config.minimumScaleTime"
             :index="index"
+            :class="{ selected: selectedItem === item }"
+            :select-video="selectVideo"
             @item-clicked="handleItemClicked"
+            @select-item="selectItem(item)" 
           />
         </div>
       </div>
@@ -63,14 +59,6 @@ import VideoEditingTimeline from "video-editing-timeline-vue";
 
 export default {
   props: {
-    // videos: {
-    //     type: Array,
-    //     default: () => []
-    // },
-    // images: {
-    //     type: Array,
-    //     default: () => []
-    // },
     layers: {
       type: Array,
     },
@@ -81,6 +69,9 @@ export default {
     updateLayers: {
       type: Function,
     },
+    selectVideo:{
+      type: Object,
+    }
   },
   components: {
     TimeLineItem,
@@ -96,6 +87,7 @@ export default {
         minimumScaleTime: 6,
       },
       selectedZoom: 1,
+      selectedItem: null, // Estado para o item selecionado
     };
   },
   computed: {
@@ -110,7 +102,6 @@ export default {
     },
     dynamicCanvasWidth() {
       const secondsPerPixel = this.config.minimumScaleTime / 10;
-
       const width = this.totalVideoDuration / secondsPerPixel;
       return width;
     },
@@ -173,12 +164,24 @@ export default {
         this.updateLayers();
       }
     },
+    selectItem(item) {
+      this.selectedItem = item; // Define o item selecionado
+    },
     handleItemClicked(item) {
-      this.timeline.removeFileFromLayer({
-        file: item.item,
-        layerIndex: item.layerIndex,
-      });
-      this.updateLayers();
+    // this.selectItem(item); // Seleciona o item
+    this.$emit('item-selected', item); // Emite o evento para o pai
+  },
+
+  handleDeleteVideo(video) {
+      const index = this.videos.indexOf(video);
+      if (index !== -1) {
+        this.videos.splice(index, 1); // Remove o vídeo da lista
+        this.timeline.removeFileFromLayer({ // Remove o vídeo da timeline
+          file: video,
+          layerIndex: 0, // Ajuste conforme necessário
+        });
+        this.updateLayers(); // Atualiza a visualização
+      }
     },
     formatTime(seconds) {
       const hours = Math.floor(seconds / 3600);
@@ -189,9 +192,6 @@ export default {
         .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     },
     updateCurrentTime() {
-      // const timelineWidth = this.$el.querySelector('.time').clientWidth;
-      // this.config.canvasWidth / 100;
-      // this.config.minimumScaleTime * 10;
       const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
       const currentTimeInSeconds = Math.round(
         this.cursorPosition * secondsPerPixel
@@ -200,15 +200,14 @@ export default {
       this.currentTime = this.formatTime(currentTimeInSeconds);
     },
     updateZoom() {
-      // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
       const zoomMapping = {
-        0.1: 60, // 10%
-        0.25: 24, // 25%
-        0.5: 12, // 50%
-        0.75: 8, // 75%
-        1: 6, // 100% (referência padrão)
-        1.5: 4, // 150%
-        2: 3, //200%
+        0.1: 60,
+        0.25: 24,
+        0.5: 12,
+        0.75: 8,
+        1: 6,
+        1.5: 4,
+        2: 3,
         3: 2,
       };
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
@@ -217,7 +216,13 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
+.selected {
+  border: 2px solid rgb(255, 238, 0); /* ou qualquer estilo que destaque o item */
+  background-color: rgb(101, 228, 226); /* destaque de fundo */
+}
+
+
 .total-duration {
   margin-top: 0.625rem; /* Espaçamento superior */
   font-size: 0.875rem; /* Tamanho da fonte */

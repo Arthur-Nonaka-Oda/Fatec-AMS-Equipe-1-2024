@@ -10,12 +10,13 @@
       class="time-slider">
     <div class="controles">
       <div class="left-controls">
-        <button @click="deleteVideo">
-          <img src="/lixoIcone.png" alt="Lixo" />
-        </button>
-        <button @click="trimVideo">
-          <img src="/tesouraIcone.png" alt="Recortar" />
-        </button>
+        <button @click="$emit('delete-video')" class="delete-button">
+  <img src="/lixoIcone.png" alt="Lixo" />
+</button>
+
+    <button @click="trimVideo">
+      <img src="/tesouraIcone.png" alt="Recortar" />
+    </button>
       </div>
       <div class="center-controls">
         <button @click="togglePlayPause" class="play-button">
@@ -43,6 +44,7 @@
 
 <script>
 export default {
+  props: 'video',
   data() {
     return {
       playPauseIcon: "/playIcone.png", // Caminho para o ícone de play
@@ -60,6 +62,7 @@ export default {
     },
   },
   methods: {
+    
     togglePlayPause() {
       const video = this.$refs.videoPlayer;
       if (video.paused) {
@@ -82,7 +85,7 @@ export default {
     },
     deleteVideo() {
       // Implementar lógica de exclusão
-      console.log("Delete video logic here");
+      this.$emit('delete-video', this.video);
     },
     trimVideo() {
       // Implementar lógica de recorte
@@ -121,8 +124,8 @@ export default {
       } else {
         document.exitFullscreen();
       }
-    }
-
+    },
+   
 
 
 

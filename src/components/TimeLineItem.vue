@@ -1,5 +1,5 @@
 <template>
-    <div class="timeline-item" @click="handleClick" :style="{ width: itemWidth + 'px' }">
+    <div class="timeline-item" @click="handleClick" :style="{ width: itemWidth + 'px' }" >
         <img class="item-content" :src="item.url">
     </div>
 </template>
@@ -26,6 +26,9 @@ export default {
         layerIndex: {
             type: Number,
             required: true
+        },
+        selectVideo:{
+            type: Object,
         }
     },
     methods: {
