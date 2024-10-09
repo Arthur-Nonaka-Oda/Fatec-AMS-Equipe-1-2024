@@ -76,6 +76,30 @@ export default {
         audio.src = URL.createObjectURL(file);
       });
     },
+
+    getVideoThumbnail(blobUrl) {
+      return new Promise((resolve, reject) => {
+        const videoElement = document.createElement('video');
+        const canvasElement = document.createElement('canvas');
+        const context = canvasElement.getContext('2d');
+
+        videoElement.onloadeddata = function () {
+          videoElement.currentTime = videoElement.duration / 2;
+        };
+
+        videoElement.onseeked = function () {
+          context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+          const thumbnailUrl = canvasElement.toDataURL('image/png');
+          resolve(thumbnailUrl);
+        };
+
+        videoElement.onerror = function () {
+          reject('Error loading video file.');
+        };
+
+        videoElement.src = blobUrl;
+      });
+    },
     async handleAudioFile(file) {
       if (!file) return;
       console.log(file);
@@ -99,10 +123,11 @@ export default {
 
       const duration = await this.getVideoDuration(file);
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+      const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(file));
 
-      this.$files.addVideo({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: file });
+      this.$files.addVideo({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: file, url: thumbnailURL });
     },
-    
+
   }
 }
 </script>

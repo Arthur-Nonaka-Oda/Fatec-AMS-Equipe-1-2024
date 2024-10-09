@@ -1,6 +1,6 @@
 <template>
   <div class="video-item" @click="handleAddButtonClick" draggable="true" @dragstart="handleDragStart" @dragend="handleDragEnd">
-    <video :src="video.url" controls class="video-player"></video>
+    <img :src="video.url" class="video-player">
     <div class="video-info">
       <span class="video-name">{{ truncatedName }}</span>
     </div>

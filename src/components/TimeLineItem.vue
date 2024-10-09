@@ -1,8 +1,6 @@
 <template>
     <div class="timeline-item" @click="handleClick" :style="{ width: itemWidth + 'px' }">
-        <div class="item-content">
-            <h3>{{ title }}</h3>
-        </div>
+        <img class="item-content" :src="item.url">
     </div>
 </template>
 
@@ -32,7 +30,7 @@ export default {
     },
     methods: {
         handleClick() {
-            this.$emit('item-clicked', {item: this.item, layerIndex: this.layerIndex});
+            this.$emit('item-clicked', { item: this.item, layerIndex: this.layerIndex });
         }
     },
     computed: {
@@ -52,10 +50,24 @@ export default {
     /* margin: 5px 0; */
     background-color: #fff;
     /* border: 1px solid #ccc; */
-    border-radius: 0.25rem;
+    border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
     height: auto;
+    height: 45px;
+    /* Altura específica */
+    overflow: hidden;
+    /* Esconde a parte da imagem que ultrapassa o contêiner */
+    position: relative;
+}
+
+img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Ajusta a imagem para cobrir o contêiner */
+    object-position: center;
+    /* Centraliza a imagem */
 }
 
 .timeline-item:hover {
