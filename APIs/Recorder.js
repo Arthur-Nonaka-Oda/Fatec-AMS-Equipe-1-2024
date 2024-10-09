@@ -31,7 +31,8 @@ function Recorder() {
                 this.chunks.push(e.data);
             };
             this.mediaRecorder.onstop = async () => {
-                const { fileName } = await ipcRenderer.invoke('save-dialog');
+                // const { fileName } = await ipcRenderer.invoke('save-dialog');
+                const fileName = `${Date.now()}`;
                 const filePath = path.join(__dirname, "../", "videos", fileName);
 
                 if (filePath) {

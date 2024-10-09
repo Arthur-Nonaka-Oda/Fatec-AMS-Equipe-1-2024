@@ -16,6 +16,9 @@ contextBridge.exposeInMainWorld("electron", {
   importer: () => {
     return importer;
   },
+  ipcRenderer: {
+    on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
+  },
 
   // test: () => console.log("teste"),
 

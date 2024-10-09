@@ -13,7 +13,7 @@
     "electron": "^30.0.6"
   },
   "dependencies": {
-    "fluent-ffmpeg": "^2.1.3"
+    "fluent-ffmpeg": "^2.1.3",
+    "vuew": "^1.0.0-security"
   }
 }
- 

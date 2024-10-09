@@ -23,8 +23,8 @@ function createWindow() {
       nodeIntegration: true,
     },
   });
-
-  mainWindow.loadFile("../index.html");
+  mainWindow.loadURL('http://localhost:8080');
+  // mainWindow.loadFile(path.join(__dirname, "../vue/dist/index.html"));
 
   session
     .fromPartition("default")
@@ -76,6 +76,26 @@ function createModalWindow(parentWindow) {
     if (process.platform !== "darwin") app.quit();
   });
 
+  const videosDir = path.join(__dirname, '../videos');
+  if (!fs.existsSync(videosDir)) {
+    fs.mkdirSync(videosDir);
+  }
+
+  fs.watch(videosDir, (eventType, filename) => {
+    if (eventType === 'rename' && filename) {
+      const filePath = path.join(videosDir, filename);
+      if (fs.existsSync(filePath)) {
+        fs.readFile(filePath, (err, data) => {
+          if (err) {
+            console.error('Error reading file:', err);
+          } else {
+            mainWindow.webContents.send('video-saved', { filePath, data: data.toString('base64') });
+          }
+        });
+      }
+    }
+  });
+
   // ipcMain.handle("save-dialog", async () => {
   //   // dialog.showErrorBox("Save Dialog - index");
   //   const {fileName} = await createModalWindow(mainWindow);
@@ -125,6 +145,10 @@ function createModalWindow(parentWindow) {
     // })
     return { filePath: filePaths[0], name: path.basename(filePaths[0]) };
   });
+
+  ipcMain.handle("teste", async () => {
+    console.log("teste");
+  })
 
   ipcMain.handle("permission-dialog", async () => {
     const response = dialog.showMessageBoxSync({
