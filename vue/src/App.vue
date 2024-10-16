@@ -117,6 +117,7 @@ export default {
         window.electron.recorder().startRecording();
       }else {
         window.electron.recorder().stopRecording();
+        // window.electron.importer().importRecordedFiles();
       }
       this.recordImageSrc = this.isRecording
         ? "/pararIcone.png"

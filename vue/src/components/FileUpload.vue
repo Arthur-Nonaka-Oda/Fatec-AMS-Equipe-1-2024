@@ -10,6 +10,7 @@
 
 <script>
 export default {
+
   mounted() {
     window.electron.ipcRenderer.on('video-saved', this.importVideo);
   },
@@ -88,16 +89,15 @@ export default {
       });
     },
 
-    getVideoThumbnail(blobUrl) {
+    getVideoThumbnail(blobUrl, duration) {
       return new Promise((resolve, reject) => {
         const videoElement = document.createElement('video');
         const canvasElement = document.createElement('canvas');
         const context = canvasElement.getContext('2d');
-        console.log(videoElement.duration);
 
         videoElement.onloadeddata = function () {
-          if (isFinite(videoElement.duration) && videoElement.duration > 0) {
-            videoElement.currentTime = videoElement.duration / 2;
+          if (isFinite(duration) && duration > 0) {
+            videoElement.currentTime = duration / 2;
           } else {
             reject('Invalid video duration.');
           }
@@ -140,46 +140,58 @@ export default {
 
       const duration = await this.getVideoDuration(file);
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-      const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(file));
+      const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(file), duration);
       // const thumbnailURL = "teste";
 
       this.$files.addVideo({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: file, url: thumbnailURL });
     },
-    async getVideoThumbnailElectron (blobUrl) {
-        return new Promise((resolve, reject) => {
-          const videoElement = document.createElement('video');
-          const canvasElement = document.createElement('canvas');
-          const context = canvasElement.getContext('2d');
+    // async getVideoThumbnailElectron (blobUrl) {
+    //     return new Promise((resolve, reject) => {
+    //       const videoElement = document.createElement('video');
+    //       const canvasElement = document.createElement('canvas');
+    //       const context = canvasElement.getContext('2d');
       
-          videoElement.onloadeddata = function () {
-            videoElement.currentTime = videoElement.duration / 2;
-          };
+    //       videoElement.onloadeddata = function () {
+    //         videoElement.currentTime = videoElement.duration / 2;
+    //       };
       
-          videoElement.onseeked = function () {
-            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-            const thumbnailUrl = canvasElement.toDataURL('image/png');
-            resolve(thumbnailUrl);
-          };
+    //       videoElement.onseeked = function () {
+    //         context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+    //         const thumbnailUrl = canvasElement.toDataURL('image/png');
+    //         resolve(thumbnailUrl);
+    //       };
       
-          videoElement.onerror = function () {
-            reject('Error loading video file.');
-          };
+    //       videoElement.onerror = function () {
+    //         reject('Error loading video file.');
+    //       };
       
-          videoElement.src = blobUrl;
-        });
-      },
-    async importVideo({ filePath, data }) {
-      const blob = new Blob([Uint8Array.from(atob(data), c => c.charCodeAt(0))], { type: 'video/webm' });
-      blob.name = filePath.split('/').pop();
-      blob.path = filePath;
+    //       videoElement.src = blobUrl;
+    //     });
+    //   },
+    async importVideo({ data }) {
+      const byteCharacters = atob(data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'video/mp4' });
+      const blobUrl = URL.createObjectURL(blob);
 
-        console.log(blob);
+      const videoElement = document.createElement('video');
+      videoElement.src = blobUrl;
+      videoElement.onloadeddata = async () => {
+        const duration = videoElement.duration;
+        const thumbnailUrl = await this.getVideoThumbnail(blobUrl, duration);
 
-      const duration = await this.getVideoDuration(URL.createObjectURL(blob));
-      const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
-      const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(blob));
+        const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
 
-      this.$files.addVideo({ filePath: blob.path, name: blob.name, duration: duration, size: sizeInMB, blob: blob, url: thumbnailURL });
+        this.$files.addVideo({ filePath: blob.path, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
+      };
+      videoElement.onerror = () => {
+        console.error('Error loading video from Blob');
+      };
+
     },
 
   }
