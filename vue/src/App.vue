@@ -66,7 +66,7 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview />
+        <VideoPreview :video-url="videoUrl"/>
       </div>
       <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers"/>
     </section>
@@ -93,6 +93,7 @@ export default {
   },
   data() {
     return {
+      videoUrl: null,
       isRecording: false,
       isPaused: false,
       recordImageSrc: "/gravarIcone.png",
@@ -142,8 +143,15 @@ export default {
                 {items: this.timeline.listFilesInLayer(0)},
                 {items: this.timeline.listFilesInLayer(1)},
                 {items: this.timeline.listFilesInLayer(2)},
-            ]
-        }
+            ];
+            this.createVideoFromBlobs();
+    },
+    createVideoFromBlobs() {
+        const blobs = this.layers[0].items.map((video) => video.blob);
+        const combinedBlob = new Blob(blobs, { type: 'video/mp4' });
+        this.videoUrl = URL.createObjectURL(combinedBlob);
+        console.log(this.videoUrl);
+      },
   },
 };
 </script>

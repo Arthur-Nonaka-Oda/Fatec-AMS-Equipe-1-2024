@@ -2,7 +2,7 @@
   <div class="video">
     <div class="video-container">
       <video ref="videoPlayer" poster="/pirataria.jpg" @timeupdate="updateTime" @loadedmetadata="updateDuration">
-        <source src="/vteste.mp4" type="video/mp4" />
+        <source :src="videoUrl" type="video/mp4" />
         Seu navegador não suporta a exibição de vídeos.
       </video>
     </div>
@@ -43,15 +43,20 @@
 
 <script>
 export default {
+  props: {
+    videoUrl: {
+      type: String,
+      required: true,
+    },
+  },
   data() {
     return {
-      playPauseIcon: "/playIcone.png", // Caminho para o ícone de play
+      playPauseIcon: "/playIcone.png",
       videoDuration: 0,
       currentTime: 0,
       volume: 1,
       showVolumeControl: false,
       volumeIcon: "/volume.png"
-
     };
   },
   computed: {
@@ -61,31 +66,28 @@ export default {
   },
   methods: {
     togglePlayPause() {
+      console.log(this.videoUrl);
       const video = this.$refs.videoPlayer;
       if (video.paused) {
         video.play();
-        this.playPauseIcon = "/pauseIcone.png"; // Atualiza o ícone para "Pause"
+        this.playPauseIcon = "/pauseIcone.png";
       } else {
         video.pause();
-        this.playPauseIcon = "/playIcone.png"; // Atualiza o ícone para "Play"
+        this.playPauseIcon = "/playIcone.png";
       }
     },
     updateVolume() {
       const video = this.$refs.videoPlayer;
       video.volume = this.volume;
-      
-      // 
       this.volumeIcon = this.volume <= 0.0 ? "/mudo.jpg" : "/volume.png";
     },
     toggleVolumeControl() {
       this.showVolumeControl = !this.showVolumeControl;
     },
     deleteVideo() {
-      // Implementar lógica de exclusão
       console.log("Delete video logic here");
     },
     trimVideo() {
-      // Implementar lógica de recorte
       console.log("Trim video logic here");
     },
     updateTime() {
@@ -122,18 +124,12 @@ export default {
         document.exitFullscreen();
       }
     }
-
-
-
-
-
   },
   mounted() {
     const video = this.$refs.videoPlayer;
     video.addEventListener("timeupdate", this.updateTime);
     video.addEventListener("loadedmetadata", this.updateDuration);
   },
-
 };
 </script>
 

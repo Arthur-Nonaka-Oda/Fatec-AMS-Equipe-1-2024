@@ -63,14 +63,6 @@ import VideoEditingTimeline from "video-editing-timeline-vue";
 
 export default {
   props: {
-    // videos: {
-    //     type: Array,
-    //     default: () => []
-    // },
-    // images: {
-    //     type: Array,
-    //     default: () => []
-    // },
     layers: {
       type: Array,
     },
