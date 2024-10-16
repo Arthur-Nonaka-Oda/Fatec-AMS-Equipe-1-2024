@@ -14,6 +14,9 @@ export default {
   mounted() {
     window.electron.ipcRenderer.on('video-saved', this.importVideo);
   },
+  created() {
+    this.importVideos();
+  },
   methods: {
     openFileDialog() {
       this.$refs.fileInput.click();
@@ -168,32 +171,57 @@ export default {
     //       videoElement.src = blobUrl;
     //     });
     //   },
-    async importVideo({ data }) {
-      const byteCharacters = atob(data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    async importVideos() {
+      const data = await window.electron.ipcRenderer.invoke('videos-recorded');
+      for (const videoData of data) {
+        const byteCharacters = atob(videoData.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'video/mp4' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        const videoElement = document.createElement('video');
+        videoElement.src = blobUrl;
+        videoElement.onloadeddata = async () => {
+          const duration = videoElement.duration;
+          const thumbnailUrl = await this.getVideoThumbnail(blobUrl, duration);
+
+          const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
+
+          this.$files.addVideo({ filePath: blob.path, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
+        };
+        videoElement.onerror = () => {
+          console.error('Error loading video from Blob');
+        };
       }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'video/mp4' });
-      const blobUrl = URL.createObjectURL(blob);
-
-      const videoElement = document.createElement('video');
-      videoElement.src = blobUrl;
-      videoElement.onloadeddata = async () => {
-        const duration = videoElement.duration;
-        const thumbnailUrl = await this.getVideoThumbnail(blobUrl, duration);
-
-        const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
-
-        this.$files.addVideo({ filePath: blob.path, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
-      };
-      videoElement.onerror = () => {
-        console.error('Error loading video from Blob');
-      };
-
     },
+    async importVideo({ data }) {
+        const byteCharacters = atob(data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'video/mp4' });
+        const blobUrl = URL.createObjectURL(blob);
 
+        const videoElement = document.createElement('video');
+        videoElement.src = blobUrl;
+        videoElement.onloadeddata = async () => {
+          const duration = videoElement.duration;
+          const thumbnailUrl = await this.getVideoThumbnail(blobUrl, duration);
+
+          const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
+
+          this.$files.addVideo({ filePath: blob.path, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
+        };
+        videoElement.onerror = () => {
+          console.error('Error loading video from Blob');
+        };
+    },
   }
 }
 </script>

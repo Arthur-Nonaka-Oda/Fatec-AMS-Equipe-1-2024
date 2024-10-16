@@ -139,6 +139,37 @@ fileToBlob = function (filePath) {
 //   return { fileName };
 // });
 
+ipcMain.handle("videos-recorded", async () => {
+  try {
+    const files = fs.readdirSync(videosDir);
+    const videoFiles = files.filter(file => path.extname(file) === '.mp4');
+    const videoDataArray = [];
+
+    for (const filename of videoFiles) {
+      const filePath = path.join(videosDir, filename);
+      console.log(`Processing File: ${filePath}`); // Adiciona log para depuração
+
+      if (fs.existsSync(filePath)) {
+        try {
+          // Espera um curto período para garantir que o arquivo esteja completamente escrito
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const base64Data = await fileToBase64(filePath);
+          console.log(`Base64 Data Length: ${base64Data.length}`); // Adiciona log para depuração
+          videoDataArray.push({ filePath, data: base64Data });
+        } catch (error) {
+          console.error('Error converting file to base64:', error);
+        }
+      }
+    }
+
+    return videoDataArray;
+  } catch (error) {
+    console.error('Error reading video directory:', error);
+    throw error;
+  }
+});
+
+
 ipcMain.handle('save-dialog', (event) => {
   const modalWindow = createModalWindow(mainWindow);
 

@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld("electron", {
   },
   ipcRenderer: {
     on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
+    send: (channel, ...args) => ipcRenderer.send(channel, ...args),
+    invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   },
 
   // test: () => console.log("teste"),
