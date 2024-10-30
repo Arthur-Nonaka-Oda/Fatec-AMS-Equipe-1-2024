@@ -22,9 +22,9 @@
         <button @click="togglePlayPause" class="play-button">
           <img :src="playPauseIcon" alt="Play/Pause" class="play-pause-icon">
         </button>
+        <p>{{ formattedTime }}</p>
       </div>
       <div class="right-controls">
-        <p>{{ formattedTime }}</p>
         <button @click="toggleVolumeControl" class="audio-button">
         <img :src="volumeIcon" alt="Audio" class="audio-icon"> 
         </button>
@@ -47,7 +47,7 @@ export default {
   props: 'video',
   data() {
     return {
-      playPauseIcon: "/playIcone.png", // Caminho para o ícone de play
+      playPauseIcon: "/playIcon2.png", // Caminho para o ícone de play
       videoDuration: 0,
       currentTime: 0,
       volume: 1,
@@ -67,10 +67,10 @@ export default {
       const video = this.$refs.videoPlayer;
       if (video.paused) {
         video.play();
-        this.playPauseIcon = "/pauseIcone.png"; // Atualiza o ícone para "Pause"
+        this.playPauseIcon = "/pausaicon2.png"; // Atualiza o ícone para "Pause"
       } else {
         video.pause();
-        this.playPauseIcon = "/playIcone.png"; // Atualiza o ícone para "Play"
+        this.playPauseIcon = "/playIcon2.png"; // Atualiza o ícone para "Play"
       }
     },
     updateVolume() {
@@ -78,7 +78,7 @@ export default {
       video.volume = this.volume;
       
       // 
-      this.volumeIcon = this.volume <= 0.0 ? "/mudo.jpg" : "/volume.png";
+      this.volumeIcon = this.volume <= 0.0 ? "/mudo.png" : "/volume.png";
     },
     toggleVolumeControl() {
       this.showVolumeControl = !this.showVolumeControl;
@@ -158,7 +158,7 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: rgb(65, 65, 65);
+  background-color: rgb(0, 0, 0);
 }
 
 .video video {
@@ -170,7 +170,7 @@ export default {
 .controles {
   display: flex;
   align-items: center;
-  background-color: #616161;
+  background-color: #444444;
   height: 5vh; /* Altura em vh, equivalente a aproximadamente 40px em uma tela padrão */
 padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
 
@@ -186,7 +186,7 @@ padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
 
 .center-controls {
   flex: 1;
-  display: flex;
+  display:flex;
   justify-content: center;
 }
 
@@ -203,11 +203,8 @@ padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
   height: auto;
 }
 
-.right-controls p {
-  margin: 0;
+.center-controls p {
   color: #ffffff;
-  text-align: right;
-  width: 100%;
 }
 
 .play-button {
@@ -224,8 +221,10 @@ padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
 
 .play-pause-icon,
 .audio-icon {
-  width: 2vw;   /* Largura em vw (aproximadamente 24px) */
-height: 4vh;  /* Altura em vh (aproximadamente 24px) */
+  width: 2.5vw;   /* Largura em vw (aproximadamente 24px) */
+  /*
+  height: 4vh;  
+  Altura em vh (aproximadamente 24px) */
 
 }
 
@@ -233,7 +232,7 @@ height: 4vh;  /* Altura em vh (aproximadamente 24px) */
   -webkit-appearance: none;
   width: 100%;
   height: 1vh;
-  background: #011fff;
+  background: #ce2323;
   border-radius: 0.5rem; /* Raio da borda em rem */
 
 }
@@ -241,16 +240,16 @@ height: 4vh;  /* Altura em vh (aproximadamente 24px) */
 .volume-control input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 1vh;
-  background: #011fff; /* Cor da linha do controle de volume */
+  background: #ce2323; /* Cor da linha do controle de volume */
   border-radius: 0.5rem; /* Raio da borda em rem */
 
 }
 
 .volume-control input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  border: 1px solid #000000; /* Contorno da bolinha */
-  height: 1.85vh; /* Altura em vh */
-width: 1.04vw;  /* Largura em vw */
+  border: none;
+  height: 3vh; /* Altura em vh */
+  width: 1.5vw;  /* Largura em vw */
 
   border-radius: 50%;
   background: #ffffff; /* Cor da bolinha */
@@ -310,9 +309,9 @@ input[type=range] {
   -webkit-appearance: none;
   margin: 0;
   width: 100%;
-  background: linear-gradient(to right, #01ff1f 0%, #01ff1f calc((100% * var(--value)) / var(--max)),
-      #2497E3 calc((100% * var(--value)) / var(--max)),
-      #2497E3 100%);
+  background: linear-gradient(to right, #ce2323 0%, #ce2323 calc((100% * var(--value)) / var(--max)),
+    #f0f9ff8e calc((100% * var(--value)) / var(--max)),
+      #f0f9ff8e 100%);
 }
 
 input[type=range]:focus {
@@ -333,21 +332,21 @@ input[type=range]::-webkit-slider-runnable-track {
 
 input[type=range]::-webkit-slider-thumb {
   box-shadow: 0px 0px 0px #000000;
-  border: 1px solid #1a0735;
+  border: none;
   /*contorno da bolinha*/
-  height: 15px;
-  width: 15px;
+  height: 18px;
+  width: 19px;
   border-radius: 25px;
-  background: #A1D0FF;
+  background: #ffffff;
   cursor: pointer;
   -webkit-appearance: none;
   margin-top: -7px;
 }
 
 input[type=range]:focus::-webkit-slider-runnable-track {
-  background: linear-gradient(to right, #01ff1f 0%, #01ff1f calc((100% * var(--value)) / var(--max)),
-      #2497E3 calc((100% * var(--value)) / var(--max)),
-      #2497E3 100%);
+  background: linear-gradient(to right, #ce2323 0%, #ce2323 calc((100% * var(--value)) / var(--max)),
+      #f0f9ff8e calc((100% * var(--value)) / var(--max)),
+      #f0f9ff8e 100%);
   ;
 }
 
@@ -424,6 +423,5 @@ input[type=range]:focus::-ms-fill-upper {
 
 .fullscreen-icon {
   width: 3vw;
-  height: 3vh;
 }
 </style>
