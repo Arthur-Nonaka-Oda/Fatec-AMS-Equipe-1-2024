@@ -129,6 +129,49 @@ fileToBlob = function (filePath) {
   });
 }
 
+ipcMain.handle('combine-videos', async (event, { videosPaths }) => {
+  const outputFilePath = path.join(app.getPath('userData'), 'combined.mp4');
+  await combineVideos(videosPaths, outputFilePath);
+  console.log("combinining videos"+ videosPaths);
+
+  const videoBase64 = await fileToBase64(outputFilePath);
+
+  return videoBase64;
+});
+
+
+function combineVideos(videoPaths, outputFilePath) {
+  return new Promise((resolve, reject) => {
+    const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
+    const fileContent = videoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
+    fs.writeFileSync(listFilePath, fileContent);
+
+    ffmpeg()
+      .input(listFilePath)
+      .inputOptions(['-f concat', '-safe 0'])
+      .outputOptions(['-c:v libx264', '-crf 23', '-preset veryfast', '-c:a aac', '-strict experimental'])
+      .on('start', (commandLine) => {
+        console.log('Spawned Ffmpeg with command: ' + commandLine);
+      })
+      .on('codecData', (data) => {
+        console.log('Input is ' + data.audio + ' audio with ' + data.video + ' video');
+      })
+      .on('progress', (progress) => {
+        console.log('Processing: ' + progress.percent + '% done');
+      })
+      .on('end', () => {
+        console.log('Videos combined successfully');
+        resolve();
+      })
+      .on('error', (err) => {
+        console.error('Error combining videos:', err);
+        reject(err);
+      })
+      .output(outputFilePath)
+      .run();
+  });
+}
+
 // ipcMain.handle("save-dialog", async () => {
 //   // dialog.showErrorBox("Save Dialog - index");
 //   const {fileName} = await createModalWindow(mainWindow);

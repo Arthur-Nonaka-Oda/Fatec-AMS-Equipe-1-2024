@@ -4,12 +4,7 @@
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
-          <button
-            class="btn-acao"
-            data-acao="texto"
-            aria-label="Adicionar Texto"
-            @click="openTextEditor"
-          >
+          <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto" @click="openTextEditor">
             <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
           </button>
@@ -32,27 +27,14 @@
           </button>
         </div>
         <div class="direita" id="recordButtons">
-          <button
-            class="btn-acao"
-            id="startButton"
-            data-acao="gravar"
-            @click="toggleRecording"
-            aria-label="Gravar"
-          >
+          <button class="btn-acao" id="startButton" data-acao="gravar" @click="toggleRecording" aria-label="Gravar">
             <img id="imagePlay" :src="recordImageSrc" alt="Gravar" />
             <span id="textPlay" class="legenda">{{
               isRecording ? "Parar" : "Gravar"
             }}</span>
           </button>
-          <button
-            :disabled="!isRecording"
-            class="btn-acao"
-            id="pauseButton"
-            @click="pauseRecording"
-            :style="{ opacity: isRecording ? 1 : 0.5 }"
-            data-acao="pause"
-            aria-label="Pause"
-          >
+          <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording"
+            :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
             <img :src="pauseImageSrc" alt="Pause" />
             <span class="legenda">{{ isPaused ? "Retomar" : "Pausar" }}</span>
           </button>
@@ -66,9 +48,9 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview :video-url="videoUrl"/>
+        <VideoPreview :video-url="videoUrl" />
       </div>
-      <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers"/>
+      <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers" />
     </section>
   </div>
 </template>
@@ -106,17 +88,17 @@ export default {
   created() {
     this.timeline = new TimeLine();
     this.layers = [
-      {items: this.timeline.listFilesInLayer(0)},
-      {items: this.timeline.listFilesInLayer(1)},
-      {items: this.timeline.listFilesInLayer(2)},
+      { items: this.timeline.listFilesInLayer(0) },
+      { items: this.timeline.listFilesInLayer(1) },
+      { items: this.timeline.listFilesInLayer(2) },
     ]
   },
   methods: {
     async toggleRecording() {
       this.isRecording = !this.isRecording;
-      if(this.isRecording) {
+      if (this.isRecording) {
         window.electron.recorder().startRecording();
-      }else {
+      } else {
         window.electron.recorder().stopRecording();
         // window.electron.importer().importRecordedFiles();
       }
@@ -139,19 +121,19 @@ export default {
       this.isTextEditorOpen = false;
     },
     updateLayers() {
-            this.layers = [
-                {items: this.timeline.listFilesInLayer(0)},
-                {items: this.timeline.listFilesInLayer(1)},
-                {items: this.timeline.listFilesInLayer(2)},
-            ];
-            this.createVideoFromBlobs();
+      this.layers = [
+        { items: this.timeline.listFilesInLayer(0) },
+        { items: this.timeline.listFilesInLayer(1) },
+        { items: this.timeline.listFilesInLayer(2) },
+      ];
+      this.createVideoFromBlobs();
     },
-    createVideoFromBlobs() {
-        const blobs = this.layers[0].items.map((video) => video.blob);
-        const combinedBlob = new Blob(blobs, { type: 'video/mp4' });
-        this.videoUrl = URL.createObjectURL(combinedBlob);
-        console.log(this.videoUrl);
-      },
+    async createVideoFromBlobs() {
+      const videosPaths = this.layers[0].items.map((video) => video.filePath);
+      console.log(videosPaths);
+      const result = await window.electron.ipcRenderer.invoke('combine-videos', { videosPaths });
+      this.videoUrl = `data:video/mp4;base64,${result}`
+    },
   },
 };
 </script>

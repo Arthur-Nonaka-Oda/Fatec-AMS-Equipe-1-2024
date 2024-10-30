@@ -2,7 +2,7 @@
   <div class="video">
     <div class="video-container">
       <video ref="videoPlayer" poster="/pirataria.jpg" @timeupdate="updateTime" @loadedmetadata="updateDuration">
-        <source :src="videoUrl" type="video/mp4" />
+        <source :src="videoUrl" type="video/mp4"/>
         Seu navegador não suporta a exibição de vídeos.
       </video>
     </div>
@@ -42,6 +42,7 @@
 
 
 <script>
+
 export default {
   props: {
     videoUrl: {
@@ -59,12 +60,21 @@ export default {
       volumeIcon: "/volume.png"
     };
   },
+  watch: {
+    videoUrl() {
+      this.loadVideo();
+    }
+  },
   computed: {
     formattedTime() {
       return `${this.formatTime(this.currentTime)} / ${this.formatTime(this.videoDuration)}`;
     },
   },
   methods: {
+    loadVideo() {
+      const video = this.$refs.videoPlayer;
+      video.load();
+    },
     togglePlayPause() {
       console.log(this.videoUrl);
       const video = this.$refs.videoPlayer;
