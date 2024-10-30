@@ -1,5 +1,5 @@
 export default class Image {
-    constructor({filePath, name, xResolution, yResolution, size, blob, url}) {
+    constructor({filePath, name, xResolution, yResolution, size, blob, url, duration}) {
         this.filePath = filePath;
         this.name = name;
         this.xResolution = xResolution;
@@ -7,5 +7,6 @@ export default class Image {
         this.size = size;
         this.blob = blob;
         this.url = url;
+        this.duration = duration;
     }
 }

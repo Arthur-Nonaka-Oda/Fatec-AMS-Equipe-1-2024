@@ -30,6 +30,16 @@ export default {
     handleAddButtonClick() {
       this.$emit('add-image', this.image);
     },
+    handleTransformToVideo() {
+      // Emite o evento para transformar a imagem em vídeo
+      const videoItem = {
+        name: this.image.name,
+        duration: this.image.duration || 5, // Duração padrão para o vídeo
+        type: "video",
+        url: this.image.url // Supondo que a imagem tenha uma URL
+      };
+      this.$emit('transform-to-video', videoItem);
+    },
     handleDragStart(event) {
       event.dataTransfer.setData('image', JSON.stringify(this.image));
       this.$emit('drag-start', this.image);
@@ -38,6 +48,7 @@ export default {
       this.$emit('drag-end', this.image);
     }
   },
+  
 };
 </script>
 

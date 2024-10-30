@@ -11,6 +11,7 @@
 <script>
 export default {
   methods: {
+    
     openFileDialog() {
       this.$refs.fileInput.click();
     },
@@ -116,7 +117,7 @@ export default {
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
       const thumbnailURL = URL.createObjectURL(file);
 
-      this.$files.addImage({ filePath: file.path, name: file.name, xResolution: xResolution, yResolution: yResolution, size: sizeInMB, blob: file, url: thumbnailURL });
+      this.$files.addImage({ filePath: file.path, name: file.name, xResolution: xResolution, yResolution: yResolution, size: sizeInMB, blob: file, url: thumbnailURL, duration: 10 });
     },
     async handleVideoFile(file) {
       if (!file) return;

@@ -61,6 +61,11 @@ export default {
   props: {
     layers: {
       type: Array,
+      default: () => [
+        { type: "video", items: [{ duration: 120 }, { duration: 150 }] },
+        { type: "audio", items: [{ duration: 90 }] },
+        { type: "image", items: [{ duration: 30 }, { duration: 45 }] },
+      ],
     },
     timeline: {
       type: Object,
@@ -78,43 +83,87 @@ export default {
     VideoEditingTimeline,
   },
   data() {
-    return {
-      isGrabbing: false,
-      currentTime: "00:00:00",
-      cursorPosition: 0,
-      config: {
-        minimumScale: 10,
-        minimumScaleTime: 6,
-      },
-      selectedZoom: 1,
-      selectedItem: null, // Estado para o item selecionado
-    };
-  },
+  return {
+    isGrabbing: false,
+    currentTime: "00:00:00",
+    cursorPosition: 0,
+    config: {
+      minimumScale: 10,
+      minimumScaleTime: 6,
+    },
+    selectedZoom: 1,
+    selectedItem: null, // Estado para o item selecionado
+  };
+},
+
   computed: {
-    totalVideoDuration() {
-      return this.layers[0].items.reduce(
-        (total, video) => total + (video.duration || 0),
-        0
-      );
+    totalDuration() {
+      return this.layers.reduce((total, layer) => {
+        return (
+          total +
+          layer.items.reduce((layerTotal, item) => layerTotal + item.duration, 0)
+        );
+      }, 0);
     },
-    formattedTotalDuration() {
-      return this.formatTime(this.totalVideoDuration);
-    },
-    dynamicCanvasWidth() {
-      const secondsPerPixel = this.config.minimumScaleTime / 10;
-      const width = this.totalVideoDuration / secondsPerPixel;
-      return width;
-    },
+  totalVideoDuration() {
+    return this.layers[0].items.reduce(
+      (total, video) => total + (video.duration || 0),
+      0
+    );
   },
-  mounted() {
+  totalAudioDuration() {
+    return this.layers[1].items.reduce(
+      (total, audio) => total + (audio.duration || 0),
+      0
+    );
+  },
+  totalImageDuration() {
+    return this.layers[2].items.reduce(
+      (total, image) => total + (image.duration || 0),
+      0
+    );
+  },
+
+  formattedTotalDuration() {
+    const videoDuration = this.totalVideoDuration;
+    const audioDuration = this.totalAudioDuration;
+    const imageDuration = this.totalImageDuration;
+
+    // Aqui você pode somar as durações
+    const totalDuration = videoDuration + audioDuration + imageDuration;
+
+    return this.formatTime(totalDuration);
+  },
+  dynamicCanvasWidth() {
+    const secondsPerPixel = this.config.minimumScaleTime / 10;
+
+    // Obter as durações individuais
+    const videoDuration = this.totalVideoDuration;
+    const audioDuration = this.totalAudioDuration;
+    const imageDuration = this.totalImageDuration;
+
+    // Encontrar a duração máxima
+    const maxDuration = Math.max(videoDuration, audioDuration, imageDuration);
+
+    const width = maxDuration / secondsPerPixel;
+    return width;
+  },
+  }, 
+  mounted(){
+    console.log('Layers:', this.layers);
     document.addEventListener("mousemove", this.grabMove);
     document.addEventListener("mouseup", this.grabDone);
   },
-  beforeDestroy() {
-    document.removeEventListener("mousemove", this.grabMove);
-    document.removeEventListener("mouseup", this.grabDone);
-  },
+  beforeUnmount() {
+  document.removeEventListener("mousemove", this.grabMove);
+  document.removeEventListener("mouseup", this.grabDone);
+},
+
   methods: {
+    getItemDuration(layerType, itemIndex) {
+      const layer = this.layers.find((layer) => layer.type === layerType);
+      return layer && layer.items[itemIndex] ? layer.items[itemIndex].duration : 0;
+    },
     grabMove(event) {
       if (this.isGrabbing) {
         const timelineRect = this.$el
@@ -221,7 +270,6 @@ export default {
   border: 2px solid rgb(255, 238, 0); /* ou qualquer estilo que destaque o item */
   background-color: rgb(101, 228, 226); /* destaque de fundo */
 }
-
 
 .total-duration {
   margin-top: 0.625rem; /* Espaçamento superior */
