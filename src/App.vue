@@ -57,7 +57,7 @@
         </div>
       </div>
     </header>
-
+ 
     <section class="secao-principal">
       <div class="area-visualizacao">
         <div class="esquerda">
@@ -65,13 +65,13 @@
           <MediaTabs @add-file="handleFileAdded" @delete-video="handleDeleteVideo"/>
         </div>
         <VideoPreview  @delete-video="handleDeleteVideo"/>
-
+ 
       </div>
-      <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers" :select-video="selectedVideo" @item-selected="handleItemSelected"/>
+      <TimeLine  @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline" :layers="layers" :update-layers="updateLayers" :select-video="selectedVideo" @item-selected="handleItemSelected"/>
     </section>
   </div>
 </template>
-
+ 
 <script>
 import FileUpload from "./components/FileUpload.vue";
 import MediaTabs from "./components/MediaTabs.vue";
@@ -80,7 +80,7 @@ import TimeLine from "./models/TimeLine.js";
 import VideoPreview from "./components/VideoPreview.vue";
 import TextEditor from "./components/TextEditor.vue";
 import "./assets/main.css";
-
+ 
 export default {
   name: "App",
   components: {
@@ -94,6 +94,7 @@ export default {
     return {
       videos: [],
       selectedVideo: null,
+      selectedItem: {item: null},
       isRecording: false,
       isPaused: false,
       recordImageSrc: "/gravarIcone.png",
@@ -124,18 +125,17 @@ export default {
       this.timeline.addFileToLayer(fileData);
       this.updateLayers();
     },
-    handleDeleteVideo() { 
+    handleDeleteVideo() {
       // const index = this.videos.indexOf(video);
-      this.timeline.removeFileFromLayer({ file: this.selectedVideo.item, layerIndex: this.selectedVideo.layerIndex }); // Ajuste conforme necessário
+      this.timeline.removeFileFromLayer({ file: this.selectedItem.item, layerIndex: this.selectedItem.layerIndex }); // Ajuste conforme necessário
       this.updateLayers();
       // if (index !== -1) {
         // this.videos.splice(index, 1); // Remove o vídeo da lista
         // Lógica para remover o vídeo da timeline se necessário
       // }
     },
-    handleItemSelected(item) {
-      this.selectedVideo = item; // Define o vídeo selecionado
-      console.log(item);
+    handleItemClicked(item) {
+      this.selectedItem = this.selectedItem === item ? null : item;
     },
     openTextEditor() {
       this.isTextEditorOpen = true;
@@ -153,8 +153,8 @@ export default {
   },
 };
 </script>
-
-
+ 
+ 
 <style scoped>
 /* Estilos para o modal */
 .modal {
@@ -171,7 +171,7 @@ export default {
   z-index: 1000;
   /* Coloca o modal acima de tudo */
 }
-
+ 
 /* Conteúdo do modal (TextEditor) */
 .modal-content {
   background-color: white;
@@ -183,7 +183,7 @@ export default {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   position: relative;
 }
-
+ 
 /* Botão para fechar o modal */
 .close-button {
   position: absolute;
@@ -195,3 +195,4 @@ export default {
   cursor: pointer;
 }
 </style>
+ 

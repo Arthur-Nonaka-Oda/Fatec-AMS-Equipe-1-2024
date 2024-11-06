@@ -30,10 +30,9 @@
             :title="item.name"
             :minimumScaleTime="config.minimumScaleTime"
             :index="index"
-            :class="{ selected: selectedItem === item }"
+            :selectedItem="selectedItem"
             :select-video="selectVideo"
             @item-clicked="handleItemClicked"
-            @select-item="selectItem(item)" 
           />
         </div>
       </div>
@@ -52,20 +51,15 @@
     </div>
   </div>
 </template>
-
+ 
 <script>
 import TimeLineItem from "./TimeLineItem.vue";
 import VideoEditingTimeline from "video-editing-timeline-vue";
-
+ 
 export default {
   props: {
     layers: {
       type: Array,
-      default: () => [
-        { type: "video", items: [{ duration: 120 }, { duration: 150 }] },
-        { type: "audio", items: [{ duration: 90 }] },
-        { type: "image", items: [{ duration: 30 }, { duration: 45 }] },
-      ],
     },
     timeline: {
       type: Object,
@@ -76,6 +70,10 @@ export default {
     },
     selectVideo:{
       type: Object,
+    },
+    selectedItem: {
+      type: Object,
+      required: true
     }
   },
   components: {
@@ -83,87 +81,42 @@ export default {
     VideoEditingTimeline,
   },
   data() {
-  return {
-    isGrabbing: false,
-    currentTime: "00:00:00",
-    cursorPosition: 0,
-    config: {
-      minimumScale: 10,
-      minimumScaleTime: 6,
-    },
-    selectedZoom: 1,
-    selectedItem: null, // Estado para o item selecionado
-  };
-},
-
+    return {
+      isGrabbing: false,
+      currentTime: "00:00:00",
+      cursorPosition: 0,
+      config: {
+        minimumScale: 10,
+        minimumScaleTime: 6,
+      },
+      selectedZoom: 1,
+    };
+  },
   computed: {
-    totalDuration() {
-      return this.layers.reduce((total, layer) => {
-        return (
-          total +
-          layer.items.reduce((layerTotal, item) => layerTotal + item.duration, 0)
-        );
-      }, 0);
+    totalVideoDuration() {
+      return this.layers[0].items.reduce(
+        (total, video) => total + (video.duration || 0),
+        0
+      );
     },
-  totalVideoDuration() {
-    return this.layers[0].items.reduce(
-      (total, video) => total + (video.duration || 0),
-      0
-    );
+    formattedTotalDuration() {
+      return this.formatTime(this.totalVideoDuration);
+    },
+    dynamicCanvasWidth() {
+      const secondsPerPixel = this.config.minimumScaleTime / 10;
+      const width = this.totalVideoDuration / secondsPerPixel;
+      return width;
+    },
   },
-  totalAudioDuration() {
-    return this.layers[1].items.reduce(
-      (total, audio) => total + (audio.duration || 0),
-      0
-    );
-  },
-  totalImageDuration() {
-    return this.layers[2].items.reduce(
-      (total, image) => total + (image.duration || 0),
-      0
-    );
-  },
-
-  formattedTotalDuration() {
-    const videoDuration = this.totalVideoDuration;
-    const audioDuration = this.totalAudioDuration;
-    const imageDuration = this.totalImageDuration;
-
-    // Aqui você pode somar as durações
-    const totalDuration = videoDuration + audioDuration + imageDuration;
-
-    return this.formatTime(totalDuration);
-  },
-  dynamicCanvasWidth() {
-    const secondsPerPixel = this.config.minimumScaleTime / 10;
-
-    // Obter as durações individuais
-    const videoDuration = this.totalVideoDuration;
-    const audioDuration = this.totalAudioDuration;
-    const imageDuration = this.totalImageDuration;
-
-    // Encontrar a duração máxima
-    const maxDuration = Math.max(videoDuration, audioDuration, imageDuration);
-
-    const width = maxDuration / secondsPerPixel;
-    return width;
-  },
-  }, 
-  mounted(){
-    console.log('Layers:', this.layers);
+  mounted() {
     document.addEventListener("mousemove", this.grabMove);
     document.addEventListener("mouseup", this.grabDone);
   },
-  beforeUnmount() {
-  document.removeEventListener("mousemove", this.grabMove);
-  document.removeEventListener("mouseup", this.grabDone);
-},
-
+  beforeDestroy() {
+    document.removeEventListener("mousemove", this.grabMove);
+    document.removeEventListener("mouseup", this.grabDone);
+  },
   methods: {
-    getItemDuration(layerType, itemIndex) {
-      const layer = this.layers.find((layer) => layer.type === layerType);
-      return layer && layer.items[itemIndex] ? layer.items[itemIndex].duration : 0;
-    },
     grabMove(event) {
       if (this.isGrabbing) {
         const timelineRect = this.$el
@@ -187,7 +140,7 @@ export default {
     handleDrop(event) {
       let fileData = "";
       let type = "";
-
+ 
       if (event.dataTransfer.types.includes("video")) {
         fileData = event.dataTransfer.getData("video");
         type = "video";
@@ -198,7 +151,7 @@ export default {
         fileData = event.dataTransfer.getData("image");
         type = "image";
       }
-
+ 
       if (fileData) {
         const file = JSON.parse(fileData);
         let layerIndex;
@@ -213,14 +166,10 @@ export default {
         this.updateLayers();
       }
     },
-    selectItem(item) {
-      this.selectedItem = item; // Define o item selecionado
-    },
     handleItemClicked(item) {
-    // this.selectItem(item); // Seleciona o item
-    this.$emit('item-selected', item); // Emite o evento para o pai
+    this.$emit('item-clicked', item);
   },
-
+ 
   handleDeleteVideo(video) {
       const index = this.videos.indexOf(video);
       if (index !== -1) {
@@ -264,19 +213,20 @@ export default {
   },
 };
 </script>
-
+ 
 <style>
 .selected {
   border: 2px solid rgb(255, 238, 0); /* ou qualquer estilo que destaque o item */
   background-color: rgb(101, 228, 226); /* destaque de fundo */
 }
-
+ 
+ 
 .total-duration {
   margin-top: 0.625rem; /* Espaçamento superior */
   font-size: 0.875rem; /* Tamanho da fonte */
   color: white; /* Cor do texto */
 }
-
+ 
 .timeline {
   position: relative;
   bottom: 0;
@@ -287,22 +237,22 @@ export default {
   overflow-x: scroll;
   width: 100%;
 }
-
+ 
 .timeline::-webkit-scrollbar {
   height: 2.22vh;
 }
-
+ 
 .timeline::-webkit-scrollbar-track {
   background: #5a6ac2 !important;
 }
-
+ 
 .timeline::-webkit-scrollbar-thumb {
   height: 1.89vh;
   background-color: #133a8d;
   border-radius: 0px;
   border: 2px solid #5a6ac2;
 }
-
+ 
 .time {
   user-select: none;
   width: fit-content;
@@ -311,7 +261,7 @@ export default {
   align-items: start;
   position: relative;
 }
-
+ 
 .timecursor {
   width: 4.51vw; /* Largura */
   height: 2.78vh; /* Altura */
@@ -330,16 +280,16 @@ export default {
   transition-duration: 0.2s;
   transition-timing-function: cubic-bezier(0.05, 0.03, 0.35, 1);
   user-select: none;
-
+ 
   transform: translateX(-50%);
   /* Centralizar o cursor */
 }
-
+ 
 .timecursor:hover {
   transform: scale(1.12) translateX(-50%);
   cursor: pointer;
 }
-
+ 
 .timecursor:after {
   transition-property: transform, margin-top;
   transition-duration: 0.25s;
@@ -353,7 +303,7 @@ export default {
   position: absolute;
   z-index: 2 !important;
 }
-
+ 
 .layers {
   top: 3.125rem;
   height: 50%;
@@ -364,34 +314,34 @@ export default {
     overflow-x: hidden;
     background-color: #0d185e00; */
 }
-
+ 
 .layer {
   margin-bottom: 3px;
 }
-
+ 
 .videos {
   display: flex;
   background-color: #b81313;
   height: 100%;
 }
-
+ 
 .items {
   display: flex;
   height: 100%;
 }
-
+ 
 .audios {
   display: flex;
   height: 100%;
   background-color: #c7771c;
 }
-
+ 
 .images {
   display: flex;
   height: 100%;
   background-color: #1ddb3c;
 }
-
+ 
 .time-markers {
   display: flex;
   flex-grow: 1;
@@ -400,7 +350,7 @@ export default {
   /* Remover overflow horizontal */
   /* height: 40px; */
 }
-
+ 
 .time-marker {
   user-select: none;
   width: 4.86vw; /* Largura */
@@ -414,7 +364,7 @@ export default {
   padding-bottom: 0.625rem; /* Espaço inferior */
   /* height: auto; */
 }
-
+ 
 .time-marker::after {
   content: "";
   position: absolute;
@@ -428,7 +378,7 @@ export default {
   background-color: #ffffff;
   /* Cor da linha vertical */
 }
-
+ 
 .zoom-controls {
   position: fixed;
   bottom: 1.11vh; /* Distância do fundo */
@@ -437,7 +387,7 @@ export default {
   gap: 0.625rem; /* Espaçamento entre os elementos */
   align-items: center;
 }
-
+ 
 .zoom-controls select {
   padding: 0.3125rem; /* Preenchimento */
   font-size: 0.875rem; /* Tamanho da fonte */

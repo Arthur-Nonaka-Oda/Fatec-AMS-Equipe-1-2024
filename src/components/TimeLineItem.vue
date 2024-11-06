@@ -1,89 +1,101 @@
 <template>
-    <div
-      class="timeline-item"
-      @click="handleClick"  
-      :style="{ width: itemWidth + 'px' }"
-      :class="{ selected: isSelected }"  
-    >
-      <img class="item-content" :src="item.url" />
-    </div>
-  </template>
-  
-  <script>
-  export default {
-    props: {
-      title: {
-        type: String,
-        required: true
-      },
-      index: {
-        type: Number,
-        required: true
-      },
-      item: {
-        type: Object,
-        required: true,
-      },
-      minimumScaleTime: {
-        type: Number,
-        required: true
-      },
-      layerIndex: {
-        type: Number,
-        required: true
-      },
-      selectVideo: {
-        type: Object,
-      }
+  <div
+    class="timeline-item"
+    @click="handleClick"  
+    :style="{ width: itemWidth + 'px' }"
+    :class="{ selected: selectedItem.item === item }"  
+  >
+    <img class="item-content" :src="item.url" />
+  </div>
+</template>
+ 
+<script>
+export default {
+  props: {
+    title: {
+      type: String,
+      required: true
     },
-    data() {
-      return {
-        isSelected: false, // Estado de seleção
-      };
+    index: {
+      type: Number,
+      required: true
     },
-    methods: {
-      handleClick() {
-        this.isSelected = !this.isSelected; // Alterna o estado de seleção ao clicar
-        this.$emit('item-clicked', { item: this.item, layerIndex: this.layerIndex }); // Emite o evento com o item
-      }
+    item: {
+      type: Object,
+      required: true,
     },
-    computed: {
-      itemWidth() {
-        const secondsPerPixel = this.minimumScaleTime / 10; // Ajuste conforme necessário
-        return this.item.duration / secondsPerPixel;
-      }
+    selectedItem: {
+      type: Object,
+      required: true
+    },
+    minimumScaleTime: {
+      type: Number,
+      required: true
+    },
+    layerIndex: {
+      type: Number,
+      required: true
+    },
+    selectVideo: {
+      type: Object,
     }
-  };
-  </script>
-  
-  <style scoped>
-  .timeline-item {
-    display: flex;
-    flex-direction: column;
-    background-color: #fff;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    height: 45px; /* Altura específica */
-    overflow: hidden; /* Esconde a parte da imagem que ultrapassa o contêiner */
-    position: relative;
+  },
+  created() {
+    console.log(this.selectedItem);
+    console.log(this.item);
+  },
+  data() {
+    return {
+      isSelected: false, // Estado de seleção
+    };
+  },
+  methods: {
+    handleClick() {
+      this.isSelected = !this.isSelected; // Alterna o estado de seleção ao clicar
+      this.$emit('item-clicked', { item: this.item, layerIndex: this.layerIndex }); // Emite o evento com o item
+    }
+  },
+  computed: {
+    itemWidth() {
+      const secondsPerPixel = this.minimumScaleTime / 10; // Ajuste conforme necessário
+      return this.item.duration / secondsPerPixel;
+    }
   }
-  
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Ajusta a imagem para cobrir o contêiner */
-    object-position: center; /* Centraliza a imagem */
-  }
-  
-  .timeline-item:hover {
-    background-color: #f0f0f0;
-  }
-  
-  /* Estilo para o item selecionado */
-  .timeline-item.selected {
-    background-color: #d0f0c0; /* Cor de destaque para item selecionado */
-    border: 2px solid #4caf50; /* Adiciona uma borda verde ao item selecionado */
-  }
-  </style>
-  
+};
+</script>
+ 
+<style scoped>
+.timeline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centraliza os itens dentro do contêiner */
+  background-color: #fff;
+  border-radius: 8px; /* Arredondar mais os cantos */
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s; /* Suaviza a transição de fundo e de transformação */
+  height: 60px; /* Altura específica */
+  overflow: hidden; /* Esconde a parte da imagem que ultrapassa o contêiner */
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Adiciona sombra suave */
+}
+ 
+img {
+  width: 100%;
+  height: 100%; /* Ajuste a altura para preencher o contêiner */
+  object-fit: cover; /* Ajusta a imagem para cobrir o contêiner */
+  object-position: center; /* Centraliza a imagem */
+  border-radius: 8px; /* Arredondar a imagem */
+}
+ 
+.timeline-item:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.02); /* Aumenta um pouco o item ao passar o mouse */
+}
+ 
+/* Estilo para o item selecionado */
+.timeline-item.selected {
+  background-color: #d0f0c0; /* Cor de destaque para item selecionado */
+  border: 2px solid #4caf50; /* Adiciona uma borda verde ao item selecionado */
+  transform: scale(1.05); /* Aumenta o item selecionado */
+}
+</style>
