@@ -139,17 +139,54 @@ ipcMain.handle('combine-videos', async (event, { videosPaths }) => {
   return videoBase64;
 });
 
+function checkVideoDurations(videoPaths) {
+  return Promise.all(videoPaths.map(videoPath => {
+    return new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(videoPath, (err, metadata) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(metadata.format.duration);
+      });
+    });
+  }));
+}
 
-function combineVideos(videoPaths, outputFilePath) {
+function normalizeFrameRate(videoPath, outputDir) {
   return new Promise((resolve, reject) => {
-    const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
-    const fileContent = videoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
-    fs.writeFileSync(listFilePath, fileContent);
+    console.log("frame-rate");
+    const outputFilePath = path.join(outputDir, path.basename(videoPath));
+    ffmpeg(videoPath)
+      .outputOptions(['-r 30']) // Define a taxa de quadros para 30 fps
+      .on('end', () => {
+        resolve(outputFilePath);
+      })
+      .on('error', (err) => {
+        reject(err);
+      })
+      .save(outputFilePath);
+  });
+}
+
+
+async function combineVideos (videoPaths, outputFilePath) {
+  const normalizedVideoPaths = await Promise.all(videoPaths.map(videoPath => normalizeFrameRate(videoPath, app.getPath('userData'))));
+  console.log('Normalized Video Paths:', normalizedVideoPaths);
+  const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
+  const fileContent = normalizedVideoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
+  fs.writeFileSync(listFilePath, fileContent);
+
+  
+  // const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
+  // const fileContent = videoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
+  // fs.writeFileSync(listFilePath, fileContent);
+  // console.log('List file content:', fileContent);
+  return new Promise( (resolve, reject) => {
 
     ffmpeg()
       .input(listFilePath)
       .inputOptions(['-f concat', '-safe 0'])
-      .outputOptions(['-c:v libx264', '-crf 23', '-preset veryfast', '-c:a aac', '-strict experimental'])
+      .outputOptions(['-c:v libx264', '-crf 18', '-preset veryfast', '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2' , '-c:a aac', '-b:a 192k'])
       .on('start', (commandLine) => {
         console.log('Spawned Ffmpeg with command: ' + commandLine);
       })
@@ -157,7 +194,7 @@ function combineVideos(videoPaths, outputFilePath) {
         console.log('Input is ' + data.audio + ' audio with ' + data.video + ' video');
       })
       .on('progress', (progress) => {
-        console.log('Processing: ' + progress.percent + '% done');
+        console.log('Processing: ' + progress.percentage + '% done');
       })
       .on('end', () => {
         console.log('Videos combined successfully');
