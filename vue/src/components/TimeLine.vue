@@ -117,22 +117,25 @@ export default {
   },
   methods: {
     grabMove(event) {
-      if (this.isGrabbing) {
-        const timelineRect = this.$el
-          .querySelector(".time")
-          .getBoundingClientRect();
-        let newPosition = event.clientX - timelineRect.left;
-        newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
-        this.cursorPosition = newPosition;
-        this.updateCurrentTime();
-      }
-    },
-    grabDone() {
-      this.isGrabbing = false;
-    },
-    grabTime() {
-      this.isGrabbing = true;
-    },
+   
+      // esta dando erro vou arrumar na proxima aula -_-
+    if (this.isGrabbing) {
+      const timelineRect = this.$el.querySelector(".time").getBoundingClientRect();
+      let newPosition = event.clientX - timelineRect.left;
+      newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
+      this.cursorPosition = newPosition;
+      this.updateCurrentTime();  // Chamando o updateCurrentTime dentro do grabMove
+    }
+  },
+  
+  grabDone() {
+    this.isGrabbing = false;
+  },
+  grabTime() {
+    this.isGrabbing = true;
+  },
+
+// esta dando erro vou arrumar na proxima aula -_-
     handleDragOver(event) {
       event.preventDefault();
     },
@@ -180,17 +183,7 @@ export default {
         .toString()
         .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     },
-    updateCurrentTime() {
-      // const timelineWidth = this.$el.querySelector('.time').clientWidth;
-      // this.config.canvasWidth / 100;
-      // this.config.minimumScaleTime * 10;
-      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
-      const currentTimeInSeconds = Math.round(
-        this.cursorPosition * secondsPerPixel
-      );
-      this.timeline.setCurrentSecond(currentTimeInSeconds);
-      this.currentTime = this.formatTime(currentTimeInSeconds);
-    },
+
     updateZoom() {
       // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
       const zoomMapping = {

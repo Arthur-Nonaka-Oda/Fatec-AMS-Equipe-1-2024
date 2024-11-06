@@ -8,6 +8,21 @@
             <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
           </button>
+        
+         
+   <div>
+    <!-- Passando a função handleCursorPosition para o evento do componente Timeline -->
+    <TimeLine 
+      :layers="layers" 
+      :timeline="timeline" 
+      @cursor-position-changed="handleCursorPosition" 
+      :updateLayers="updateLayers" 
+      />
+    </div>
+
+
+
+
           <div v-if="isTextEditorOpen" class="modal">
             <div class="modal-content">
               <button class="close-button" @click="closeTextEditor">X</button>
@@ -83,7 +98,11 @@ export default {
       timeline: null,
       isTextEditorOpen: false,
       layers: [],
-    };
+      startTime: null,  // Tempo de início do corte
+      duration: 10,   // Duração do corte
+      videoFilePath: null, // Novo atributo para armazenar o caminho real do arquivo
+      cursorTimeInSeconds: 0,  // Armazena o tempo do cursor
+    }; 
   },
   created() {
     this.timeline = new TimeLine();
@@ -134,6 +153,45 @@ export default {
       const result = await window.electron.ipcRenderer.invoke('combine-videos', { videosPaths });
       this.videoUrl = `data:video/mp4;base64,${result}`
     },
+    // esta dando erro vou arrumar na proxima aula -_-
+    updateCurrentTime() {
+  const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;  // Cálculo do tempo por pixel
+  const currentTimeInSeconds = Math.round(this.cursorPosition * secondsPerPixel);  // Posição do cursor em segundos
+  this.timeline.setCurrentSecond(currentTimeInSeconds);
+  this.currentTime = this.formatTime(currentTimeInSeconds);
+
+  // Emite o tempo atual para o componente pai (App.vue)
+  this.$emit("cursor-position-changed", currentTimeInSeconds);
+},
+
+handleCursorPosition(currentTimeInSeconds) {
+      // Atualiza o tempo de início do corte com o tempo do cursor
+      this.startTime = currentTimeInSeconds;
+    },
+
+    async cutVideo() {
+      if (this.startTime === null) {
+        alert("Por favor, mova o cursor para o ponto de corte.");
+        return;
+      }
+
+      const filePath = this.videoFilePath;  // Certifique-se de definir corretamente o caminho do vídeo
+
+      try {
+        const base64Video = await window.electron.ipcRenderer.invoke("cut-video", {
+          filePath,
+          startTime: this.startTime,
+          duration: this.duration,
+        });
+
+        // Atualiza o vídeo cortado (aqui você pode salvar o vídeo em base64 ou apenas no caminho)
+        this.videoUrl = `data:video/mp4;base64,${base64Video}`;
+        this.closeCutEditor();  // Fecha o editor de corte, se necessário
+      } catch (error) {
+        console.error("Erro ao cortar o vídeo:", error);
+      }
+    },
+    // esta dando erro vou arrumar na proxima aula -_-
   },
 };
 </script>

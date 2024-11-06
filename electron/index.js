@@ -310,3 +310,43 @@ ipcMain.handle("select-screen", async () => {
     console.log(err);
   }
 });
+
+// esta dando erro vou arrumar na proxima aula -_-
+ipcMain.handle("cut-video", async (event, { filePath, startTime, duration }) => {
+  const outputFilePath = path.join(app.getPath("userData"), "cut-video.mp4");
+
+  try {
+    await cutVideo(filePath, startTime, duration, outputFilePath);
+    const videoBase64 = await fileToBase64(outputFilePath);
+    return videoBase64; // Retorna o vídeo cortado em base64 para o frontend
+  } catch (error) {
+    console.error("Error cutting video:", error);
+    throw new Error("Error cutting video.");
+  }
+});
+
+function cutVideo(filePath, startTime, duration, outputFilePath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg(filePath)
+      .setStartTime(startTime) // Define o início do corte (ex: "00:00:30" para 30 segundos)
+      .setDuration(duration)  // Define a duração do corte (ex: "00:00:10" para 10 segundos)
+      .output(outputFilePath)
+      .outputOptions("-c:v libx264", "-crf 23", "-preset fast", "-c:a aac")
+      .on("start", (commandLine) => {
+        console.log("Spawned Ffmpeg with command: " + commandLine);
+      })
+      .on("progress", (progress) => {
+        console.log(`Processing: ${progress.percent}% done`);
+      })
+      .on("end", () => {
+        console.log("Video cut successfully.");
+        resolve();
+      })
+      .on("error", (err) => {
+        console.error("Error cutting video:", err);
+        reject(err);
+      })
+      .run();
+  });
+}
+// esta dando erro vou arrumar na proxima aula -_-
