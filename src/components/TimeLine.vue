@@ -230,8 +230,8 @@ export default {
 .timeline {
   position: relative;
   bottom: 0;
-  border: 1px solid #0d185e;
-  background-color: #0d185e;
+  border: 1px solid #0F153C;
+  background-color: #0F153C;
   height: 30%;
   overflow-y: hidden;
   overflow-x: scroll;
@@ -312,7 +312,7 @@ export default {
   width: fit-content;
   /* overflow-y: scroll;
     overflow-x: hidden;
-    background-color: #0d185e00; */
+    background-color: #0F153C00; */
 }
  
 .layer {
@@ -381,17 +381,33 @@ export default {
  
 .zoom-controls {
   position: fixed;
-  bottom: 1.11vh; /* Distância do fundo */
-  right: 0.69vw; /* Distância da direita */
+  bottom: 10px; /* Define a posição no canto inferior */
+  right: 20px;
+  z-index: 1000; /* Mantém o elemento acima de outros */
   display: flex;
-  gap: 0.625rem; /* Espaçamento entre os elementos */
+  justify-content: flex-end;
   align-items: center;
+  background-color: #323C7D; /* Fundo para melhor visibilidade */
 }
  
 .zoom-controls select {
-  padding: 0.3125rem; /* Preenchimento */
-  font-size: 0.875rem; /* Tamanho da fonte */
-  border-radius: 0.25rem; /* Arredondamento das bordas */
-  border: 1px solid #133a8d;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #fff; /* Cor da fonte branca */
+  background-color: #323C7D;
+  border: 1px solid #ddd;
+  border-radius: 0; /* Bordas quadradas */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
 }
+ 
+.zoom-controls select:hover {
+  background-color: #ffffff;
+  border-color: #bbb;
+  color: #000
+}
+ 
 </style>

@@ -111,6 +111,12 @@ export default {
       { items: this.timeline.listFilesInLayer(1) },
       { items: this.timeline.listFilesInLayer(2) },
     ];
+
+    window.addEventListener("keydown", this.handleKeyDown);
+    },
+    beforeDestroy() {
+      // Remove o listener quando o componente é destruído
+      window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
     toggleRecording() {
@@ -134,6 +140,11 @@ export default {
         // Lógica para remover o vídeo da timeline se necessário
       // }
     },
+    handleKeyDown(event) {
+    if (event.key === "Delete") {
+      this.handleDeleteVideo();
+    }
+  },
     handleItemClicked(item) {
       this.selectedItem = this.selectedItem === item ? null : item;
     },
@@ -195,4 +206,3 @@ export default {
   cursor: pointer;
 }
 </style>
- 
