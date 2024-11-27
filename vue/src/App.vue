@@ -8,17 +8,6 @@
             <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
           </button>
-        
-         
-   <div>
-    <!-- Passando a função handleCursorPosition para o evento do componente Timeline -->
-    <TimeLine 
-      :layers="layers" 
-      :timeline="timeline" 
-      @cursor-position-changed="handleCursorPosition" 
-      :updateLayers="updateLayers" 
-      />
-    </div>
 
 
 
@@ -63,9 +52,9 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview :video-url="videoUrl" />
+        <VideoPreview :video-url="videoUrl" @delete-video="handleDeleteVideo"/>
       </div>
-      <TimeLine :timeline="timeline" :layers="layers" :update-layers="updateLayers" />
+      <TimeLine  @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline" :layers="layers" :update-layers="updateLayers" />
     </section>
   </div>
 </template>
@@ -93,6 +82,7 @@ export default {
       videoUrl: null,
       isRecording: false,
       isPaused: false,
+      selectedItem: {item: null},
       recordImageSrc: "/gravarIcone.png",
       pauseImageSrc: "/pauseIcone.png",
       timeline: null,
@@ -110,7 +100,13 @@ export default {
       { items: this.timeline.listFilesInLayer(0) },
       { items: this.timeline.listFilesInLayer(1) },
       { items: this.timeline.listFilesInLayer(2) },
-    ]
+    ];
+
+    window.addEventListener("keydown", this.handleKeyDown);
+  },
+  beforeDestroy() {
+      // Remove o listener quando o componente é destruído
+      window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
     async toggleRecording() {
@@ -133,12 +129,29 @@ export default {
       this.timeline.addFileToLayer(fileData);
       this.updateLayers();
     },
+    handleItemClicked(item) {
+      this.selectedItem = this.selectedItem === item ? null : item;
+    },
     openTextEditor() {
       this.isTextEditorOpen = true;
     },
     closeTextEditor() {
       this.isTextEditorOpen = false;
     },
+    handleDeleteVideo() {
+      // const index = this.videos.indexOf(video);
+      this.timeline.removeFileFromLayer({ file: this.selectedItem.item, layerIndex: this.selectedItem.layerIndex }); // Ajuste conforme necessário
+      this.updateLayers();
+      // if (index !== -1) {
+        // this.videos.splice(index, 1); // Remove o vídeo da lista
+        // Lógica para remover o vídeo da timeline se necessário
+      // }
+    },
+    handleKeyDown(event) {
+    if (event.key === "Delete") {
+      this.handleDeleteVideo();
+    }
+  },
     updateLayers() {
       this.layers = [
         { items: this.timeline.listFilesInLayer(0) },
