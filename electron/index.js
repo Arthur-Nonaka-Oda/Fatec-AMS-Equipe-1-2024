@@ -186,7 +186,7 @@ async function combineVideos (videoPaths, outputFilePath) {
     ffmpeg()
       .input(listFilePath)
       .inputOptions(['-f concat', '-safe 0'])
-      .outputOptions(['-c:v libx264', '-crf 18', '-preset veryfast', '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2' , '-c:a aac', '-b:a 192k'])
+      .outputOptions(['-c:v libx264', '-crf 32', '-preset ultrafast', '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2' , '-c:a aac', '-b:a 192k'])
       .on('start', (commandLine) => {
         console.log('Spawned Ffmpeg with command: ' + commandLine);
       })

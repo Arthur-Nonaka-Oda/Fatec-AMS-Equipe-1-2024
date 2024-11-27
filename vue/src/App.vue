@@ -1,6 +1,9 @@
 <template>
   <div>
     <header>
+      <div v-if="isLoading" class="loading-screen">
+      <p>Carregando...</p>
+    </div>
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
@@ -8,21 +11,6 @@
             <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
           </button>
-        
-         
-   <div>
-    <!-- Passando a função handleCursorPosition para o evento do componente Timeline -->
-    <TimeLine 
-      :layers="layers" 
-      :timeline="timeline" 
-      @cursor-position-changed="handleCursorPosition" 
-      :updateLayers="updateLayers" 
-      />
-    </div>
-
-
-
-
           <div v-if="isTextEditorOpen" class="modal">
             <div class="modal-content">
               <button class="close-button" @click="closeTextEditor">X</button>
@@ -102,6 +90,7 @@ export default {
       duration: 10,   // Duração do corte
       videoFilePath: null, // Novo atributo para armazenar o caminho real do arquivo
       cursorTimeInSeconds: 0,  // Armazena o tempo do cursor
+      isLoading: false,
     }; 
   },
   created() {
@@ -148,10 +137,15 @@ export default {
       this.createVideoFromBlobs();
     },
     async createVideoFromBlobs() {
+      this.isLoading = true;
       const videosPaths = this.layers[0].items.map((video) => video.filePath);
       console.log(videosPaths);
-      const result = await window.electron.ipcRenderer.invoke('combine-videos', { videosPaths });
-      this.videoUrl = `data:video/mp4;base64,${result}`
+      try {
+        const result = await window.electron.ipcRenderer.invoke('combine-videos', { videosPaths });
+        this.videoUrl = `data:video/mp4;base64,${result}`
+      } finally {
+        this.isLoading = false;
+      }
     },
     // esta dando erro vou arrumar na proxima aula -_-
     updateCurrentTime() {
@@ -234,5 +228,20 @@ handleCursorPosition(currentTimeInSeconds) {
   border: none;
   font-size: 18px;
   cursor: pointer;
+}
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 2em;
+  z-index: 100;
 }
 </style>
