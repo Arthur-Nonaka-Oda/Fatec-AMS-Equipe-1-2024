@@ -48,6 +48,10 @@ export default {
   box-sizing: border-box; /* Inclui padding e border no cálculo da largura */
 }
 
+.video-item:hover {
+  cursor: pointer;
+}
+
 .video-player {
   width: 100%;
   height: auto;

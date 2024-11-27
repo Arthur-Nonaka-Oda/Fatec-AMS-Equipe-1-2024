@@ -1,10 +1,18 @@
 <template>
   <div>
     <header>
+      <div v-if="isLoading" class="loading-screen">
+        <p>Carregando...</p>
+      </div>
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
-          <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto" @click="openTextEditor">
+          <button
+            class="btn-acao"
+            data-acao="texto"
+            aria-label="Adicionar Texto"
+            @click="openTextEditor"
+          >
             <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
           </button>
@@ -25,20 +33,38 @@
             <img src="/voltarIcone.png" alt="Desfazer" />
             <span class="legenda">Desfazer</span>
           </button>
-          <button class="btn-acao" data-acao="salvar" aria-label="Salvar">
+          <button
+            @click="renderizeVideo"
+            class="btn-acao"
+            data-acao="salvar"
+            aria-label="Salvar"
+          >
             <img src="/salvarIcone.png" alt="Salvar" />
             <span class="legenda">Salvar</span>
           </button>
         </div>
         <div class="direita" id="recordButtons">
-          <button class="btn-acao" id="startButton" data-acao="gravar" @click="toggleRecording" aria-label="Gravar">
+          <button
+            class="btn-acao"
+            id="startButton"
+            data-acao="gravar"
+            @click="toggleRecording"
+            aria-label="Gravar"
+          >
             <img id="imagePlay" :src="recordImageSrc" alt="Gravar" />
             <span id="textPlay" class="legenda">{{
               isRecording ? "Parar" : "Gravar"
             }}</span>
           </button>
-          <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording"
-            :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
+          <button
+            :disabled="!isRecording"
+            class="btn-acao"
+            id="pauseButton"
+            @click="pauseRecording"
+            :style="{ opacity: isRecording ? 1 : 0.5 }"
+            data-acao="pause"
+            aria-label="Pause"
+          >
             <img :src="pauseImageSrc" alt="Pause" />
             <span class="legenda">{{ isPaused ? "Retomar" : "Pausar" }}</span>
           </button>
@@ -88,11 +114,12 @@ export default {
       timeline: null,
       isTextEditorOpen: false,
       layers: [],
-      startTime: null,  // Tempo de início do corte
-      duration: 10,   // Duração do corte
+      startTime: null, // Tempo de início do corte
+      duration: 10, // Duração do corte
       videoFilePath: null, // Novo atributo para armazenar o caminho real do arquivo
-      cursorTimeInSeconds: 0,  // Armazena o tempo do cursor
-    }; 
+      cursorTimeInSeconds: 0, // Armazena o tempo do cursor
+      isLoading: false,
+    };
   },
   created() {
     this.timeline = new TimeLine();
@@ -109,6 +136,18 @@ export default {
       window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
+    async renderizeVideo() {
+      this.isLoading = true;
+      const videosPaths = this.layers[0].items.map((video) => video.filePath);
+      console.log(videosPaths);
+      try {
+        await window.electron.ipcRenderer.invoke("renderize", {
+          videosPaths,
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    },
     async toggleRecording() {
       this.isRecording = !this.isRecording;
       if (this.isRecording) {
@@ -123,7 +162,9 @@ export default {
     },
     pauseRecording() {
       this.isPaused = !this.isPaused;
-      this.pauseImageSrc = this.isPaused ? "/gravarIcone.png" : "/pauseIcone.png";
+      this.pauseImageSrc = this.isPaused
+        ? "/gravarIcone.png"
+        : "/pauseIcone.png";
     },
     handleFileAdded(fileData) {
       this.timeline.addFileToLayer(fileData);
@@ -161,23 +202,33 @@ export default {
       this.createVideoFromBlobs();
     },
     async createVideoFromBlobs() {
+      this.isLoading = true;
       const videosPaths = this.layers[0].items.map((video) => video.filePath);
       console.log(videosPaths);
-      const result = await window.electron.ipcRenderer.invoke('combine-videos', { videosPaths });
-      this.videoUrl = `data:video/mp4;base64,${result}`
+      try {
+        const result = await window.electron.ipcRenderer.invoke(
+          "combine-videos",
+          { videosPaths }
+        );
+        this.videoUrl = `data:video/mp4;base64,${result}`;
+      } finally {
+        this.isLoading = false;
+      }
     },
     // esta dando erro vou arrumar na proxima aula -_-
     updateCurrentTime() {
-  const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;  // Cálculo do tempo por pixel
-  const currentTimeInSeconds = Math.round(this.cursorPosition * secondsPerPixel);  // Posição do cursor em segundos
-  this.timeline.setCurrentSecond(currentTimeInSeconds);
-  this.currentTime = this.formatTime(currentTimeInSeconds);
+      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100; // Cálculo do tempo por pixel
+      const currentTimeInSeconds = Math.round(
+        this.cursorPosition * secondsPerPixel
+      ); // Posição do cursor em segundos
+      this.timeline.setCurrentSecond(currentTimeInSeconds);
+      this.currentTime = this.formatTime(currentTimeInSeconds);
 
-  // Emite o tempo atual para o componente pai (App.vue)
-  this.$emit("cursor-position-changed", currentTimeInSeconds);
-},
+      // Emite o tempo atual para o componente pai (App.vue)
+      this.$emit("cursor-position-changed", currentTimeInSeconds);
+    },
 
-handleCursorPosition(currentTimeInSeconds) {
+    handleCursorPosition(currentTimeInSeconds) {
       // Atualiza o tempo de início do corte com o tempo do cursor
       this.startTime = currentTimeInSeconds;
     },
@@ -188,18 +239,21 @@ handleCursorPosition(currentTimeInSeconds) {
         return;
       }
 
-      const filePath = this.videoFilePath;  // Certifique-se de definir corretamente o caminho do vídeo
+      const filePath = this.videoFilePath; // Certifique-se de definir corretamente o caminho do vídeo
 
       try {
-        const base64Video = await window.electron.ipcRenderer.invoke("cut-video", {
-          filePath,
-          startTime: this.startTime,
-          duration: this.duration,
-        });
+        const base64Video = await window.electron.ipcRenderer.invoke(
+          "cut-video",
+          {
+            filePath,
+            startTime: this.startTime,
+            duration: this.duration,
+          }
+        );
 
         // Atualiza o vídeo cortado (aqui você pode salvar o vídeo em base64 ou apenas no caminho)
         this.videoUrl = `data:video/mp4;base64,${base64Video}`;
-        this.closeCutEditor();  // Fecha o editor de corte, se necessário
+        this.closeCutEditor(); // Fecha o editor de corte, se necessário
       } catch (error) {
         console.error("Erro ao cortar o vídeo:", error);
       }
@@ -247,5 +301,20 @@ handleCursorPosition(currentTimeInSeconds) {
   border: none;
   font-size: 18px;
   cursor: pointer;
+}
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 2em;
+  z-index: 100;
 }
 </style>
