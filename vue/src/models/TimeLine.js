@@ -43,28 +43,33 @@ export default class TimeLine {
 
   removeFileFromLayer(fileData) {
     if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
-      const layer = this.layers[fileData.layerIndex];
-      if (layer.head !== null) {
-        let current = layer.head;
-        let before = null;
-        if (current.item === fileData.file) {
-          layer.head = current.next;
-          return;
-        }
-        while (current !== null) {
-          if (current.item === fileData.file) {
-            if(layer.end.item === fileData.file) {
-              layer.end = before;
-              return;
+        const layer = this.layers[fileData.layerIndex];
+        if (layer.head !== null) {
+            let current = layer.head;
+            let before = null;
+            if (current.item === fileData.file) {
+                layer.head = current.next;
+                if (layer.end === current) {
+                    layer.end = null;
+                }
+                return;
             }
-            before.next = current.next;
-          }
-          before = current;
-          current = current.next;
+            while (current !== null) {
+                if (current.item === fileData.file) {
+                    if (layer.end === current) {
+                        layer.end = before;
+                    }
+                    if (before !== null) {
+                        before.next = current.next;
+                    }
+                    return;
+                }
+                before = current;
+                current = current.next;
+            }
         }
-      }
     }
-  }
+}
 
   listFilesInLayer(layerIndex) {
     if (layerIndex >= 0 && layerIndex < this.layers.length) {

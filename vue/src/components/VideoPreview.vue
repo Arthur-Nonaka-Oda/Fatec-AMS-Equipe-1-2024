@@ -1,8 +1,8 @@
 <template>
   <div class="video">
     <div class="video-container">
-      <video ref="videoPlayer" poster="/pirataria.jpg" @timeupdate="updateTime" @loadedmetadata="updateDuration">
-        <source src="/vteste.mp4" type="video/mp4" />
+      <video ref="videoPlayer" @timeupdate="updateTime" @loadedmetadata="updateDuration">
+        <source :src="videoUrl" type="video/mp4"/>
         Seu navegador não suporta a exibição de vídeos.
       </video>
     </div>
@@ -44,7 +44,12 @@
 
 <script>
 export default {
-  props: 'video',
+  props: {
+    videoUrl: {
+      type: String,
+      required: true,
+    },
+  },
   data() {
     return {
       playPauseIcon: "../playIcon2.png", // Caminho para o ícone de play
@@ -56,13 +61,21 @@ export default {
 
     };
   },
+  watch: {
+    videoUrl() {
+      this.loadVideo();
+    }
+  },
   computed: {
     formattedTime() {
       return `${this.formatTime(this.currentTime)} / ${this.formatTime(this.videoDuration)}`;
     },
   },
   methods: {
-    
+    loadVideo() {
+      const video = this.$refs.videoPlayer;
+      video.load();
+    },
     togglePlayPause() {
       const video = this.$refs.videoPlayer;
       if (video.paused) {

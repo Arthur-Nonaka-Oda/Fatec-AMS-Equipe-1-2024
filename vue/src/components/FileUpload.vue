@@ -197,7 +197,7 @@ export default {
         };
       }
     },
-    async importVideo({ data }) {
+    async importVideo({ data, filePath }) {
         const byteCharacters = atob(data);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
@@ -215,7 +215,7 @@ export default {
 
           const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
 
-          this.$files.addVideo({ filePath: blob.path, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
+          this.$files.addVideo({ filePath: filePath, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
         };
         videoElement.onerror = () => {
           console.error('Error loading video from Blob');

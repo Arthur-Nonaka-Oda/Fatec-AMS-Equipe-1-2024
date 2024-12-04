@@ -17,9 +17,6 @@
             <span class="legenda">Texto</span>
           </button>
 
-
-
-
           <div v-if="isTextEditorOpen" class="modal">
             <div class="modal-content">
               <button class="close-button" @click="closeTextEditor">X</button>
@@ -78,9 +75,15 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview :video-url="videoUrl" @delete-video="handleDeleteVideo"/>
+        <VideoPreview :video-url="videoUrl" @delete-video="handleDeleteVideo" />
       </div>
-      <TimeLine  @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline" :layers="layers" :update-layers="updateLayers" />
+      <TimeLine
+        @item-clicked="handleItemClicked"
+        :selected-item="selectedItem"
+        :timeline="timeline"
+        :layers="layers"
+        :update-layers="updateLayers"
+      />
     </section>
   </div>
 </template>
@@ -108,7 +111,7 @@ export default {
       videoUrl: null,
       isRecording: false,
       isPaused: false,
-      selectedItem: {item: null},
+      selectedItem: { item: null },
       recordImageSrc: "/gravarIcone.png",
       pauseImageSrc: "/pauseIcone.png",
       timeline: null,
@@ -132,8 +135,8 @@ export default {
     window.addEventListener("keydown", this.handleKeyDown);
   },
   beforeDestroy() {
-      // Remove o listener quando o componente é destruído
-      window.removeEventListener("keydown", this.handleKeyDown);
+    // Remove o listener quando o componente é destruído
+    window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
     async renderizeVideo() {
@@ -181,25 +184,40 @@ export default {
     },
     handleDeleteVideo() {
       // const index = this.videos.indexOf(video);
-      this.timeline.removeFileFromLayer({ file: this.selectedItem.item, layerIndex: this.selectedItem.layerIndex }); // Ajuste conforme necessário
+      this.timeline.removeFileFromLayer({
+        file: this.selectedItem.item,
+        layerIndex: this.selectedItem.layerIndex,
+      }); // Ajuste conforme necessário
+      console.log("delete");
+      console.log(this.timeline.listFilesInLayer(0));
+      console.log(this.timeline.listFilesInLayer(1));
+      console.log(this.timeline.listFilesInLayer(2));
       this.updateLayers();
       // if (index !== -1) {
-        // this.videos.splice(index, 1); // Remove o vídeo da lista
-        // Lógica para remover o vídeo da timeline se necessário
+      // this.videos.splice(index, 1); // Remove o vídeo da lista
+      // Lógica para remover o vídeo da timeline se necessário
       // }
     },
     handleKeyDown(event) {
-    if (event.key === "Delete") {
-      this.handleDeleteVideo();
-    }
-  },
+      if (event.key === "Delete") {
+        this.handleDeleteVideo();
+      }
+    },
     updateLayers() {
       this.layers = [
         { items: this.timeline.listFilesInLayer(0) },
         { items: this.timeline.listFilesInLayer(1) },
         { items: this.timeline.listFilesInLayer(2) },
       ];
-      this.createVideoFromBlobs();
+
+      const hasItems = this.layers.some((layer) => layer.items.length > 0);
+
+      if (hasItems) {
+        this.createVideoFromBlobs();
+      } else {
+        this.videoUrl = `data:video/mp4;base64,${""}`;
+        console.log("Nenhum item nas camadas, não criando vídeo.");
+      }
     },
     async createVideoFromBlobs() {
       this.isLoading = true;
