@@ -129,10 +129,11 @@ fileToBlob = function (filePath) {
   });
 }
 
-ipcMain.handle('combine-videos', async (event, { videosPaths }) => {
+ipcMain.handle('combine-videos', async (event, { videosInfo }) => {
+  console.log("combine");
   const outputFilePath = path.join(app.getPath('userData'), 'combined.mp4');
-  await combineVideos(videosPaths, outputFilePath);
-  console.log("combinining videos" + videosPaths);
+
+  await combineVideos(videosInfo, outputFilePath);
 
   const videoBase64 = await fileToBase64(outputFilePath);
 
@@ -169,24 +170,57 @@ function normalizeFrameRate(videoPath, outputDir) {
 }
 
 
-async function combineVideos(videoPaths, outputFilePath) {
-  const normalizedVideoPaths = await Promise.all(videoPaths.map(videoPath => normalizeFrameRate(videoPath, app.getPath('userData'))));
+async function combineVideos(videosInfo, outputFilePath) {
+  console.log(videosInfo);
+  const videosPaths = videosInfo.map(video => video.filePath)
+
+  const normalizedVideoPaths = await Promise.all(videosPaths.map(videoPath => normalizeFrameRate(videoPath, app.getPath('userData'))));
   console.log('Normalized Video Paths:', normalizedVideoPaths);
   const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
   const fileContent = normalizedVideoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
   fs.writeFileSync(listFilePath, fileContent);
-
-
-  // const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
-  // const fileContent = videoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
-  // fs.writeFileSync(listFilePath, fileContent);
-  // console.log('List file content:', fileContent);
   return new Promise((resolve, reject) => {
 
+    const ffmpegCommand = ffmpeg();
+    let filterParts = [];
+    let videoInputs = [];
+    let audioInputs = [];
+
+    // Iterate through your videosInfo array,
+    // which should include filePath, startTime, and endTime for each video.
+    videosInfo.forEach((video, index) => {
+      // Add each video as an input.
+      ffmpegCommand.input(video.filePath);
+
+      // Build the video trim filter for the current input.
+      filterParts.push(
+        `[${index}:v]trim=start=${video.startTime}:end=${video.endTime},setpts=PTS-STARTPTS[v${index}]`
+      );
+
+      // Build the audio trim filter for the current input.
+      filterParts.push(
+        `[${index}:a]atrim=start=${video.startTime}:end=${video.endTime},asetpts=PTS-STARTPTS[a${index}]`
+      );
+
+      // Save the labels for later concatenation.
+      videoInputs.push(`[v${index}]`);
+      audioInputs.push(`[a${index}]`);
+    });
+
+    // Build the concat filter. This assumes each input has both video and audio.
+    filterParts.push(
+      `${videoInputs.join('')}${audioInputs.join('')}concat=n=${videosInfo.length}:v=1:a=1[outv][outa]`
+    );
+
+    const filterComplex = filterParts.join('; ');
+
+    console.log("Filter Complex:", filterComplex);
+
     ffmpeg()
+      .complexFilter(filterComplex)
       .input(listFilePath)
       .inputOptions(['-f concat', '-safe 0'])
-      .outputOptions(['-c:v libx264', '-crf 32', '-preset ultrafast', '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2', '-c:a aac', '-b:a 192k'])
+      .outputOptions(['-c:v libx264', '-crf 32', '-preset ultrafast', '-filter:v', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2', '-c:a aac', '-b:a 192k'])
       .on('start', (commandLine) => {
         console.log('Spawned Ffmpeg with command: ' + commandLine);
       })

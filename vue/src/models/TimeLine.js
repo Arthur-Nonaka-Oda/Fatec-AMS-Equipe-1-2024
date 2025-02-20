@@ -43,33 +43,33 @@ export default class TimeLine {
 
   removeFileFromLayer(fileData) {
     if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
-        const layer = this.layers[fileData.layerIndex];
-        if (layer.head !== null) {
-            let current = layer.head;
-            let before = null;
-            if (current.item === fileData.file) {
-                layer.head = current.next;
-                if (layer.end === current) {
-                    layer.end = null;
-                }
-                return;
-            }
-            while (current !== null) {
-                if (current.item === fileData.file) {
-                    if (layer.end === current) {
-                        layer.end = before;
-                    }
-                    if (before !== null) {
-                        before.next = current.next;
-                    }
-                    return;
-                }
-                before = current;
-                current = current.next;
-            }
+      const layer = this.layers[fileData.layerIndex];
+      if (layer.head !== null) {
+        let current = layer.head;
+        let before = null;
+        if (current.item === fileData.file) {
+          layer.head = current.next;
+          if (layer.end === current) {
+            layer.end = null;
+          }
+          return;
         }
+        while (current !== null) {
+          if (current.item === fileData.file) {
+            if (layer.end === current) {
+              layer.end = before;
+            }
+            if (before !== null) {
+              before.next = current.next;
+            }
+            return;
+          }
+          before = current;
+          current = current.next;
+        }
+      }
     }
-}
+  }
 
   listFilesInLayer(layerIndex) {
     if (layerIndex >= 0 && layerIndex < this.layers.length) {
@@ -98,4 +98,46 @@ export default class TimeLine {
         return new Node(new Image(file));
     }
   }
+
+  async splitVideoInHalf(video) {
+    // Ensure start and end times are defined
+    const start = video.startTime !== undefined ? video.startTime : 0;
+    const end = video.endTime !== undefined ? video.endTime : video.duration;
+    const fullDuration = end - start;
+    const midPoint = start + fullDuration / 2;
+
+    // Calculate segment durations
+    const segment1Duration = midPoint - start;
+    const segment2Duration = end - midPoint;
+
+    // Create two new Video instances representing each half
+    const videoPart1 = new Video({
+      filePath: video.filePath,
+      name: video.name + " (Part 1)",
+      duration: segment1Duration,
+      size: video.size,
+      blob: video.blob,
+      url: video.url,
+      startTime: start,
+      endTime: midPoint
+    });
+
+    const videoPart2 = new Video({
+      filePath: video.filePath,
+      name: video.name + " (Part 2)",
+      duration: segment2Duration,
+      size: video.size,
+      blob: video.blob,
+      url: video.url,
+      startTime: midPoint,
+      endTime: end
+    });
+
+    // Update the timeline: remove the original video and add the two new segments
+    this.removeFileFromLayer({ file: video, layerIndex: 0 });
+    this.addFileToLayer({ file: videoPart1, type: 'video', layerIndex: 0 });
+    this.addFileToLayer({ file: videoPart2, type: 'video', layerIndex: 0 });
+  }
+
+
 }

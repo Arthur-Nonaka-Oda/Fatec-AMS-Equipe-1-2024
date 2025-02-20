@@ -101,7 +101,7 @@ export default {
       this.$emit('delete-video', this.video);
     },
     trimVideo() {
-      // Implementar lógica de recorte
+      this.$emit('trim-video', this.video);
       console.log("Trim video logic here");
     },
     updateTime() {
