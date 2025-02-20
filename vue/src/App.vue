@@ -7,12 +7,7 @@
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
-          <button
-            class="btn-acao"
-            data-acao="texto"
-            aria-label="Adicionar Texto"
-            @click="openTextEditor"
-          >
+          <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto" @click="openTextEditor">
             <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
           </button>
@@ -30,38 +25,20 @@
             <img src="/voltarIcone.png" alt="Desfazer" />
             <span class="legenda">Desfazer</span>
           </button>
-          <button
-            @click="renderizeVideo"
-            class="btn-acao"
-            data-acao="salvar"
-            aria-label="Salvar"
-          >
+          <button @click="renderizeVideo" class="btn-acao" data-acao="salvar" aria-label="Salvar">
             <img src="/salvarIcone.png" alt="Salvar" />
             <span class="legenda">Salvar</span>
           </button>
         </div>
         <div class="direita" id="recordButtons">
-          <button
-            class="btn-acao"
-            id="startButton"
-            data-acao="gravar"
-            @click="toggleRecording"
-            aria-label="Gravar"
-          >
+          <button class="btn-acao" id="startButton" data-acao="gravar" @click="toggleRecording" aria-label="Gravar">
             <img id="imagePlay" :src="recordImageSrc" alt="Gravar" />
             <span id="textPlay" class="legenda">{{
               isRecording ? "Parar" : "Gravar"
             }}</span>
           </button>
-          <button
-            :disabled="!isRecording"
-            class="btn-acao"
-            id="pauseButton"
-            @click="pauseRecording"
-            :style="{ opacity: isRecording ? 1 : 0.5 }"
-            data-acao="pause"
-            aria-label="Pause"
-          >
+          <button :disabled="!isRecording" class="btn-acao" id="pauseButton" @click="pauseRecording"
+            :style="{ opacity: isRecording ? 1 : 0.5 }" data-acao="pause" aria-label="Pause">
             <img :src="pauseImageSrc" alt="Pause" />
             <span class="legenda">{{ isPaused ? "Retomar" : "Pausar" }}</span>
           </button>
@@ -75,15 +52,11 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview :video-url="videoUrl" @delete-video="handleDeleteVideo" />
+        <VideoPreview :video-url="videoUrl" :current-time="currentTime" @delete-video="handleDeleteVideo"
+          @update:currentTime="currentTime = $event" />
       </div>
-      <TimeLine
-        @item-clicked="handleItemClicked"
-        :selected-item="selectedItem"
-        :timeline="timeline"
-        :layers="layers"
-        :update-layers="updateLayers"
-      />
+      <TimeLine @item-clicked="handleItemClicked" :selected-item="selectedItem" :current-time="currentTime" :timeline="timeline" :layers="layers"
+        :update-layers="updateLayers" />
     </section>
   </div>
 </template>
@@ -121,6 +94,7 @@ export default {
       duration: 10, // Duração do corte
       videoFilePath: null, // Novo atributo para armazenar o caminho real do arquivo
       cursorTimeInSeconds: 0, // Armazena o tempo do cursor
+      currentTime: 0,
       isLoading: false,
     };
   },

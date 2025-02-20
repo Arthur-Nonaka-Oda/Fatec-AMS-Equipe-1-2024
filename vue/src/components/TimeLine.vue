@@ -13,15 +13,8 @@
       :style="{ left: cursorPosition + 'px' }"
       @mousedown="grabTime"
     >
-      {{ currentTime }}
+      {{ currentTimeText }}
     </div>
-    <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
-            <div class="time-markers">
-                <div v-for="second in filteredSeconds" :key="second" class="time-marker">
-                    {{ formatTime(second) }}
-                </div>
-            </div>rgrgrg
-        </div> -->
     <div class="layers">
       <div
         v-for="(layer, layerIndex) in layers"
@@ -81,7 +74,12 @@ export default {
     selectedItem: {
       type: Object,
       required: true
+    },
+    currentTime: {
+      type: Number,
+      required: true
     }
+    
   },
   components: {
     TimeLineItem,
@@ -90,7 +88,7 @@ export default {
   data() {
     return {
       isGrabbing: false,
-      currentTime: "00:00:00",
+      currentTimeText: "00:00:00",
       cursorPosition: 0,
       config: {
         minimumScale: 10,
@@ -111,9 +109,7 @@ export default {
     },
     dynamicCanvasWidth() {
       const secondsPerPixel = this.config.minimumScaleTime / 10;
-
-      const width = this.totalVideoDuration / secondsPerPixel;
-      return width;
+      return this.totalVideoDuration / secondsPerPixel;
     },
   },
   mounted() {
@@ -133,18 +129,17 @@ export default {
         let newPosition = event.clientX - timelineRect.left;
         newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
         this.cursorPosition = newPosition;
-        this.updateCurrentTime();
+        this.updateCurrentTimeText();
       }
-  },
+    },
   
-  grabDone() {
-    this.isGrabbing = false;
-  },
-  grabTime() {
-    this.isGrabbing = true;
-  },
+    grabDone() {
+      this.isGrabbing = false;
+    },
+    grabTime() {
+      this.isGrabbing = true;
+    },
 
-// esta dando erro vou arrumar na proxima aula -_-
     handleDragOver(event) {
       event.preventDefault();
     },
@@ -165,31 +160,13 @@ export default {
 
       if (fileData) {
         const file = JSON.parse(fileData);
-        let layerIndex;
-        if (type === "video") {
-          layerIndex = 0;
-        } else if (type === "audio") {
-          layerIndex = 1;
-        } else if (type === "image") {
-          layerIndex = 2;
-        }
+        let layerIndex = type === "video" ? 0 : type === "audio" ? 1 : 2;
         this.timeline.addFileToLayer({ file, layerIndex, type });
         this.updateLayers();
       }
     },
     handleItemClicked(item) {
-    this.$emit('item-clicked', item);
-  },
-  handleDeleteVideo(video) {
-      const index = this.videos.indexOf(video);
-      if (index !== -1) {
-        this.videos.splice(index, 1); // Remove o vídeo da lista
-        this.timeline.removeFileFromLayer({ // Remove o vídeo da timeline
-          file: video,
-          layerIndex: 0, // Ajuste conforme necessário
-        });
-        this.updateLayers(); // Atualiza a visualização
-      }
+      this.$emit('item-clicked', item);
     },
     formatTime(seconds) {
       const hours = Math.floor(seconds / 3600);
@@ -199,32 +176,46 @@ export default {
         .toString()
         .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     },
-    updateCurrentTime() {
-      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
-      const currentTimeInSeconds = Math.round(
-        this.cursorPosition * secondsPerPixel
-      );
-      this.timeline.setCurrentSecond(currentTimeInSeconds);
-      this.currentTime = this.formatTime(currentTimeInSeconds);
-    },
-
-    updateZoom() {
-      // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
-      const zoomMapping = {
-        0.1: 60, // 10%
-        0.25: 24, // 25%
-        0.5: 12, // 50%
-        0.75: 8, // 75%
-        1: 6, // 100% (referência padrão)
-        1.5: 4, // 150%
-        2: 3, //200%
-        3: 2,
-      };
-      this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
+    updateCursorPosition() {
+      const secondsPerPixel = this.config.minimumScaleTime / 10;
+      this.cursorPosition = this.currentTime / secondsPerPixel;
     },
   },
-};
+  watch: {
+  currentTime(newTime) {
+    this.updateCursorPosition(newTime);
+  }
+},
+
+  updateCursorPosition(currentTime) {
+    if (!this.$el) return;
+
+    const timelineRect = this.$el.querySelector(".time").getBoundingClientRect();
+    const timelineWidth = timelineRect.width;
+
+    const secondsPerPixel = this.config.minimumScaleTime / 10;
+    
+    let newPosition = currentTime / secondsPerPixel;
+    newPosition = Math.max(0, Math.min(newPosition, timelineWidth));
+
+    this.cursorPosition = newPosition; // Atualiza a posição do cursor
+    this.updateCurrentTimeText();
+  },
+
+  updateCurrentTimeText() {
+    if (!this.timeline) return;
+
+    const secondsPerPixel = this.config.minimumScaleTime / 10;
+    const currentTimeTextInSeconds = Math.round(this.cursorPosition * secondsPerPixel);
+
+    this.timeline.setCurrentSecond(currentTimeTextInSeconds);
+    this.currentTimeText = this.formatTime(currentTimeTextInSeconds);
+  }
+}
+
+
 </script>
+
 
 <style scoped>
 .selected {
