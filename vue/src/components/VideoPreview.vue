@@ -2,21 +2,21 @@
   <div class="video">
     <div class="video-container">
       <video ref="videoPlayer" @timeupdate="updateTime" @loadedmetadata="updateDuration">
-        <source :src="videoUrl" type="video/mp4"/>
+        <source :src="currentVideo.url" type="video/mp4" />
         Seu navegador não suporta a exibição de vídeos.
       </video>
     </div>
-    <input type="range" min="0" :max="videoDuration" step="0.1" v-model="currentTime" @input="seekVideo"
-      class="time-slider">
+    <input type="range" min="0" :max="videoDuration" step="0.1" v-model="currentTime"
+      @input="seekVideo" class="time-slider">
+
     <div class="controles">
       <div class="left-controls">
-        <button @click="$emit('delete-video')" class="delete-button">
-  <img src="/lixoIcone.png" alt="Lixo" />
-</button>
-
-    <button @click="trimVideo">
-      <img src="/tesouraIcone.png" alt="Recortar" />
-    </button>
+        <button @click="deleteVideo" class="delete-button">
+          <img src="/lixoIcone.png" alt="Lixo" />
+        </button>
+        <button @click="trimVideo">
+          <img src="/tesouraIcone.png" alt="Recortar" />
+        </button>
       </div>
       <div class="center-controls">
         <button @click="togglePlayPause" class="play-button">
@@ -26,7 +26,7 @@
       </div>
       <div class="right-controls">
         <button @click="toggleVolumeControl" class="audio-button">
-        <img :src="volumeIcon" alt="Audio" class="audio-icon"> 
+          <img :src="volumeIcon" alt="Audio" class="audio-icon">
         </button>
         <div v-if="showVolumeControl" class="volume-control">
           <input type="range" min="0" max="1" step="0.01" v-model="volume" @input="updateVolume"
@@ -34,7 +34,7 @@
         </div>
         <button @click="toggleFullscreen" class="fullscreen-button">
           <img src="/full.png" alt="Fullscreen" class="fullscreen-icon">
-          </button>
+        </button>
       </div>
     </div>
   </div>
@@ -45,13 +45,15 @@
 <script>
 export default {
   props: {
-    videoUrl: {
-      type: String,
-      required: true,
-    },
+    timeline: {
+      type: Object,
+      required: false
+    }
   },
   data() {
     return {
+      currentIndex: 0,
+      currentVideo: null,
       playPauseIcon: "../playIcon2.png", // Caminho para o ícone de play
       videoDuration: 0,
       currentTime: 0,
@@ -61,11 +63,6 @@ export default {
 
     };
   },
-  watch: {
-    videoUrl() {
-      this.loadVideo();
-    }
-  },
   computed: {
     formattedTime() {
       return `${this.formatTime(this.currentTime)} / ${this.formatTime(this.videoDuration)}`;
@@ -73,8 +70,8 @@ export default {
   },
   methods: {
     loadVideo() {
-      const video = this.$refs.videoPlayer;
-      video.load();
+      const videos = this.timeline.listFilesInLayer(0);
+      this.currentVideo = videos.length > 0 ? videos[this.currentIndex] : null;
     },
     togglePlayPause() {
       const video = this.$refs.videoPlayer;
@@ -89,7 +86,7 @@ export default {
     updateVolume() {
       const video = this.$refs.videoPlayer;
       video.volume = this.volume;
-      
+
       // 
       this.volumeIcon = this.volume <= 0.0 ? "/mudo.png" : "/volume.png";
     },
@@ -138,7 +135,7 @@ export default {
         document.exitFullscreen();
       }
     },
-   
+
 
 
 
@@ -148,6 +145,7 @@ export default {
     const video = this.$refs.videoPlayer;
     video.addEventListener("timeupdate", this.updateTime);
     video.addEventListener("loadedmetadata", this.updateDuration);
+    this.loadVideo();
   },
 
 };
@@ -184,8 +182,10 @@ export default {
   display: flex;
   align-items: center;
   background-color: #444444;
-  height: 5vh; /* Altura em vh, equivalente a aproximadamente 40px em uma tela padrão */
-padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
+  height: 5vh;
+  /* Altura em vh, equivalente a aproximadamente 40px em uma tela padrão */
+  padding: 0.625rem;
+  /* Preenchimento em rem, equivalente a 5px */
 
   margin-top: auto;
   position: relative;
@@ -199,7 +199,7 @@ padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
 
 .center-controls {
   flex: 1;
-  display:flex;
+  display: flex;
   justify-content: center;
 }
 
@@ -234,7 +234,8 @@ padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
 
 .play-pause-icon,
 .audio-icon {
-  width: 2.5vw;   /* Largura em vw (aproximadamente 24px) */
+  width: 2.5vw;
+  /* Largura em vw (aproximadamente 24px) */
   /*
   height: 4vh;  
   Altura em vh (aproximadamente 24px) */
@@ -246,42 +247,51 @@ padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
   width: 100%;
   height: 1vh;
   background: #ce2323;
-  border-radius: 0.5rem; /* Raio da borda em rem */
+  border-radius: 0.5rem;
+  /* Raio da borda em rem */
 
 }
 
 .volume-control input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 1vh;
-  background: #ce2323; /* Cor da linha do controle de volume */
-  border-radius: 0.5rem; /* Raio da borda em rem */
+  background: #ce2323;
+  /* Cor da linha do controle de volume */
+  border-radius: 0.5rem;
+  /* Raio da borda em rem */
 
 }
 
 .volume-control input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   border: none;
-  height: 3vh; /* Altura em vh */
-  width: 1.5vw;  /* Largura em vw */
+  height: 3vh;
+  /* Altura em vh */
+  width: 1.5vw;
+  /* Largura em vw */
 
   border-radius: 50%;
-  background: #ffffff; /* Cor da bolinha */
+  background: #ffffff;
+  /* Cor da bolinha */
   cursor: pointer;
 }
 
 .volume-control input[type=range]::-moz-range-track {
   width: 100%;
   height: 0.74vh;
-  background: #ff0199; /* Cor da linha do controle de volume */
+  background: #ff0199;
+  /* Cor da linha do controle de volume */
   border-radius: 0.5rem;
 }
 
 .volume-control input[type=range]::-moz-range-thumb {
-  border: 1px solid #1a0735; /* Contorno da bolinha */
+  border: 1px solid #1a0735;
+  /* Contorno da bolinha */
   height: 15px;
   width: 15px;
   border-radius: 50%;
-  background: #A1D0FF; /* Cor da bolinha */
+  background: #A1D0FF;
+  /* Cor da bolinha */
   cursor: pointer;
 }
 
@@ -294,23 +304,27 @@ padding: 0.625rem; /* Preenchimento em rem, equivalente a 5px */
 }
 
 .volume-control input[type=range]::-ms-fill-lower {
-  background: #ff0199; /* Cor da linha do controle de volume */
+  background: #ff0199;
+  /* Cor da linha do controle de volume */
   border-radius: 5px;
 }
 
 .volume-control input[type=range]::-ms-fill-upper {
-  background: #ff0199; /* Cor da linha do controle de volume */
- 
+  background: #ff0199;
+  /* Cor da linha do controle de volume */
+
   border-radius: 10%;
 
 }
 
 .volume-control input[type=range]::-ms-thumb {
-  border: 1px solid #1a0735; /* Contorno da bolinha */
+  border: 1px solid #1a0735;
+  /* Contorno da bolinha */
   height: 50px;
   width: 50px;
   border-radius: 50%;
-  background: #A1D0FF; /* Cor da bolinha */
+  background: #A1D0FF;
+  /* Cor da bolinha */
   cursor: pointer;
 }
 
@@ -323,7 +337,7 @@ input[type=range] {
   margin: 0;
   width: 100%;
   background: linear-gradient(to right, #ce2323 0%, #ce2323 calc((100% * var(--value)) / var(--max)),
-    #f0f9ff8e calc((100% * var(--value)) / var(--max)),
+      #f0f9ff8e calc((100% * var(--value)) / var(--max)),
       #f0f9ff8e 100%);
 }
 
@@ -386,7 +400,8 @@ input[type=range]::-moz-range-thumb {
 
 input[type=range]::-ms-track {
   width: 100%;
-  height: 0.5vh; /* Ajuste conforme necessário */
+  height: 0.5vh;
+  /* Ajuste conforme necessário */
 
   cursor: pointer;
   animate: 0.2s;

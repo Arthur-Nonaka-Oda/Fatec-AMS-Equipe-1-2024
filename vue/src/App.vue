@@ -52,7 +52,7 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview :video-url="videoUrl" @delete-video="handleDeleteVideo" @trim-video="handleTrimVideo" />
+        <VideoPreview :timeline="timeline" @delete-video="handleDeleteVideo" @trim-video="handleTrimVideo" />
       </div>
       <TimeLine @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline" :layers="layers"
         :update-layers="updateLayers" />
@@ -190,7 +190,7 @@ export default {
       const hasItems = this.layers.some((layer) => layer.items.length > 0);
 
       if (hasItems) {
-        this.createVideoFromBlobs();
+        // this.createVideoFromBlobs();
       } else {
         this.videoUrl = `data:video/mp4;base64,${""}`;
         console.log("Nenhum item nas camadas, não criando vídeo.");
