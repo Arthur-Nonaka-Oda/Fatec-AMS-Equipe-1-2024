@@ -18,17 +18,19 @@ Instruções
 -----------------------------------------------------------------------------------------------------
 
 
-8. O preview renderizar somente quando adicionar novos videos, inves de videos ressultantes 
+8 P2 . O preview precisa renderizar somente quando adicionar novos videos, inves de videos ressultantes 
 
-9. sobre a extresão te audio, é converter o video para mp3 e mutar o video original.
+9 P2. sobre a extresão te audio, é converter o video para mp3 e mutar o video original.
 
-10. as imagens vão ficar nos video, não vai ser sobrepostas (devinir tempo minimo), e depois ter a possibilidade de "esticar" a imagem na timeline, aumentando o tempo dela no preview.
+10 P3. as imagens vão ficar nos video, não vai ser sobrepostas (devinir tempo minimo), e depois ter a possibilidade de "esticar" a imagem na timeline, aumentando o tempo dela no preview.
 
-11. sobre o corte do video, é colocar a agulha na linha do tempo e selecionar o cortar para dividir o video
+11 P 1.5 . sobre o corte do video, é colocar a agulha na linha do tempo e selecionar o cortar para dividir o video
 
-12. quando importar copiar o video para dentro da pastas projetos. Sugestão de separar os video em mais qualidade e menos (preview).
+12 P3. quando importar, copiar o video para dentro da pastas projetos. Sugestão de separar os video em mais qualidade e menos (preview).
 
-13. Tirar o editor de texto e fazer estilo o "texto dos stories do intagram". Simplificar as funções de acordo com o ffmemp.
+13 P2. Fazer o texto aparecer na timeline depois de salvo
+
+13-2 P3 . Tirar o editor de texto e fazer estilo o "texto dos stories do intagram". Simplificar as funções de acordo com o ffmemp.
 
     Sugestões: Padrões(texto branco no fundo preto e vice-versa)
                 Alterar Fonte, tanto em tipo do texto quanto tamanho. exmp. Arial, comic sans, e outra
@@ -38,9 +40,9 @@ Instruções
 
 14. Pesquisar API's modernas
 
-15. Para cada projeto salvar numa pasta separada, todos os arquivos gravados ou adicionados vão ser copiados para essa pastas e nessa pasta tambem vai ter o arquivo de configuração
+15 P1.5 Para cada projeto salvar numa pasta separada, todos os arquivos gravados ou adicionados vão ser copiados para essa pastas e nessa pasta tambem vai ter o arquivo de configuração
 
-16. Para a função desfazer, foi sugerido a função:
+16 P1. Para a função desfazer, foi sugerido a função:
 
             class TimeLine() {
     this.items.video = [
@@ -71,5 +73,12 @@ const historicoEv = [
     },
 ]
 
-17. Fazer com que o preview  acompanhe a agulho da timeline. e quando for cortar a agulha vai ser usado de parametro. Sugestão Debounce
+17 P1. Fazer com que o preview  acompanhe a agulho da timeline. e quando for cortar a agulha vai ser usado de parametro. Sugestão Debounce.
+
+18 P2. Possibilidade de mover as midias dentro da timeline. dentro da sua layer
+
+19 P1. Re-codificar toda a timeline, refazando suas estrutura assim acelerando o carregamento do sistema.
+            Imagens na mesma layer que o video
+            Texto numa layer acima porem menor
+            audio continua separado
 
