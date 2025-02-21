@@ -167,6 +167,9 @@ function normalizeFrameRate(videoPath, outputDir) {
       })
       .save(outputFilePath);
   });
+  //Expandir essa função para receber mais comportamentos/funções, mudar o framerate 30->24.
+  //Aplicar a bitrate para 1000 há 1500 kb.
+  //Mudar o nome da função 
 }
 
 
@@ -217,7 +220,7 @@ async function combineVideos(videosInfo, outputFilePath) {
     console.log("Filter Complex:", filterComplex);
 
     ffmpeg()
-      .complexFilter(filterComplex)
+      // .complexFilter(filterComplex)
       .input(listFilePath)
       .inputOptions(['-f concat', '-safe 0'])
       .outputOptions(['-c:v libx264', '-crf 32', '-preset ultrafast', '-filter:v', 'scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2', '-c:a aac', '-b:a 192k'])
@@ -339,7 +342,7 @@ ipcMain.handle("videos-recorded", async () => {
           videoDataArray.push({ filePath, data: base64Data });
         } catch (error) {
           console.error('Error converting file to base64:', error);
-        }
+        }//
       }
     }
 
