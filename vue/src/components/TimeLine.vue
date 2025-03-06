@@ -144,11 +144,48 @@ export default {
     this.isGrabbing = true;
   },
 
-// esta dando erro vou arrumar na proxima aula -_-
     handleDragOver(event) {
       event.preventDefault();
     },
     handleDrop(event) {
+
+      event.preventDefault();
+
+const internalData = event.dataTransfer.getData('application/x-timeline-item');
+if (internalData) {
+  const { layerIndex: sourceLayerIndex, itemIndex: sourceItemIndex } = JSON.parse(internalData);
+  
+  const timelineRect = this.$el.querySelector('.layers').getBoundingClientRect();
+  const x = event.clientX - timelineRect.left;
+  const secondsPerPixel = this.config.minimumScaleTime / 10;
+  const dropTime = x * secondsPerPixel;
+
+  const targetLayerIndex = sourceLayerIndex;
+  const items = this.timeline.listFilesInLayer(targetLayerIndex);
+  let cumulativeTime = 0;
+  let targetIndex = items.length;
+
+  for (let i = 0; i < items.length; i++) {
+    cumulativeTime += items[i].duration;
+    if (cumulativeTime > dropTime) {
+      targetIndex = i;
+      break;
+    }
+  }
+
+  this.timeline.moveItem(
+    sourceLayerIndex,
+    sourceItemIndex,
+    targetLayerIndex,
+    targetIndex
+  );
+
+  this.updateLayers();
+  return;
+}
+
+
+
       let fileData = "";
       let type = "";
 

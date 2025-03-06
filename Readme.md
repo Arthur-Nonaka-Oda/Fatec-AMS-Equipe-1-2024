@@ -82,3 +82,5 @@ const historicoEv = [
             Texto numa layer acima porem menor
             audio continua separado
 
+
+20. Somente os videos acrecentão tempo na timeline.

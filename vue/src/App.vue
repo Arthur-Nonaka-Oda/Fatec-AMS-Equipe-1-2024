@@ -98,11 +98,7 @@ export default {
   },
   created() {
     this.timeline = new TimeLine();
-    this.layers = [
-      { items: this.timeline.listFilesInLayer(0) },
-      { items: this.timeline.listFilesInLayer(1) },
-      { items: this.timeline.listFilesInLayer(2) },
-    ];
+  this.layers = this.timeline.getLayersForVue();
 
     window.addEventListener("keydown", this.handleKeyDown);
   },
@@ -111,6 +107,16 @@ export default {
     window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
+    updateLayers(newLayers) {
+    this.layers = newLayers || this.timeline.getLayersForVue();
+    
+    const hasItems = this.layers.some((layer) => layer.items.length > 0);
+    if (hasItems) {
+      // this.createVideoFromBlobs();
+    } else {
+      this.videoUrl = `data:video/mp4;base64,${""}`;
+    }
+  },
     async renderizeVideo() {
       this.isLoading = true;
       const videosPaths = this.layers[0].items.map((video) => video.filePath);
@@ -179,22 +185,6 @@ export default {
       this.timeline.splitVideoInHalf(this.selectedItem.item);
 
       this.updateLayers();
-    },
-    updateLayers() {
-      this.layers = [
-        { items: this.timeline.listFilesInLayer(0) },
-        { items: this.timeline.listFilesInLayer(1) },
-        { items: this.timeline.listFilesInLayer(2) },
-      ];
-
-      const hasItems = this.layers.some((layer) => layer.items.length > 0);
-
-      if (hasItems) {
-        // this.createVideoFromBlobs();
-      } else {
-        this.videoUrl = `data:video/mp4;base64,${""}`;
-        console.log("Nenhum item nas camadas, não criando vídeo.");
-      }
     },
     async createVideoFromBlobs() {
       this.isLoading = true;

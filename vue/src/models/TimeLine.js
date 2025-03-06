@@ -139,5 +139,56 @@ export default class TimeLine {
     this.addFileToLayer({ file: videoPart2, type: 'video', layerIndex: 0 });
   }
 
+  
+  moveItem(sourceLayerIndex, sourceIndex, targetLayerIndex, targetIndex) {
+    const sourceLayer = this.layers[sourceLayerIndex];
+    let current = sourceLayer.head;
+    let prev = null;
+    let count = 0;
+
+    while (current && count < sourceIndex) {
+      prev = current;
+      current = current.next;
+      count++;
+    }
+
+    if (!current) return;
+
+    if (prev) {
+      prev.next = current.next;
+    } else {
+      sourceLayer.head = current.next;
+    }
+
+    const targetLayer = this.layers[targetLayerIndex];
+    let targetCurrent = targetLayer.head;
+    let targetPrev = null;
+    count = 0;
+
+    while (targetCurrent && count < targetIndex) {
+      targetPrev = targetCurrent;
+      targetCurrent = targetCurrent.next;
+      count++;
+    }
+
+    if (targetPrev) {
+      targetPrev.next = current;
+      current.next = targetCurrent;
+    } else {
+      current.next = targetLayer.head;
+      targetLayer.head = current;
+    }
+
+    if (!current.next) {
+      targetLayer.end = current;
+    }
+  }
+
+  getLayersForVue() {
+    return this.layers.map(layer => ({
+      items: this.listFilesInLayer(this.layers.indexOf(layer))
+    }));
+  }
+
 
 }
