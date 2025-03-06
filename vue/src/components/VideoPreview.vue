@@ -2,12 +2,12 @@
   <div class="video">
     <div class="video-container">
       <video ref="videoPlayer" @timeupdate="updateTime" @loadedmetadata="updateDuration">
-        <source :src="currentVideo.url" type="video/mp4" />
+        <source :src="currentVideo" type="video/mp4" />
         Seu navegador não suporta a exibição de vídeos.
       </video>
     </div>
-    <input type="range" min="0" :max="videoDuration" step="0.1" v-model="currentTime"
-      @input="seekVideo" class="time-slider">
+    <input type="range" min="0" :max="totalDuration" step="0.1" v-model="currentGlobalTime" @input="seekVideo"
+      class="time-slider">
 
     <div class="controles">
       <div class="left-controls">
@@ -57,6 +57,7 @@ export default {
       playPauseIcon: "../playIcon2.png", // Caminho para o ícone de play
       videoDuration: 0,
       currentTime: 0,
+      currentGlobalTime: 0,
       volume: 1,
       showVolumeControl: false,
       volumeIcon: "/volume.png"
@@ -64,14 +65,43 @@ export default {
     };
   },
   computed: {
-    formattedTime() {
-      return `${this.formatTime(this.currentTime)} / ${this.formatTime(this.videoDuration)}`;
+    totalDuration() {
+      const videos = this.timeline.listFilesInLayer(0);
+      return videos.reduce((total, video) => total + video.duration, 0);
     },
+    formattedTime() {
+      return `${this.formatTime(this.currentGlobalTime)} / ${this.formatTime(this.totalDuration)}`;
+    },
+  },
+  watch: {
+    timeline: {
+      deep: true,
+      handler() {
+        this.loadVideo();
+      }
+    }
   },
   methods: {
     loadVideo() {
       const videos = this.timeline.listFilesInLayer(0);
-      this.currentVideo = videos.length > 0 ? videos[this.currentIndex] : null;
+      if (videos.length > 0) {
+        const videoBlob = videos[this.currentIndex].blob;
+        console.log("MIME Type:", videoBlob.type);
+        this.currentVideo = URL.createObjectURL(videoBlob);
+      } else {
+        this.currentVideo = null;
+      }
+      this.$refs.videoPlayer.load();
+    },
+    handleVideoEnded() {
+      this.currentIndex++;
+      const videos = this.timeline.listFilesInLayer(0);
+      if (this.currentIndex < videos.length) {
+        const nextVideoBlob = videos[this.currentIndex].blob;
+        this.currentVideo = URL.createObjectURL(nextVideoBlob);
+        this.$refs.videoPlayer.load();
+        this.$refs.videoPlayer.play();
+      }
     },
     togglePlayPause() {
       const video = this.$refs.videoPlayer;
@@ -101,23 +131,104 @@ export default {
       this.$emit('trim-video', this.video);
       console.log("Trim video logic here");
     },
+    playSegment(startTime, endTime) {
+      const video = this.$refs.videoPlayer;
+      video.currentTime = startTime;
+      video.play();
+
+      const pauseAtEndTime = () => {
+        if (video.currentTime >= endTime) {
+          video.pause();
+          video.removeEventListener('timeupdate', pauseAtEndTime);
+        }
+      };
+
+      video.addEventListener('timeupdate', pauseAtEndTime);
+    },
     updateTime() {
       const video = this.$refs.videoPlayer;
-      this.currentTime = video.currentTime;
+      // Get the list of videos
+      const videos = this.timeline.listFilesInLayer(0);
+      // Accumulate durations of videos before the current video index
+      let accumulated = 0;
+      for (let i = 0; i < this.currentIndex; i++) {
+        accumulated += videos[i].duration;
+      }
+      // Calculate the global current time as previous videos plus current video's time
+      this.currentGlobalTime = accumulated + video.currentTime;
+
+      // Update slider styles (using custom CSS variables for styling)
       const slider = this.$el.querySelector('.time-slider');
-      slider.style.setProperty('--value', this.currentTime);
-      slider.style.setProperty('--max', this.videoDuration);
+      slider.style.setProperty('--value', this.currentGlobalTime);
+      slider.style.setProperty('--max', this.totalDuration);
     },
     updateDuration() {
       const video = this.$refs.videoPlayer;
+      // Capture the duration of the current video (optional if you need it separately)
       this.videoDuration = video.duration;
+
+      // Update slider styles to reflect the global total duration
       const slider = this.$el.querySelector('.time-slider');
-      slider.style.setProperty('--value', this.currentTime);
-      slider.style.setProperty('--max', this.videoDuration);
+      slider.style.setProperty('--value', this.currentGlobalTime);
+      slider.style.setProperty('--max', this.totalDuration);
     },
     seekVideo() {
-      const video = this.$refs.videoPlayer;
-      video.currentTime = this.currentTime;
+      // Get all videos and the global slider time
+      const videos = this.timeline.listFilesInLayer(0);
+      let globalTime = this.currentGlobalTime;
+      let accumulated = 0;
+      let targetIndex = 0;
+
+      // Determine which video segment the global time corresponds to
+      while (targetIndex < videos.length && (accumulated + videos[targetIndex].duration) < globalTime) {
+        accumulated += videos[targetIndex].duration;
+        targetIndex++;
+      }
+
+      // If globalTime exceeds total, use the last video and its duration
+      if (targetIndex >= videos.length) {
+        targetIndex = videos.length - 1;
+        globalTime = videos[targetIndex].duration;
+      }
+
+      // Calculate the local time in the target video
+      const localTime = globalTime - accumulated;
+
+      // If we need to change the video segment
+      if (targetIndex !== this.currentIndex) {
+        this.currentIndex = targetIndex;
+
+        // Revoke the previous blob URL if needed
+        if (this.currentVideo) {
+          URL.revokeObjectURL(this.currentVideo);
+        }
+
+        const videoBlob = videos[targetIndex].blob;
+        const videoDuration = videos[targetIndex].duration;
+
+        // Start and end time from the video's metadata
+        const startTime = videos[targetIndex].startTime; // Assume these times are provided in the video metadata
+        const endTime = videos[targetIndex].endTime;     // These are the start and end times of the video segment
+
+        // Calculate the byte range for the slice
+        const startByte = (startTime / videoDuration) * videoBlob.size;
+        const endByte = (endTime / videoDuration) * videoBlob.size;
+
+        // Slice the video blob from startByte to endByte
+        const slicedBlob = videoBlob.slice(startByte, endByte, "video/mp4");
+        this.currentVideo = URL.createObjectURL(slicedBlob);
+
+        // Load the new video and set its time
+        this.$nextTick(() => {
+          const video = this.$refs.videoPlayer;
+          video.load();
+          video.currentTime = 0; // Start from the beginning of the sliced video
+        });
+
+      } else {
+        // If the current video remains, just update its currentTime
+        this.$refs.videoPlayer.currentTime = localTime;
+      }
     },
     formatTime(seconds) {
       const hours = Math.floor(seconds / 3600);
@@ -136,16 +247,13 @@ export default {
       }
     },
 
-
-
-
-
   },
   mounted() {
     const video = this.$refs.videoPlayer;
     video.addEventListener("timeupdate", this.updateTime);
     video.addEventListener("loadedmetadata", this.updateDuration);
     this.loadVideo();
+    this.$refs.videoPlayer.addEventListener("ended", this.handleVideoEnded);
   },
 
 };
