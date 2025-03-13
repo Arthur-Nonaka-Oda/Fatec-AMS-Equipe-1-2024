@@ -60,7 +60,7 @@ export default {
       currentGlobalTime: 0,
       volume: 1,
       showVolumeControl: false,
-      volumeIcon: "/volume.png"
+      volumeIcon: "/volume.png",
 
     };
   },
@@ -85,19 +85,20 @@ export default {
     loadVideo() {
       const videos = this.timeline.listFilesInLayer(0);
       if (videos.length > 0) {
-        const videoBlob = videos[this.currentIndex].blob;
-        console.log(videos[this.currentIndex]);
-        console.log("MIME Type:", videoBlob.type);
-        this.currentVideo = URL.createObjectURL(videoBlob);
+        const currentItem = videos[this.currentIndex];
+        this.isImage = false;
+        this.currentVideo = URL.createObjectURL(currentItem.blob);
         const video = this.$refs.videoPlayer;
         video.load();
         this.$nextTick(() => {
-          video.currentTime = videos[this.currentIndex].startTime;
-          console.log(videos[this.currentIndex].startTime);
-        })
+          video.currentTime = currentItem.startTime;
+          this.updatePlayPauseIcon();
+        });
       } else {
         this.currentVideo = null;
-        this.$refs.videoPlayer.load();
+        const video = this.$refs.videoPlayer;
+        video.load();
+
         this.updatePlayPauseIcon();
       }
     },
@@ -105,23 +106,15 @@ export default {
       const videos = this.timeline.listFilesInLayer(0);
       if (this.currentIndex < videos.length - 1) {
         this.currentIndex++;
-        const nextVideoBlob = videos[this.currentIndex].blob;
-        this.currentVideo = URL.createObjectURL(nextVideoBlob);
-        const video = this.$refs.videoPlayer;
-        video.load();
-        this.$nextTick(() => {
-          video.currentTime = videos[this.currentIndex].startTime;
-          console.log(videos[this.currentIndex].startTime);
-
-          video.play();
-        })
+        this.loadVideo();
+        this.$refs.videoPlayer.play();
       } else {
-
         this.currentIndex = 0;
         const video = this.$refs.videoPlayer;
         this.$nextTick(() => {
           video.currentTime = videos[this.currentIndex].startTime;
           console.log(videos[this.currentIndex].startTime);
+          video.pause();
           this.updatePlayPauseIcon();
         })
 
@@ -257,11 +250,13 @@ export default {
           const video = this.$refs.videoPlayer;
           video.load();
           video.currentTime = 0; // Start from the beginning of the sliced video
+          this.updatePlayPauseIcon();
         });
 
       } else {
-        // If the current video remains, just update its currentTime
-        this.$refs.videoPlayer.currentTime = localTime;
+        if (!this.isImage) {
+          this.$refs.videoPlayer.currentTime = localTime;
+        }
       }
     },
     formatTime(seconds) {
@@ -280,15 +275,19 @@ export default {
         document.exitFullscreen();
       }
     },
-
   },
   mounted() {
     const video = this.$refs.videoPlayer;
     video.addEventListener("timeupdate", this.updateTime);
     video.addEventListener("loadedmetadata", this.updateDuration);
+    video.addEventListener("play", this.updatePlayPauseIcon);
+    video.addEventListener("pause", this.updatePlayPauseIcon);
+    video.addEventListener("ended", this.handleVideoEnded);
     this.loadVideo();
-    this.$refs.videoPlayer.addEventListener("ended", this.handleVideoEnded);
   },
+  beforeDestroy() {
+    this.clearImageInterval();
+  }
 
 };
 </script>

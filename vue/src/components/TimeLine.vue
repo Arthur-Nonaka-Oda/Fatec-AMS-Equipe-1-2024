@@ -1,18 +1,11 @@
 <template>
   <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
-    <VideoEditingTimeline
-      :config="{
-        canvasWidth: dynamicCanvasWidth,
-        minimumScale: 10,
-        minimumScaleTime: config.minimumScaleTime,
-      }"
-      class="time"
-    />
-    <div
-      class="timecursor"
-      :style="{ left: cursorPosition + 'px' }"
-      @mousedown="grabTime"
-    >
+    <VideoEditingTimeline :config="{
+      canvasWidth: dynamicCanvasWidth,
+      minimumScale: 10,
+      minimumScaleTime: config.minimumScaleTime,
+    }" class="time" />
+    <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">
       {{ currentTime }}
     </div>
     <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
@@ -23,24 +16,11 @@
             </div>rgrgrg
         </div> -->
     <div class="layers">
-      <div
-        v-for="(layer, layerIndex) in layers"
-        :key="layerIndex"
-        class="layer"
-      >
+      <div v-for="(layer, layerIndex) in layers" :key="layerIndex" class="layer">
         <div class="items">
-          <TimeLineItem
-            v-for="(item, index) in layer.items"
-            :key="index"
-            :layerIndex="layerIndex"
-            :item="item"
-            :title="item.name"
-            :minimumScaleTime="config.minimumScaleTime"
-            :index="index"
-            :selectedItem="selectedItem"
-            :select-video="selectVideo"
-            @item-clicked="handleItemClicked"
-          />
+          <TimeLineItem v-for="(item, index) in layer.items" :key="index" :layerIndex="layerIndex" :item="item"
+            :title="item.name" :minimumScaleTime="config.minimumScaleTime" :index="index" :selectedItem="selectedItem"
+            :select-video="selectVideo" @item-clicked="handleItemClicked" />
         </div>
       </div>
     </div>
@@ -75,7 +55,7 @@ export default {
     updateLayers: {
       type: Function,
     },
-    selectVideo:{
+    selectVideo: {
       type: Object,
     },
     selectedItem: {
@@ -135,14 +115,14 @@ export default {
         this.cursorPosition = newPosition;
         this.updateCurrentTime();
       }
-  },
-  
-  grabDone() {
-    this.isGrabbing = false;
-  },
-  grabTime() {
-    this.isGrabbing = true;
-  },
+    },
+
+    grabDone() {
+      this.isGrabbing = false;
+    },
+    grabTime() {
+      this.isGrabbing = true;
+    },
 
     handleDragOver(event) {
       event.preventDefault();
@@ -151,38 +131,38 @@ export default {
 
       event.preventDefault();
 
-const internalData = event.dataTransfer.getData('application/x-timeline-item');
-if (internalData) {
-  const { layerIndex: sourceLayerIndex, itemIndex: sourceItemIndex } = JSON.parse(internalData);
-  
-  const timelineRect = this.$el.querySelector('.layers').getBoundingClientRect();
-  const x = event.clientX - timelineRect.left;
-  const secondsPerPixel = this.config.minimumScaleTime / 10;
-  const dropTime = x * secondsPerPixel;
+      const internalData = event.dataTransfer.getData('application/x-timeline-item');
+      if (internalData) {
+        const { layerIndex: sourceLayerIndex, itemIndex: sourceItemIndex } = JSON.parse(internalData);
 
-  const targetLayerIndex = sourceLayerIndex;
-  const items = this.timeline.listFilesInLayer(targetLayerIndex);
-  let cumulativeTime = 0;
-  let targetIndex = items.length;
+        const timelineRect = this.$el.querySelector('.layers').getBoundingClientRect();
+        const x = event.clientX - timelineRect.left;
+        const secondsPerPixel = this.config.minimumScaleTime / 10;
+        const dropTime = x * secondsPerPixel;
 
-  for (let i = 0; i < items.length; i++) {
-    cumulativeTime += items[i].duration;
-    if (cumulativeTime > dropTime) {
-      targetIndex = i;
-      break;
-    }
-  }
+        const targetLayerIndex = sourceLayerIndex;
+        const items = this.timeline.listFilesInLayer(targetLayerIndex);
+        let cumulativeTime = 0;
+        let targetIndex = items.length;
 
-  this.timeline.moveItem(
-    sourceLayerIndex,
-    sourceItemIndex,
-    targetLayerIndex,
-    targetIndex
-  );
+        for (let i = 0; i < items.length; i++) {
+          cumulativeTime += items[i].duration;
+          if (cumulativeTime > dropTime) {
+            targetIndex = i;
+            break;
+          }
+        }
 
-  this.updateLayers();
-  return;
-}
+        this.timeline.moveItem(
+          sourceLayerIndex,
+          sourceItemIndex,
+          targetLayerIndex,
+          targetIndex
+        );
+
+        this.updateLayers();
+        return;
+      }
 
 
 
@@ -208,16 +188,16 @@ if (internalData) {
         } else if (type === "audio") {
           layerIndex = 1;
         } else if (type === "image") {
-          layerIndex = 2;
+          layerIndex = 0;
         }
         this.timeline.addFileToLayer({ file, layerIndex, type });
         this.updateLayers();
       }
     },
     handleItemClicked(item) {
-    this.$emit('item-clicked', item);
-  },
-  handleDeleteVideo(video) {
+      this.$emit('item-clicked', item);
+    },
+    handleDeleteVideo(video) {
       const index = this.videos.indexOf(video);
       if (index !== -1) {
         this.videos.splice(index, 1); // Remove o vídeo da lista
@@ -265,17 +245,22 @@ if (internalData) {
 
 <style scoped>
 .selected {
-  border: 2px solid rgb(255, 238, 0); /* ou qualquer estilo que destaque o item */
-  background-color: rgb(101, 228, 226); /* destaque de fundo */
+  border: 2px solid rgb(255, 238, 0);
+  /* ou qualquer estilo que destaque o item */
+  background-color: rgb(101, 228, 226);
+  /* destaque de fundo */
 }
- 
- 
+
+
 .total-duration {
-  margin-top: 0.625rem; /* Espaçamento superior */
-  font-size: 0.875rem; /* Tamanho da fonte */
-  color: white; /* Cor do texto */
+  margin-top: 0.625rem;
+  /* Espaçamento superior */
+  font-size: 0.875rem;
+  /* Tamanho da fonte */
+  color: white;
+  /* Cor do texto */
 }
- 
+
 .timeline {
   position: relative;
   bottom: 0;
@@ -286,22 +271,22 @@ if (internalData) {
   overflow-x: scroll;
   width: 100%;
 }
- 
+
 .timeline::-webkit-scrollbar {
   height: 2.22vh;
 }
- 
+
 .timeline::-webkit-scrollbar-track {
   background: #5a6ac2 !important;
 }
- 
+
 .timeline::-webkit-scrollbar-thumb {
   height: 1.89vh;
   background-color: #133a8d;
   border-radius: 0px;
   border: 2px solid #5a6ac2;
 }
- 
+
 .time {
   user-select: none;
   width: fit-content;
@@ -310,35 +295,41 @@ if (internalData) {
   align-items: start;
   position: relative;
 }
- 
+
 .timecursor {
-  width: 4.51vw; /* Largura */
-  height: 2.78vh; /* Altura */
-  line-height: 2.78vh; /* Altura da linha */
+  width: 4.51vw;
+  /* Largura */
+  height: 2.78vh;
+  /* Altura */
+  line-height: 2.78vh;
+  /* Altura da linha */
   position: absolute;
   background-color: #ce2323;
   border-radius: 30px;
-  top: 0px; /* Mantido */
+  top: 0px;
+  /* Mantido */
   font-family: Inter;
-  font-size: 0.75rem; /* Tamanho da fonte */
+  font-size: 0.75rem;
+  /* Tamanho da fonte */
   color: white;
   z-index: 2 !important;
   text-align: center;
-  margin-top: 0.5rem; /* Espaço superior */
+  margin-top: 0.5rem;
+  /* Espaço superior */
   transition-property: transform;
   transition-duration: 0.2s;
   transition-timing-function: cubic-bezier(0.05, 0.03, 0.35, 1);
   user-select: none;
- 
+
   transform: translateX(-50%);
   /* Centralizar o cursor */
 }
- 
+
 .timecursor:hover {
   transform: scale(1.12) translateX(-50%);
   cursor: pointer;
 }
- 
+
 .timecursor:after {
   transition-property: transform, margin-top;
   transition-duration: 0.25s;
@@ -346,13 +337,15 @@ if (internalData) {
   content: "";
   display: block;
   height: 100vh;
-  width: 0.14vw; /* Largura */
+  width: 0.14vw;
+  /* Largura */
   background-color: #ce2323;
-  margin-left: 2.26vw; /* Margem à esquerda */
+  margin-left: 2.26vw;
+  /* Margem à esquerda */
   position: absolute;
   z-index: 2 !important;
 }
- 
+
 .layers {
   top: 3.125rem;
   height: 50%;
@@ -363,34 +356,34 @@ if (internalData) {
     overflow-x: hidden;
     background-color: #0F153C00; */
 }
- 
+
 .layer {
   margin-bottom: 3px;
 }
- 
+
 .videos {
   display: flex;
   background-color: #b81313;
   height: 100%;
 }
- 
+
 .items {
   display: flex;
   height: 100%;
 }
- 
+
 .audios {
   display: flex;
   height: 100%;
   background-color: #c7771c;
 }
- 
+
 .images {
   display: flex;
   height: 100%;
   background-color: #1ddb3c;
 }
- 
+
 .time-markers {
   display: flex;
   flex-grow: 1;
@@ -399,21 +392,25 @@ if (internalData) {
   /* Remover overflow horizontal */
   /* height: 40px; */
 }
- 
+
 .time-marker {
   user-select: none;
-  width: 4.86vw; /* Largura */
+  width: 4.86vw;
+  /* Largura */
   text-align: center;
   font-family: Inter;
-  font-size: 0.75rem; /* Tamanho da fonte */
+  font-size: 0.75rem;
+  /* Tamanho da fonte */
   color: rgb(255, 255, 255);
-  padding-top: 0.4375rem; /* Espaço superior */
+  padding-top: 0.4375rem;
+  /* Espaço superior */
   box-sizing: border-box;
   position: relative;
-  padding-bottom: 0.625rem; /* Espaço inferior */
+  padding-bottom: 0.625rem;
+  /* Espaço inferior */
   /* height: auto; */
 }
- 
+
 .time-marker::after {
   content: "";
   position: absolute;
@@ -427,32 +424,37 @@ if (internalData) {
   background-color: #ffffff;
   /* Cor da linha vertical */
 }
- 
+
 .zoom-controls {
   position: fixed;
-  bottom: 10px; /* Define a posição no canto inferior */
+  bottom: 10px;
+  /* Define a posição no canto inferior */
   right: 20px;
-  z-index: 1000; /* Mantém o elemento acima de outros */
+  z-index: 1000;
+  /* Mantém o elemento acima de outros */
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  background-color: #323C7D; /* Fundo para melhor visibilidade */
+  background-color: #323C7D;
+  /* Fundo para melhor visibilidade */
 }
- 
+
 .zoom-controls select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
   padding: 8px 12px;
   font-size: 14px;
-  color: #fff; /* Cor da fonte branca */
+  color: #fff;
+  /* Cor da fonte branca */
   background-color: #323C7D;
   border: 1px solid #ddd;
-  border-radius: 0; /* Bordas quadradas */
+  border-radius: 0;
+  /* Bordas quadradas */
   transition: background-color 0.2s ease, border-color 0.2s ease;
   cursor: pointer;
 }
- 
+
 .zoom-controls select:hover {
   background-color: #ffffff;
   border-color: #bbb;

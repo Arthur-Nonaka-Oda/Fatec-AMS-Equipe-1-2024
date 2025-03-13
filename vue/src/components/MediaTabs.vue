@@ -63,7 +63,7 @@ export default {
       this.$emit('add-file', {file: audio, layerIndex: 1, type: 'audio'});
     },
     addImage(image) {
-      this.$emit('add-file', {file: image, layerIndex: 2, type: 'image'});
+      this.$emit('add-file', {file: image, layerIndex: 0, type: 'image'});
     }
   }
 };
