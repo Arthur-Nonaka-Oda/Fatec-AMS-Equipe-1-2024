@@ -78,6 +78,10 @@ export default {
     currentTime: {
       type: Number,
       required: true
+    },
+    isPlaying:{
+      type: Boolean,
+      required: true
     }
     
   },
@@ -121,23 +125,41 @@ export default {
     document.removeEventListener("mouseup", this.grabDone);
   },
   methods: {
-    grabMove(event) {
-      if (this.isGrabbing) {
-        const timelineRect = this.$el
-          .querySelector(".time")
-          .getBoundingClientRect();
-        let newPosition = event.clientX - timelineRect.left;
-        newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
-        this.cursorPosition = newPosition;
-        this.updateCurrentTimeText();
-      }
-    },
-  
-    grabDone() {
-      this.isGrabbing = false;
-    },
     grabTime() {
-      this.isGrabbing = true;
+        if (!this.isPlaying) { // Permite mover o cursor se o vídeo estiver pausado
+            this.isGrabbing = true;
+        }
+    },
+    grabMove(event) {
+        if (!this.isGrabbing) return;
+
+        const timelineRect = this.$el.querySelector(".time").getBoundingClientRect();
+        let newPosition = event.clientX - timelineRect.left;
+
+        // Mantém o cursor dentro dos limites da timeline
+        newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
+
+        this.cursorPosition = newPosition;
+        this.updateCurrentTime();
+    },
+
+    grabDone() {
+        this.isGrabbing = false;
+    },
+
+    updateCurrentTime() {
+        const secondsPerPixel = this.config.minimumScaleTime / 10;
+        const currentTimeInSeconds = Math.round(this.cursorPosition * secondsPerPixel);
+
+        this.currentTimeText = this.formatTime(currentTimeInSeconds);
+        this.$emit("update:currentTime", currentTimeInSeconds); // Atualiza o tempo no componente pai
+    },
+    formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
     },
 
     handleDragOver(event) {
@@ -168,23 +190,26 @@ export default {
     handleItemClicked(item) {
       this.$emit('item-clicked', item);
     },
-    formatTime(seconds) {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const remainingSeconds = seconds % 60;
-      return `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+
+    formatTime(seconds) { // 🔥 Mantenha apenas UMA versão desta função
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
     },
+
     updateCursorPosition() {
       const secondsPerPixel = this.config.minimumScaleTime / 10;
       this.cursorPosition = this.currentTime / secondsPerPixel;
     },
   },
   watch: {
-  currentTime(newTime) {
-    this.updateCursorPosition(newTime);
-  }
+    currentTime(newTime) {
+        const secondsPerPixel = this.config.minimumScaleTime / 10;
+        this.cursorPosition = newTime / secondsPerPixel;
+        this.updateCurrentTime();
+    }
 },
 
   updateCursorPosition(currentTime) {
@@ -214,9 +239,10 @@ export default {
 }
 
 
+
 </script>
 
-
+ 
 <style scoped>
 .selected {
   border: 2px solid rgb(255, 238, 0); /* ou qualquer estilo que destaque o item */
