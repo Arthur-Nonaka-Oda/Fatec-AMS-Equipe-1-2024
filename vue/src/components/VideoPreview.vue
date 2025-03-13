@@ -86,21 +86,45 @@ export default {
       const videos = this.timeline.listFilesInLayer(0);
       if (videos.length > 0) {
         const videoBlob = videos[this.currentIndex].blob;
+        console.log(videos[this.currentIndex]);
         console.log("MIME Type:", videoBlob.type);
         this.currentVideo = URL.createObjectURL(videoBlob);
+        const video = this.$refs.videoPlayer;
+        video.load();
+        this.$nextTick(() => {
+          video.currentTime = videos[this.currentIndex].startTime;
+          console.log(videos[this.currentIndex].startTime);
+        })
       } else {
         this.currentVideo = null;
+        this.$refs.videoPlayer.load();
+        this.updatePlayPauseIcon();
       }
-      this.$refs.videoPlayer.load();
     },
     handleVideoEnded() {
-      this.currentIndex++;
       const videos = this.timeline.listFilesInLayer(0);
-      if (this.currentIndex < videos.length) {
+      if (this.currentIndex < videos.length - 1) {
+        this.currentIndex++;
         const nextVideoBlob = videos[this.currentIndex].blob;
         this.currentVideo = URL.createObjectURL(nextVideoBlob);
-        this.$refs.videoPlayer.load();
-        this.$refs.videoPlayer.play();
+        const video = this.$refs.videoPlayer;
+        video.load();
+        this.$nextTick(() => {
+          video.currentTime = videos[this.currentIndex].startTime;
+          console.log(videos[this.currentIndex].startTime);
+
+          video.play();
+        })
+      } else {
+
+        this.currentIndex = 0;
+        const video = this.$refs.videoPlayer;
+        this.$nextTick(() => {
+          video.currentTime = videos[this.currentIndex].startTime;
+          console.log(videos[this.currentIndex].startTime);
+          this.updatePlayPauseIcon();
+        })
+
       }
     },
     togglePlayPause() {
@@ -112,6 +136,11 @@ export default {
         video.pause();
         this.playPauseIcon = "/playIcon2.png"; // Atualiza o ícone para "Play"
       }
+
+    },
+    updatePlayPauseIcon() {
+      const video = this.$refs.videoPlayer;
+      this.playPauseIcon = video.paused ? "/playIcon2.png" : "/pausaicon2.png";
     },
     updateVolume() {
       const video = this.$refs.videoPlayer;
@@ -135,6 +164,7 @@ export default {
       const video = this.$refs.videoPlayer;
       video.currentTime = startTime;
       video.play();
+      this.updatePlayPauseIcon();
 
       const pauseAtEndTime = () => {
         if (video.currentTime >= endTime) {
@@ -147,20 +177,24 @@ export default {
     },
     updateTime() {
       const video = this.$refs.videoPlayer;
-      // Get the list of videos
       const videos = this.timeline.listFilesInLayer(0);
-      // Accumulate durations of videos before the current video index
       let accumulated = 0;
       for (let i = 0; i < this.currentIndex; i++) {
         accumulated += videos[i].duration;
       }
-      // Calculate the global current time as previous videos plus current video's time
-      this.currentGlobalTime = accumulated + video.currentTime;
+      if (videos.length > 0) {
+        this.currentGlobalTime = accumulated + (video.currentTime - videos[this.currentIndex].startTime);
 
-      // Update slider styles (using custom CSS variables for styling)
-      const slider = this.$el.querySelector('.time-slider');
-      slider.style.setProperty('--value', this.currentGlobalTime);
-      slider.style.setProperty('--max', this.totalDuration);
+
+        const slider = this.$el.querySelector('.time-slider');
+        slider.style.setProperty('--value', this.currentGlobalTime);
+        slider.style.setProperty('--max', this.totalDuration);
+
+        const currentVideo = videos[this.currentIndex];
+        if (video.currentTime >= currentVideo.endTime) {
+          this.handleVideoEnded();
+        }
+      }
     },
     updateDuration() {
       const video = this.$refs.videoPlayer;
