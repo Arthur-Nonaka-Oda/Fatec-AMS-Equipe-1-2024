@@ -99,44 +99,58 @@ export default class TimeLine {
     }
   }
 
-  async splitVideoInHalf(video) {
-    // Ensure start and end times are defined
+  async splitVideoAtTime(video, splitTime) {
     const start = video.startTime !== undefined ? video.startTime : 0;
     const end = video.endTime !== undefined ? video.endTime : video.duration;
-    const fullDuration = end - start;
-    const midPoint = start + fullDuration / 2;
-
-    // Calculate segment durations
-    const segment1Duration = midPoint - start;
-    const segment2Duration = end - midPoint;
-
-    // Create two new Video instances representing each half
+  
+    if (splitTime <= start || splitTime >= end) {
+      console.error("Tempo de divisão inválido.");
+      return;
+    }
+  
+    const segment1Duration = splitTime - start;
+    const segment2Duration = end - splitTime;
+  
     const videoPart1 = new Video({
       filePath: video.filePath,
-      name: video.name + " (Part 1)",
+      name: video.name + " (Parte 1)",
       duration: segment1Duration,
       size: video.size,
       blob: video.blob,
       url: video.url,
       startTime: start,
-      endTime: midPoint
+      endTime: splitTime
     });
-
+  
     const videoPart2 = new Video({
       filePath: video.filePath,
-      name: video.name + " (Part 2)",
+      name: video.name + " (Parte 2)",
       duration: segment2Duration,
       size: video.size,
       blob: video.blob,
       url: video.url,
-      startTime: midPoint,
+      startTime: splitTime,
       endTime: end
     });
-
-    // Update the timeline: remove the original video and add the two new segments
+  
     this.removeFileFromLayer({ file: video, layerIndex: 0 });
     this.addFileToLayer({ file: videoPart1, type: 'video', layerIndex: 0 });
     this.addFileToLayer({ file: videoPart2, type: 'video', layerIndex: 0 });
+  }
+  getCumulativeDurationBeforeVideo(layerIndex, video) {
+    if (layerIndex < 0 || layerIndex >= this.layers.length) return 0;
+  
+    const layer = this.layers[layerIndex];
+    let current = layer.head;
+    let cumulativeDuration = 0;
+  
+    while (current !== null) {
+      if (current.item === video) return cumulativeDuration;
+      cumulativeDuration += current.item.duration;
+      current = current.next;
+    }
+  
+    return 0;
   }
 
   

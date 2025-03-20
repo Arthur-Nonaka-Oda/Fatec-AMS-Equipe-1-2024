@@ -185,8 +185,19 @@ export default {
       }
     },
     handleTrimVideo() {
-      this.timeline.splitVideoInHalf(this.selectedItem.item);
+      const selectedVideo = this.selectedItem.item;
+      const layerIndex = this.selectedItem.layerIndex;
 
+      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedVideo);
+      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
+
+      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedVideo.duration) {
+        alert("Posicione o cursor dentro do vídeo para dividir.");
+        return;
+      }
+
+      const splitPointInOriginal = selectedVideo.startTime + splitPointInTimeline;
+      this.timeline.splitVideoAtTime(selectedVideo, splitPointInOriginal);
       this.updateLayers();
     },
     async createVideoFromBlobs() {
