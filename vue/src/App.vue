@@ -193,7 +193,7 @@ export default {
       this.isLoading = true;
       const videosInfo = this.layers[0].items.map(video => ({
         filePath: video.filePath,
-        startTime: video.startTime, // make sure these properties are defined on your video objects
+        startTime: video.startTime,
         endTime: video.endTime
       }));
       console.log("front/combine/ " + videosInfo);
@@ -208,20 +208,8 @@ export default {
         this.isLoading = false;
       }
     },
-    // updateCurrentTime() {
-    //   const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100; // Cálculo do tempo por pixel
-    //   const currentTimeInSeconds = Math.round(
-    //     this.cursorPosition * secondsPerPixel
-    //   ); // Posição do cursor em segundos
-    //   this.timeline.setCurrentSecond(currentTimeInSeconds);
-    //   this.currentTime = this.formatTime(currentTimeInSeconds);
-
-    //   // Emite o tempo atual para o componente pai (App.vue)
-    //   this.$emit("cursor-position-changed", currentTimeInSeconds);
-    // },
 
     handleCursorPosition(currentTimeInSeconds) {
-      // Atualiza o tempo de início do corte com o tempo do cursor
       this.startTime = currentTimeInSeconds;
     },
     handleUpdateTime(currentTime) {
@@ -239,7 +227,7 @@ export default {
         return;
       }
 
-      const filePath = this.videoFilePath; // Certifique-se de definir corretamente o caminho do vídeo
+      const filePath = this.videoFilePath;
 
       try {
         const base64Video = await window.electron.ipcRenderer.invoke(
@@ -251,14 +239,12 @@ export default {
           }
         );
 
-        // Atualiza o vídeo cortado (aqui você pode salvar o vídeo em base64 ou apenas no caminho)
         this.videoUrl = `data:video/mp4;base64,${base64Video}`;
-        this.closeCutEditor(); // Fecha o editor de corte, se necessário
+        this.closeCutEditor(); 
       } catch (error) {
         console.error("Erro ao cortar o vídeo:", error);
       }
     },
-    // esta dando erro vou arrumar na proxima aula -_-
   },
 };
 </script>

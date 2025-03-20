@@ -140,6 +140,49 @@ ipcMain.handle('combine-videos', async (event, { videosInfo }) => {
   return videoBase64;
 });
 
+ipcMain.handle('create-video-from-image', async (event, { filePath, duration }) => {
+  const outputFilePath = path.join(app.getPath('userData'), `image-video-${Date.now()}.mp4`);
+
+  try {
+    await createVideoFromImage(filePath, duration, outputFilePath);
+    const videoBase64 = await fileToBase64(outputFilePath);
+    return videoBase64; // Retorna o vídeo em base64 para o frontend
+  } catch (error) {
+    console.error('Error creating video from image:', error);
+    throw new Error('Error creating video from image.');
+  }
+});
+
+function createVideoFromImage(imagePath, duration, outputFilePath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg(imagePath)
+      .inputOptions(['-loop', '1'])
+      .outputOptions([
+        '-t', duration,
+        '-c:v', 'libx264',
+        '-r', '20',
+        '-pix_fmt', 'yuv420p',
+        '-vf', 'scale=1280:720'
+      ])
+      .output(outputFilePath)
+      .on('start', (commandLine) => {
+        console.log('Spawned Ffmpeg with command: ' + commandLine);
+      })
+      .on('progress', (progress) => {
+        console.log(`Processing: ${progress.percent}% done`);
+      })
+      .on('end', () => {
+        console.log('Video created successfully.');
+        resolve();
+      })
+      .on('error', (err) => {
+        console.error('Error creating video from image:', err);
+        reject(err);
+      })
+      .run();
+  });
+}
+
 function checkVideoDurations(videoPaths) {
   return Promise.all(videoPaths.map(videoPath => {
     return new Promise((resolve, reject) => {

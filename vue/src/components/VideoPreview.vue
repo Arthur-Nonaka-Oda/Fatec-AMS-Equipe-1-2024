@@ -85,6 +85,7 @@ export default {
     loadVideo() {
       const videos = this.timeline.listFilesInLayer(0);
       if (videos.length > 0) {
+        console.log(videos);
         const currentItem = videos[this.currentIndex];
         this.currentVideo = URL.createObjectURL(currentItem.blob);
         const video = this.$refs.videoPlayer;
