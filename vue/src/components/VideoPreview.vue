@@ -86,14 +86,13 @@ export default {
       const videos = this.timeline.listFilesInLayer(0);
       if (videos.length > 0) {
         const currentItem = videos[this.currentIndex];
-        this.isImage = false;
         this.currentVideo = URL.createObjectURL(currentItem.blob);
         const video = this.$refs.videoPlayer;
-        video.load();
         this.$nextTick(() => {
           video.currentTime = currentItem.startTime;
           this.updatePlayPauseIcon();
         });
+        video.load();
       } else {
         this.currentVideo = null;
         const video = this.$refs.videoPlayer;
@@ -218,9 +217,6 @@ export default {
         globalTime = videos[targetIndex].duration;
       }
 
-      // Calculate the local time in the target video
-      const localTime = globalTime - accumulated;
-
       // If we need to change the video segment
       if (targetIndex !== this.currentIndex) {
         this.currentIndex = targetIndex;
@@ -248,15 +244,11 @@ export default {
         // Load the new video and set its time
         this.$nextTick(() => {
           const video = this.$refs.videoPlayer;
-          video.load();
           video.currentTime = 0; // Start from the beginning of the sliced video
+          video.load();
           this.updatePlayPauseIcon();
         });
 
-      } else {
-        if (!this.isImage) {
-          this.$refs.videoPlayer.currentTime = localTime;
-        }
       }
     },
     formatTime(seconds) {
@@ -285,9 +277,6 @@ export default {
     video.addEventListener("ended", this.handleVideoEnded);
     this.loadVideo();
   },
-  beforeDestroy() {
-    this.clearImageInterval();
-  }
 
 };
 </script>
