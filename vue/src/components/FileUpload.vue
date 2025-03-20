@@ -21,20 +21,24 @@ export default {
     openFileDialog() {
       this.$refs.fileInput.click();
     },
-    handleFileUpload(event) {
-      const files = event.target.files;
-      Array.from(files).forEach(file => {
+    async handleFileUpload(event) {
+      const files = Array.from(event.target.files);
+      const promises = files.map(file => {
         const fileType = this.getFileType(file);
         if (fileType === 'video') {
-          this.handleVideoFile(file);
+          return this.handleVideoFile(file);
         } else if (fileType === 'image') {
-          this.handleImageFile(file);
+          return this.handleImageFile(file);
         } else if (fileType === 'audio') {
-          this.handleAudioFile(file);
+          return this.handleAudioFile(file);
         } else {
           console.log('Unsupported file type:', file.type);
+          return Promise.resolve();
         }
       });
+
+      await Promise.all(promises);
+      console.log('All files processed');
     },
     getFileType(file) {
       const mimeType = file.type;
@@ -131,11 +135,30 @@ export default {
     async handleImageFile(file) {
       if (!file) return;
       console.log(file);
-      const { xResolution, yResolution } = await this.getImageResolution(file);
-      const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-      const thumbnailURL = URL.createObjectURL(file);
 
-      this.$files.addImage({ filePath: file.path, name: file.name, xResolution: xResolution, yResolution: yResolution, size: sizeInMB, blob: file, url: thumbnailURL });
+      if (file.type === 'image/x-icon') {
+        console.log('Ignoring .ico file');
+        return;
+      }
+
+      const videoBase64 = await window.electron.ipcRenderer.invoke('create-video-from-image', {
+        filePath: file.path,
+        duration: 5
+      });
+
+      const byteCharacters = atob(videoBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const videoBlob = new Blob([byteArray], { type: 'video/mp4' });
+
+      const duration = await this.getVideoDuration(videoBlob);
+      const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+      const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(videoBlob), duration);
+
+      this.$files.addImage({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: videoBlob, url: thumbnailURL });
     },
     async handleVideoFile(file) {
       console.log(file);
@@ -144,7 +167,6 @@ export default {
       const duration = await this.getVideoDuration(file);
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
       const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(file), duration);
-      // const thumbnailURL = "teste";
 
       this.$files.addVideo({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: file, url: thumbnailURL });
     },
@@ -153,21 +175,21 @@ export default {
     //       const videoElement = document.createElement('video');
     //       const canvasElement = document.createElement('canvas');
     //       const context = canvasElement.getContext('2d');
-      
+
     //       videoElement.onloadeddata = function () {
     //         videoElement.currentTime = videoElement.duration / 2;
     //       };
-      
+
     //       videoElement.onseeked = function () {
     //         context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
     //         const thumbnailUrl = canvasElement.toDataURL('image/png');
     //         resolve(thumbnailUrl);
     //       };
-      
+
     //       videoElement.onerror = function () {
     //         reject('Error loading video file.');
     //       };
-      
+
     //       videoElement.src = blobUrl;
     //     });
     //   },
@@ -198,28 +220,28 @@ export default {
       }
     },
     async importVideo({ data, filePath }) {
-        const byteCharacters = atob(data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'video/mp4' });
-        const blobUrl = URL.createObjectURL(blob);
+      const byteCharacters = atob(data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'video/mp4' });
+      const blobUrl = URL.createObjectURL(blob);
 
-        const videoElement = document.createElement('video');
-        videoElement.src = blobUrl;
-        videoElement.onloadeddata = async () => {
-          const duration = videoElement.duration;
-          const thumbnailUrl = await this.getVideoThumbnail(blobUrl, duration);
+      const videoElement = document.createElement('video');
+      videoElement.src = blobUrl;
+      videoElement.onloadeddata = async () => {
+        const duration = videoElement.duration;
+        const thumbnailUrl = await this.getVideoThumbnail(blobUrl, duration);
 
-          const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
+        const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
 
-          this.$files.addVideo({ filePath: filePath, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
-        };
-        videoElement.onerror = () => {
-          console.error('Error loading video from Blob');
-        };
+        this.$files.addVideo({ filePath: filePath, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
+      };
+      videoElement.onerror = () => {
+        console.error('Error loading video from Blob');
+      };
     },
   }
 }
