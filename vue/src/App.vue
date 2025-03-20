@@ -52,10 +52,12 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview :timeline="timeline" @delete-video="handleDeleteVideo" @trim-video="handleTrimVideo" />
+        <VideoPreview ref="videoPreview" :timeline="timeline" @delete-video="handleDeleteVideo" @trim-video="handleTrimVideo"
+          @update-time="handleUpdateTime" />
       </div>
-      <TimeLine @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline" :layers="layers"
-        :update-layers="updateLayers" />
+      <TimeLine ref="timeline" @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline"
+        :layers="layers" :update-layers="updateLayers" :current-time="currentGlobalTime"
+        @cursor-moved="handleCursorMoved" />
     </section>
   </div>
 </template>
@@ -94,11 +96,12 @@ export default {
       videoFilePath: null, // Novo atributo para armazenar o caminho real do arquivo
       cursorTimeInSeconds: 0, // Armazena o tempo do cursor
       isLoading: false,
+      currentGlobalTime: 0,
     };
   },
   created() {
     this.timeline = new TimeLine();
-  this.layers = this.timeline.getLayersForVue();
+    this.layers = this.timeline.getLayersForVue();
 
     window.addEventListener("keydown", this.handleKeyDown);
   },
@@ -108,15 +111,15 @@ export default {
   },
   methods: {
     updateLayers(newLayers) {
-    this.layers = newLayers || this.timeline.getLayersForVue();
-    
-    const hasItems = this.layers.some((layer) => layer.items.length > 0);
-    if (hasItems) {
-      // this.createVideoFromBlobs();
-    } else {
-      this.videoUrl = `data:video/mp4;base64,${""}`;
-    }
-  },
+      this.layers = newLayers || this.timeline.getLayersForVue();
+
+      const hasItems = this.layers.some((layer) => layer.items.length > 0);
+      if (hasItems) {
+        // this.createVideoFromBlobs();
+      } else {
+        this.videoUrl = `data:video/mp4;base64,${""}`;
+      }
+    },
     async renderizeVideo() {
       this.isLoading = true;
       const videosPaths = this.layers[0].items.map((video) => video.filePath);
@@ -205,22 +208,29 @@ export default {
         this.isLoading = false;
       }
     },
-    // esta dando erro vou arrumar na proxima aula -_-
-    updateCurrentTime() {
-      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100; // Cálculo do tempo por pixel
-      const currentTimeInSeconds = Math.round(
-        this.cursorPosition * secondsPerPixel
-      ); // Posição do cursor em segundos
-      this.timeline.setCurrentSecond(currentTimeInSeconds);
-      this.currentTime = this.formatTime(currentTimeInSeconds);
+    // updateCurrentTime() {
+    //   const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100; // Cálculo do tempo por pixel
+    //   const currentTimeInSeconds = Math.round(
+    //     this.cursorPosition * secondsPerPixel
+    //   ); // Posição do cursor em segundos
+    //   this.timeline.setCurrentSecond(currentTimeInSeconds);
+    //   this.currentTime = this.formatTime(currentTimeInSeconds);
 
-      // Emite o tempo atual para o componente pai (App.vue)
-      this.$emit("cursor-position-changed", currentTimeInSeconds);
-    },
+    //   // Emite o tempo atual para o componente pai (App.vue)
+    //   this.$emit("cursor-position-changed", currentTimeInSeconds);
+    // },
 
     handleCursorPosition(currentTimeInSeconds) {
       // Atualiza o tempo de início do corte com o tempo do cursor
       this.startTime = currentTimeInSeconds;
+    },
+    handleUpdateTime(currentTime) {
+      this.currentGlobalTime = currentTime;
+      this.$refs.timeline.updateCurrentTime(currentTime);
+    },
+    handleCursorMoved(currentTimeInSeconds) {
+      this.currentGlobalTime = currentTimeInSeconds;
+      this.$refs.videoPreview.$refs.videoPlayer.currentTime = currentTimeInSeconds;
     },
 
     async cutVideo() {

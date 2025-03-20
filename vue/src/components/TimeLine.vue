@@ -13,7 +13,7 @@
                 <div v-for="second in filteredSeconds" :key="second" class="time-marker">
                     {{ formatTime(second) }}
                 </div>
-            </div>rgrgrg
+            </div>
         </div> -->
     <div class="layers">
       <div v-for="(layer, layerIndex) in layers" :key="layerIndex" class="layer">
@@ -113,7 +113,10 @@ export default {
         let newPosition = event.clientX - timelineRect.left;
         newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
         this.cursorPosition = newPosition;
-        this.updateCurrentTime();
+        const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
+        const currentTimeInSeconds = this.cursorPosition * secondsPerPixel;
+        this.currentTime = this.formatTime(currentTimeInSeconds);
+        this.$emit('cursor-moved', currentTimeInSeconds);
       }
     },
 
@@ -200,33 +203,30 @@ export default {
     handleDeleteVideo(video) {
       const index = this.videos.indexOf(video);
       if (index !== -1) {
-        this.videos.splice(index, 1); // Remove o vídeo da lista
-        this.timeline.removeFileFromLayer({ // Remove o vídeo da timeline
+        this.videos.splice(index, 1);
+        this.timeline.removeFileFromLayer({
           file: video,
-          layerIndex: 0, // Ajuste conforme necessário
+          layerIndex: 0,
         });
-        this.updateLayers(); // Atualiza a visualização
+        this.updateLayers();
       }
     },
     formatTime(seconds) {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const remainingSeconds = seconds % 60;
+      const roundedSeconds = Math.floor(seconds);
+      const hours = Math.floor(roundedSeconds / 3600);
+      const minutes = Math.floor((roundedSeconds % 3600) / 60);
+      const remainingSeconds = roundedSeconds % 60;
       return `${hours.toString().padStart(2, "0")}:${minutes
         .toString()
         .padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     },
-    updateCurrentTime() {
+    updateCurrentTime(currentTimeInSeconds) {
       const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
-      const currentTimeInSeconds = Math.round(
-        this.cursorPosition * secondsPerPixel
-      );
-      this.timeline.setCurrentSecond(currentTimeInSeconds);
+      this.cursorPosition = currentTimeInSeconds / secondsPerPixel;
       this.currentTime = this.formatTime(currentTimeInSeconds);
     },
 
     updateZoom() {
-      // Aqui, ajusta o minimumScaleTime baseado no zoom selecionado
       const zoomMapping = {
         0.1: 60, // 10%
         0.25: 24, // 25%

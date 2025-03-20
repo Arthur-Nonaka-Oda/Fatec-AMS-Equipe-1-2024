@@ -110,6 +110,7 @@ export default {
       } else {
         this.currentIndex = 0;
         const video = this.$refs.videoPlayer;
+        this.loadVideo();
         this.$nextTick(() => {
           video.currentTime = videos[this.currentIndex].startTime;
           console.log(videos[this.currentIndex].startTime);
@@ -186,6 +187,7 @@ export default {
         if (video.currentTime >= currentVideo.endTime) {
           this.handleVideoEnded();
         }
+        this.$emit('update-time', this.currentGlobalTime);
       }
     },
     updateDuration() {
