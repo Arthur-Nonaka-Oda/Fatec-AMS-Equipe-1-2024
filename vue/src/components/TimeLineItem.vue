@@ -8,7 +8,12 @@
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
   >
-    <img class="item-content" :src="item.url" />
+  <template v-if="item.type === 'audio'">
+     <div class="audio-icon">Audio</div>
+   </template>
+   <template v-else>
+     <img class="item-content" :src="item.url" alt="Conteúdo" />
+   </template>
     </div>
   </template>
    
@@ -81,6 +86,19 @@
   </script>
    
   <style scoped>
+.audio-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background-color: #ddd;
+  color: #333;
+  font-weight: bold;
+}
+
+
+
   .timeline-item.dragging {
   opacity: 0.7;
   transform: scale(0.95);
