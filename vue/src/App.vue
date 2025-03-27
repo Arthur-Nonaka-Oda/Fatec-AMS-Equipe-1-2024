@@ -229,7 +229,7 @@ export default {
     },
     handleCursorMoved(currentTimeInSeconds) {
       this.currentGlobalTime = currentTimeInSeconds;
-      this.$refs.videoPreview.$refs.videoPlayer.currentTime = currentTimeInSeconds;
+      this.$refs.videoPreview.updateCurrentTime(currentTimeInSeconds);
     },
 
     async cutVideo() {

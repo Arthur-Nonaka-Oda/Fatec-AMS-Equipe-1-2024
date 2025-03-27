@@ -5,6 +5,10 @@
         <source :src="currentVideo" type="video/mp4" />
         Seu navegador não suporta a exibição de vídeos.
       </video>
+      <audio ref="audioPlayer" v-if="currentAudio">
+        <source :src="currentAudio" type="audio/mp3" />
+        Seu navegador não suporta a reprodução de áudio.
+      </audio>
     </div>
     <input type="range" min="0" :max="totalDuration" step="0.1" v-model="currentGlobalTime" @input="seekVideo"
       class="time-slider">
@@ -53,7 +57,9 @@ export default {
   data() {
     return {
       currentIndex: 0,
+      currentAudioIndex: 0,
       currentVideo: null,
+      currentAudio: null,
       playPauseIcon: "../playIcon2.png", // Caminho para o ícone de play
       videoDuration: 0,
       currentTime: 0,
@@ -78,6 +84,7 @@ export default {
       deep: true,
       handler() {
         this.loadVideo();
+        this.loadAudio();
       }
     }
   },
@@ -88,6 +95,7 @@ export default {
         console.log(videos);
         const currentItem = videos[this.currentIndex];
         this.currentVideo = URL.createObjectURL(currentItem.blob);
+
         const video = this.$refs.videoPlayer;
         this.$nextTick(() => {
           video.currentTime = currentItem.startTime;
@@ -99,6 +107,25 @@ export default {
         const video = this.$refs.videoPlayer;
         video.load();
 
+        this.updatePlayPauseIcon();
+      }
+    },
+    loadAudio() {
+      const audios = this.timeline.listFilesInLayer(1);
+      if(audios.length > 0) {
+        const currentAudioItem = audios[this.currentAudioIndex];
+        this.currentAudio = URL.createObjectURL(currentAudioItem.blob);
+
+        const audio = this.$refs.audioPlayer;
+        this.$nextTick(() => {
+          audio.currentTime = currentAudioItem.startTime;
+          this.updatePlayPauseIcon();
+        });
+        audio.load();
+      } else {
+        this.currentAudio = null;
+        const audio = this.$refs.audioPlayer;
+        audio.load();
         this.updatePlayPauseIcon();
       }
     },
@@ -121,16 +148,40 @@ export default {
 
       }
     },
+    handleAudioEnded() {
+      const audios = this.timeline.listFilesInLayer(1);
+      if (this.currentIndex < audios.length - 1) {
+        this.currentAudioIndex++;
+        this.loadAudio();
+        this.$refs.audioPlayer.play();
+      } else {
+        this.currentAudioIndex = 0;
+        const audio = this.$refs.audioPlayer;
+        this.loadAudio();
+        this.$nextTick(() => {
+          audio.currentTime = audios[this.currentAudioIndex].startTime;
+          audio.pause();
+          this.updatePlayPauseIcon();
+        })
+      }
+    },
     togglePlayPause() {
       const video = this.$refs.videoPlayer;
+      const audio = this.$refs.audioPlayer;
+
       if (video.paused) {
         video.play();
-        this.playPauseIcon = "/pausaicon2.png"; // Atualiza o ícone para "Pause"
+        if (audio && this.currentAudio) {
+          audio.play();
+        }
+        this.playPauseIcon = "/pausaicon2.png";
       } else {
         video.pause();
-        this.playPauseIcon = "/playIcon2.png"; // Atualiza o ícone para "Play"
+        if (audio && this.currentAudio) {
+          audio.pause();
+        }
+        this.playPauseIcon = "/playIcon2.png";
       }
-
     },
     updatePlayPauseIcon() {
       const video = this.$refs.videoPlayer;
@@ -169,16 +220,29 @@ export default {
 
       video.addEventListener('timeupdate', pauseAtEndTime);
     },
+    updateCurrentTime(currentGlobalTime) {
+      this.currentGlobalTime = currentGlobalTime;
+      console.log("update");
+      const video = this.$refs.videoPlayer;
+      video.pause();
+      this.seekVideo();
+    },
     updateTime() {
       const video = this.$refs.videoPlayer;
+      const audio = this.$refs.audioPlayer;
       const videos = this.timeline.listFilesInLayer(0);
+      const audios = this.timeline.listFilesInLayer(1);
       let accumulated = 0;
       for (let i = 0; i < this.currentIndex; i++) {
         accumulated += videos[i].duration;
       }
       if (videos.length > 0) {
         this.currentGlobalTime = accumulated + (video.currentTime - videos[this.currentIndex].startTime);
-
+        
+        
+      if (audio && this.currentAudio) {
+          audio.currentTime = video.currentTime;
+      }
 
         const slider = this.$el.querySelector('.time-slider');
         slider.style.setProperty('--value', this.currentGlobalTime);
@@ -188,6 +252,14 @@ export default {
         if (video.currentTime >= currentVideo.endTime) {
           this.handleVideoEnded();
         }
+
+        const currentAudio = audios[this.currentAudioIndex];
+        if(this.currentAudio) {
+          if (audio.currentTime >= currentAudio.endTime) {
+          this.handleAudioEnded();
+          }
+        }
+
         this.$emit('update-time', this.currentGlobalTime);
       }
     },
@@ -219,40 +291,44 @@ export default {
         targetIndex = videos.length - 1;
         globalTime = videos[targetIndex].duration;
       }
-
+      
       // If we need to change the video segment
       if (targetIndex !== this.currentIndex) {
         this.currentIndex = targetIndex;
-
+        
         // Revoke the previous blob URL if needed
         if (this.currentVideo) {
           URL.revokeObjectURL(this.currentVideo);
         }
-
+        
         const videoBlob = videos[targetIndex].blob;
         const videoDuration = videos[targetIndex].duration;
-
+        
         // Start and end time from the video's metadata
         const startTime = videos[targetIndex].startTime; // Assume these times are provided in the video metadata
         const endTime = videos[targetIndex].endTime;     // These are the start and end times of the video segment
-
+        
+        
         // Calculate the byte range for the slice
         const startByte = (startTime / videoDuration) * videoBlob.size;
         const endByte = (endTime / videoDuration) * videoBlob.size;
-
+        
         // Slice the video blob from startByte to endByte
         const slicedBlob = videoBlob.slice(startByte, endByte, "video/mp4");
         this.currentVideo = URL.createObjectURL(slicedBlob);
-
-        // Load the new video and set its time
+        
         this.$nextTick(() => {
           const video = this.$refs.videoPlayer;
-          video.currentTime = 0; // Start from the beginning of the sliced video
+          video.currentTime = relativeTime;
           video.load();
           this.updatePlayPauseIcon();
         });
-
+        
       }
+
+      const relativeTime = globalTime - accumulated;
+      const video = this.$refs.videoPlayer;
+      video.currentTime = relativeTime;
     },
     formatTime(seconds) {
       const hours = Math.floor(seconds / 3600);
@@ -279,6 +355,7 @@ export default {
     video.addEventListener("pause", this.updatePlayPauseIcon);
     video.addEventListener("ended", this.handleVideoEnded);
     this.loadVideo();
+    // this.loadAudio();
   },
 
 };
