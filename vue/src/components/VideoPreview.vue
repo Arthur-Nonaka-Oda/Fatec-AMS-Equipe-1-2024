@@ -67,6 +67,7 @@ export default {
       volume: 1,
       showVolumeControl: false,
       volumeIcon: "/volume.png",
+      audioSyncMap: null
 
     };
   },
@@ -92,7 +93,6 @@ export default {
     loadVideo() {
       const videos = this.timeline.listFilesInLayer(0);
       if (videos.length > 0) {
-        console.log(videos);
         const currentItem = videos[this.currentIndex];
         this.currentVideo = URL.createObjectURL(currentItem.blob);
 
@@ -129,6 +129,23 @@ export default {
         this.updatePlayPauseIcon();
       }
     },
+    initializeAudioSync() {
+      const videos = this.timeline.listFilesInLayer(0);
+      const audios = this.timeline.listFilesInLayer(1);
+      
+      this.audioSyncMap = audios.map((audioItem, index) => {
+        let globalStartTime = 0;
+        for (let i = 0; i < index; i++) {
+          globalStartTime += videos[i].duration;
+        }
+        
+        return {
+          audioItem,
+          globalStartTime,
+          globalEndTime: globalStartTime + audioItem.duration
+        };
+      });
+    },
     handleVideoEnded() {
       const videos = this.timeline.listFilesInLayer(0);
       if (this.currentIndex < videos.length - 1) {
@@ -143,6 +160,9 @@ export default {
           video.currentTime = videos[this.currentIndex].startTime;
           console.log(videos[this.currentIndex].startTime);
           video.pause();
+          if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.pause();
+      }
           this.updatePlayPauseIcon();
         })
 
@@ -150,19 +170,16 @@ export default {
     },
     handleAudioEnded() {
       const audios = this.timeline.listFilesInLayer(1);
-      if (this.currentIndex < audios.length - 1) {
+      if (this.currentAudioIndex < audios.length - 1) {
         this.currentAudioIndex++;
         this.loadAudio();
         this.$refs.audioPlayer.play();
       } else {
         this.currentAudioIndex = 0;
         const audio = this.$refs.audioPlayer;
+        audio.currentTime = audios[this.currentAudioIndex].startTime;
         this.loadAudio();
-        this.$nextTick(() => {
-          audio.currentTime = audios[this.currentAudioIndex].startTime;
-          audio.pause();
-          this.updatePlayPauseIcon();
-        })
+        audio.pause();
       }
     },
     togglePlayPause() {
@@ -172,8 +189,18 @@ export default {
       if (video.paused) {
         video.play();
         if (audio && this.currentAudio) {
-          audio.play();
-        }
+        audio.play().then(() => {
+          console.log('Audio started playing successfully');
+        }).catch(error => {
+          console.error('Audio play error:', error);
+          // Log additional audio details
+          console.log('Audio details:', {
+            src: audio.src,
+            currentTime: audio.currentTime,
+            duration: audio.duration
+          });
+        });
+      }
         this.playPauseIcon = "/pausaicon2.png";
       } else {
         video.pause();
@@ -222,7 +249,6 @@ export default {
     },
     updateCurrentTime(currentGlobalTime) {
       this.currentGlobalTime = currentGlobalTime;
-      console.log("update");
       const video = this.$refs.videoPlayer;
       video.pause();
       this.seekVideo();
@@ -240,9 +266,23 @@ export default {
         this.currentGlobalTime = accumulated + (video.currentTime - videos[this.currentIndex].startTime);
         
         
-      if (audio && this.currentAudio) {
-          audio.currentTime = video.currentTime;
-      }
+        if (audio && this.currentAudio && this.audioSyncMap) {
+          // Find the matching audio segment
+          const matchingSegment = this.audioSyncMap.find(segment => 
+            this.currentGlobalTime >= segment.globalStartTime && 
+            this.currentGlobalTime < segment.globalEndTime
+          );
+          
+          if (matchingSegment) {
+            // Calculate relative time within the audio segment
+            const relativeAudioTime = this.currentGlobalTime - matchingSegment.globalStartTime;
+            
+            // Only update if there's a significant difference
+            if (Math.abs(audio.currentTime - relativeAudioTime) > 0.1) {
+              audio.currentTime = relativeAudioTime;
+            }
+          }
+        }
 
         const slider = this.$el.querySelector('.time-slider');
         slider.style.setProperty('--value', this.currentGlobalTime);
@@ -349,6 +389,9 @@ export default {
   },
   mounted() {
     const video = this.$refs.videoPlayer;
+
+    this.initializeAudioSync();
+
     video.addEventListener("timeupdate", this.updateTime);
     video.addEventListener("loadedmetadata", this.updateDuration);
     video.addEventListener("play", this.updatePlayPauseIcon);
