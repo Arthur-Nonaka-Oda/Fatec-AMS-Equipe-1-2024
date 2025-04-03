@@ -290,7 +290,7 @@ async function combineVideos(videosInfo, outputFilePath) {
 }
 
 
-ipcMain.handle('renderize', async (event, { videosPaths }) => {
+ipcMain.handle('renderize', async (event, { videos }) => {
   const { filePath } = await dialog.showSaveDialog({
     title: "Save recording",
     defaultPath: `vid-${Date.now()}`,
@@ -298,7 +298,7 @@ ipcMain.handle('renderize', async (event, { videosPaths }) => {
 
   if (filePath) {
     const outputFilePath = filePath.endsWith('.mp4') ? filePath : `${filePath}.mp4`;
-    await renderizeVideo(videosPaths, outputFilePath);
+    await renderizeVideo(videos, outputFilePath);
     return true;
   } else {
     throw new Error('No file path selected');
@@ -306,35 +306,98 @@ ipcMain.handle('renderize', async (event, { videosPaths }) => {
 });
 
 
-async function renderizeVideo(videoPaths, outputFilePath) {
+// async function renderizeVideo(videos, outputFilePath) {
+//   try {
+//     const normalizedVideoPaths = await Promise.all(
+//       videoPaths.map(videoPath => normalizeFrameRate(videoPath, app.getPath('userData')))
+//     );
+//     console.log('Normalized Video Paths:', normalizedVideoPaths);
+
+//     const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
+//     const fileContent = normalizedVideoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
+//     fs.writeFileSync(listFilePath, fileContent);
+
+//     return new Promise((resolve, reject) => {
+//       ffmpeg()
+//         .input(listFilePath)
+//         .inputOptions(['-f concat', '-safe 0'])
+//         .outputOptions([
+//           '-c:v libx264',
+//           '-crf 10',
+//           '-preset slow', 
+//           '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
+//           '-c:a aac',
+//           '-b:a 192k'
+//         ])
+//         .on('start', (commandLine) => {
+//           console.log('Spawned Ffmpeg with command: ' + commandLine);
+//         })
+//         .on('codecData', (data) => {
+//           console.log('Input is ' + data.audio + ' audio with ' + data.video + ' video');
+//         })
+//         .on('progress', (progress) => {
+//           console.log('Processing: ' + progress.percent + '% done');
+//         })
+//         .on('end', () => {
+//           console.log('Video rendered successfully');
+//           resolve();
+//         })
+//         .on('error', (err) => {
+//           console.error('Error rendering video:', err);
+//           reject(err);
+//         })
+//         .output(outputFilePath)
+//         .run();
+//     });
+//   } catch (error) {
+//     console.error('Error normalizing videos:', error);
+//     throw error;
+//   }
+// }
+
+async function renderizeVideo(videos, outputFilePath) {
   try {
-    // Paralelizar a normalização dos vídeos
-    const normalizedVideoPaths = await Promise.all(
-      videoPaths.map(videoPath => normalizeFrameRate(videoPath, app.getPath('userData')))
-    );
-    console.log('Normalized Video Paths:', normalizedVideoPaths);
-
-    const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
-    const fileContent = normalizedVideoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
-    fs.writeFileSync(listFilePath, fileContent);
-
     return new Promise((resolve, reject) => {
-      ffmpeg()
-        .input(listFilePath)
-        .inputOptions(['-f concat', '-safe 0'])
+      const ffmpegCommand = ffmpeg();
+
+      let filterParts = [];
+      let concatInputs = '';
+
+      videos.forEach((video, index) => {
+        const { filePath, startTime, endTime } = video;
+
+        ffmpegCommand.input(filePath);
+
+        filterParts.push(
+          `[${index}:v]trim=start=${startTime}:end=${endTime},setpts=PTS-STARTPTS[v${index}]`
+        );
+        filterParts.push(
+          `[${index}:a]atrim=start=${startTime}:end=${endTime},asetpts=PTS-STARTPTS[a${index}]`
+        );
+
+        // Interleave each video and audio stream
+        concatInputs += `[v${index}][a${index}]`;
+      });
+
+      // Use the interleaved concatInputs string
+      filterParts.push(
+        `${concatInputs}concat=n=${videos.length}:v=1:a=1[outv][outa]`
+      );
+
+      const filterComplex = filterParts.join('; ');
+
+      ffmpegCommand
+        .complexFilter(filterComplex, ['outv', 'outa'])
         .outputOptions([
           '-c:v libx264',
-          '-crf 10', // Valor de CRF mais baixo para maior qualidade
-          '-preset slow', // Preset mais lento para maior qualidade
+          '-crf 10',
+          '-preset slow',
           '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
           '-c:a aac',
-          '-b:a 192k'
+          '-b:a 192k',
         ])
         .on('start', (commandLine) => {
           console.log('Spawned Ffmpeg with command: ' + commandLine);
-        })
-        .on('codecData', (data) => {
-          console.log('Input is ' + data.audio + ' audio with ' + data.video + ' video');
         })
         .on('progress', (progress) => {
           console.log('Processing: ' + progress.percent + '% done');
@@ -351,20 +414,11 @@ async function renderizeVideo(videoPaths, outputFilePath) {
         .run();
     });
   } catch (error) {
-    console.error('Error normalizing videos:', error);
+    console.error('Error rendering videos:', error);
     throw error;
   }
 }
 
-// ipcMain.handle("save-dialog", async () => {
-//   // dialog.showErrorBox("Save Dialog - index");
-//   const {fileName} = await createModalWindow(mainWindow);
-//   const { filePath } = await dialog.showSaveDialog({
-//     title: "Save recording",
-//     defaultPath: `vid-${Date.now()}`,
-//   });
-//   return { fileName };
-// });
 
 ipcMain.handle("videos-recorded", async () => {
   try {

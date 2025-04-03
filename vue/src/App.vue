@@ -52,8 +52,8 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview ref="videoPreview" :timeline="timeline" @delete-video="handleDeleteVideo" @trim-video="handleTrimVideo"
-          @update-time="handleUpdateTime" />
+        <VideoPreview ref="videoPreview" :timeline="timeline" @delete-video="handleDeleteVideo"
+          @trim-video="handleTrimVideo" @update-time="handleUpdateTime" />
       </div>
       <TimeLine ref="timeline" @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline"
         :layers="layers" :update-layers="updateLayers" :current-time="currentGlobalTime"
@@ -122,11 +122,14 @@ export default {
     },
     async renderizeVideo() {
       this.isLoading = true;
-      const videosPaths = this.layers[0].items.map((video) => video.filePath);
-      console.log(videosPaths);
+      const videos = this.layers[0].items.map(video => ({
+        filePath: video.filePath,
+        startTime: video.startTime,
+        endTime: video.endTime,
+      }));
       try {
         await window.electron.ipcRenderer.invoke("renderize", {
-          videosPaths,
+          videos,
         });
       } finally {
         this.isLoading = false;
@@ -251,7 +254,7 @@ export default {
         );
 
         this.videoUrl = `data:video/mp4;base64,${base64Video}`;
-        this.closeCutEditor(); 
+        this.closeCutEditor();
       } catch (error) {
         console.error("Erro ao cortar o vídeo:", error);
       }
