@@ -23,7 +23,7 @@ function createWindow() {
       nodeIntegration: true,
     },
   });
-  mainWindow.loadURL('http://localhost:8120');
+  mainWindow.loadURL('http://localhost:8080');
   // mainWindow.loadFile(path.join(__dirname, "../index.html"));
 
   session

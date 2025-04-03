@@ -84,3 +84,19 @@ const historicoEv = [
 
 
 20. Somente os videos acrecentão tempo na timeline.
+
+03/04
+
+21. Cortar Audio
+
+22. fazer build do video final
+
+23. resolucao do video, (de onde vai vir a resolucao)
+
+24. Melhorar zoom, até 500%
+
+25. Audio do video importado
+
+26. (Futuro) adicionar possibilidade ods itens ficarem separados na timeline/ flexiveis
+
+27. (Futuro) adicionar possibilidade de configurar o volume unitariamente para cada audio. / Volume no rodape 
