@@ -19,29 +19,19 @@ export default {
   components: {
     quillEditor
   },
-  data()  {
+  data() {
     return {
       contentHtml: '',
       quillOptions: {
-        placeholder: 'Digite aqui...',
+        placeholder: 'Digite aqui... -_-',
         readonly: false,
-        modules: {
-          toolbar: [
-            [{ header: [1, 2, false] }],
-            ['bold', 'italic', 'underline'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            [{ color: [] }, { background: [] }],
-            ['clean'],
-            
-          ],
-        },
       },
     };
   },
   methods: {
     saveText() {
       localStorage.setItem('content', this.contentHtml);
-      this.$files.addtext({ filePath: filePath, name: 'Imported video', duration: duration, size: sizeInMB, blob: blob, url: thumbnailUrl });
+      alert('Texto salvo com sucesso!');
     },
   },
 };

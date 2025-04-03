@@ -52,11 +52,12 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview :video-url="videoUrl" :current-time="currentTime" @delete-video="handleDeleteVideo"
-          @update:currentTime="currentTime = $event" />
+        <VideoPreview ref="videoPreview" :timeline="timeline" @delete-video="handleDeleteVideo" @trim-video="handleTrimVideo"
+          @update-time="handleUpdateTime" />
       </div>
-      <TimeLine @item-clicked="handleItemClicked" :selected-item="selectedItem" :current-time="currentTime" :timeline="timeline" :layers="layers"
-        :update-layers="updateLayers" />
+      <TimeLine ref="timeline" @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline"
+        :layers="layers" :update-layers="updateLayers" :current-time="currentGlobalTime"
+        @cursor-moved="handleCursorMoved" />
     </section>
   </div>
 </template>
@@ -94,17 +95,13 @@ export default {
       duration: 10, // Duração do corte
       videoFilePath: null, // Novo atributo para armazenar o caminho real do arquivo
       cursorTimeInSeconds: 0, // Armazena o tempo do cursor
-      currentTime: 0,
       isLoading: false,
+      currentGlobalTime: 0,
     };
   },
   created() {
     this.timeline = new TimeLine();
-    this.layers = [
-      { items: this.timeline.listFilesInLayer(0) },
-      { items: this.timeline.listFilesInLayer(1) },
-      { items: this.timeline.listFilesInLayer(2) },
-    ];
+    this.layers = this.timeline.getLayersForVue();
 
     window.addEventListener("keydown", this.handleKeyDown);
   },
@@ -113,6 +110,16 @@ export default {
     window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
+    updateLayers(newLayers) {
+      this.layers = newLayers || this.timeline.getLayersForVue();
+
+      const hasItems = this.layers.some((layer) => layer.items.length > 0);
+      if (hasItems) {
+        // this.createVideoFromBlobs();
+      } else {
+        this.videoUrl = `data:video/mp4;base64,${""}`;
+      }
+    },
     async renderizeVideo() {
       this.isLoading = true;
       const videosPaths = this.layers[0].items.map((video) => video.filePath);
@@ -177,52 +184,52 @@ export default {
         this.handleDeleteVideo();
       }
     },
-    updateLayers() {
-      this.layers = [
-        { items: this.timeline.listFilesInLayer(0) },
-        { items: this.timeline.listFilesInLayer(1) },
-        { items: this.timeline.listFilesInLayer(2) },
-      ];
+    handleTrimVideo() {
+      const selectedVideo = this.selectedItem.item;
+      const layerIndex = this.selectedItem.layerIndex;
 
-      const hasItems = this.layers.some((layer) => layer.items.length > 0);
+      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedVideo);
+      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
 
-      if (hasItems) {
-        this.createVideoFromBlobs();
-      } else {
-        this.videoUrl = `data:video/mp4;base64,${""}`;
-        console.log("Nenhum item nas camadas, não criando vídeo.");
+      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedVideo.duration) {
+        alert("Posicione o cursor dentro do vídeo para dividir.");
+        return;
       }
+
+      const splitPointInOriginal = selectedVideo.startTime + splitPointInTimeline;
+      this.timeline.splitVideoAtTime(selectedVideo, splitPointInOriginal);
+      this.updateLayers();
     },
     async createVideoFromBlobs() {
       this.isLoading = true;
-      const videosPaths = this.layers[0].items.map((video) => video.filePath);
-      console.log(videosPaths);
+      const videosInfo = this.layers[0].items.map(video => ({
+        filePath: video.filePath,
+        startTime: video.startTime,
+        endTime: video.endTime
+      }));
+      console.log("front/combine/ " + videosInfo);
+
       try {
         const result = await window.electron.ipcRenderer.invoke(
           "combine-videos",
-          { videosPaths }
+          { videosInfo }
         );
         this.videoUrl = `data:video/mp4;base64,${result}`;
       } finally {
         this.isLoading = false;
       }
     },
-    // esta dando erro vou arrumar na proxima aula -_-
-    updateCurrentTime() {
-      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100; // Cálculo do tempo por pixel
-      const currentTimeInSeconds = Math.round(
-        this.cursorPosition * secondsPerPixel
-      ); // Posição do cursor em segundos
-      this.timeline.setCurrentSecond(currentTimeInSeconds);
-      this.currentTime = this.formatTime(currentTimeInSeconds);
-
-      // Emite o tempo atual para o componente pai (App.vue)
-      this.$emit("cursor-position-changed", currentTimeInSeconds);
-    },
 
     handleCursorPosition(currentTimeInSeconds) {
-      // Atualiza o tempo de início do corte com o tempo do cursor
       this.startTime = currentTimeInSeconds;
+    },
+    handleUpdateTime(currentTime) {
+      this.currentGlobalTime = currentTime;
+      this.$refs.timeline.updateCurrentTime(currentTime);
+    },
+    handleCursorMoved(currentTimeInSeconds) {
+      this.currentGlobalTime = currentTimeInSeconds;
+      this.$refs.videoPreview.updateCurrentTime(currentTimeInSeconds);
     },
 
     async cutVideo() {
@@ -231,7 +238,7 @@ export default {
         return;
       }
 
-      const filePath = this.videoFilePath; // Certifique-se de definir corretamente o caminho do vídeo
+      const filePath = this.videoFilePath;
 
       try {
         const base64Video = await window.electron.ipcRenderer.invoke(
@@ -243,14 +250,12 @@ export default {
           }
         );
 
-        // Atualiza o vídeo cortado (aqui você pode salvar o vídeo em base64 ou apenas no caminho)
         this.videoUrl = `data:video/mp4;base64,${base64Video}`;
-        this.closeCutEditor(); // Fecha o editor de corte, se necessário
+        this.closeCutEditor(); 
       } catch (error) {
         console.error("Erro ao cortar o vídeo:", error);
       }
     },
-    // esta dando erro vou arrumar na proxima aula -_-
   },
 };
 </script>

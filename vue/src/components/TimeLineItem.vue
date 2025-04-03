@@ -1,11 +1,19 @@
 <template>
     <div
-      class="timeline-item"
-      @click="handleClick"  
-      :style="{ width: itemWidth + 'px' }"
-      :class="{ selected: selectedItem.item === item }"  
-    >
-      <img class="item-content" :src="item.url" />
+    class="timeline-item"
+    @click="handleClick"  
+    :style="{ width: itemWidth + 'px' }"
+    :class="{ selected: selectedItem.item === item }"
+    draggable="true"
+    @dragstart="handleDragStart"
+    @dragend="handleDragEnd"
+  >
+  <template v-if="item.type === 'audio'">
+     <div class="audio-icon">Audio</div>
+   </template>
+   <template v-else>
+     <img class="item-content" :src="item.url" alt="Conteúdo" />
+   </template>
     </div>
   </template>
    
@@ -46,10 +54,23 @@
     },
     data() {
       return {
+        isDragging: false,
         isSelected: false, // Estado de seleção
       };
     },
     methods: {
+      handleDragStart(event) {
+      this.isDragging = true;
+      event.stopPropagation();
+      event.dataTransfer.setData('application/x-timeline-item', JSON.stringify({
+        layerIndex: this.layerIndex,
+        itemIndex: this.index
+      }));
+      event.dataTransfer.effectAllowed = 'move';
+    },
+    handleDragEnd() {
+      this.isDragging = false;
+    },
       handleClick() {
         this.isSelected = !this.isSelected; // Alterna o estado de seleção ao clicar
         this.$emit('item-clicked', { item: this.item, layerIndex: this.layerIndex }); // Emite o evento com o item
@@ -65,6 +86,24 @@
   </script>
    
   <style scoped>
+.audio-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background-color: #ddd;
+  color: #333;
+  font-weight: bold;
+}
+
+
+
+  .timeline-item.dragging {
+  opacity: 0.7;
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+}
   .timeline-item {
     display: flex;
     flex-direction: column;
