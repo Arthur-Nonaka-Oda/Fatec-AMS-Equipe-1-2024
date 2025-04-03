@@ -69,6 +69,8 @@ import TimeLineComponent from "./components/TimeLine.vue";
 import TimeLine from "./models/TimeLine.js";
 import VideoPreview from "./components/VideoPreview.vue";
 import TextEditor from "./components/TextEditor.vue";
+import Video from "./models/Video"; // Certifique-se de que o caminho está correto
+import Audio from "./models/Audio"; // Certifique-se de que o caminho está correto
 import "./assets/main.css";
 
 export default {
@@ -188,19 +190,30 @@ export default {
       }
     },
     handleTrimVideo() {
-      const selectedVideo = this.selectedItem.item;
+      const selectedItem = this.selectedItem.item;
       const layerIndex = this.selectedItem.layerIndex;
-
-      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedVideo);
-      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
-
-      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedVideo.duration) {
-        alert("Posicione o cursor dentro do vídeo para dividir.");
+    
+      if (!selectedItem) {
+        alert("Nenhum item selecionado para recortar.");
         return;
       }
-
-      const splitPointInOriginal = selectedVideo.startTime + splitPointInTimeline;
-      this.timeline.splitVideoAtTime(selectedVideo, splitPointInOriginal);
+    
+      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
+      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
+    
+      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
+        alert("Posicione o cursor dentro do item para dividir.");
+        return;
+      }
+    
+      const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
+    
+      if (selectedItem instanceof Video) {
+        this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
+      } else if (selectedItem instanceof Audio) {
+        this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
+      }
+    
       this.updateLayers();
     },
     async createVideoFromBlobs() {
