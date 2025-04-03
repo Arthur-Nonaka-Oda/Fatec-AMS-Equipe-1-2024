@@ -100,8 +100,8 @@ export default class TimeLine {
   }
 
   async splitVideoAtTime(video, splitTime) {
-    const start = video.startTime !== undefined ? video.startTime : 0;
-    const end = video.endTime !== undefined ? video.endTime : video.duration;
+    const start = video.startTime || 0;
+    const end = video.endTime || video.duration;
   
     if (splitTime <= start || splitTime >= end) {
       console.error("Tempo de divisão inválido.");
@@ -112,31 +112,67 @@ export default class TimeLine {
     const segment2Duration = end - splitTime;
   
     const videoPart1 = new Video({
-      filePath: video.filePath,
+      ...video,
       name: video.name + " (Parte 1)",
       duration: segment1Duration,
-      size: video.size,
-      blob: video.blob,
-      url: video.url,
       startTime: start,
-      endTime: splitTime
+      endTime: splitTime,
     });
   
     const videoPart2 = new Video({
-      filePath: video.filePath,
+      ...video,
       name: video.name + " (Parte 2)",
       duration: segment2Duration,
-      size: video.size,
-      blob: video.blob,
-      url: video.url,
       startTime: splitTime,
-      endTime: end
+      endTime: end,
     });
   
-    this.removeFileFromLayer({ file: video, layerIndex: 0 });
-    this.addFileToLayer({ file: videoPart1, type: 'video', layerIndex: 0 });
-    this.addFileToLayer({ file: videoPart2, type: 'video', layerIndex: 0 });
+    const layerIndex = this.layers.findIndex(layer =>
+      this.listFilesInLayer(this.layers.indexOf(layer)).includes(video)
+    );
+  
+    this.removeFileFromLayer({ file: video, layerIndex });
+    this.addFileToLayer({ file: videoPart1, type: "video", layerIndex });
+    this.addFileToLayer({ file: videoPart2, type: "video", layerIndex });
   }
+
+  async splitAudioAtTime(audio, splitTime) {
+    const start = audio.startTime || 0;
+    const end = audio.endTime || audio.duration;
+  
+    if (splitTime <= start || splitTime >= end) {
+      console.error("Tempo de divisão inválido.");
+      return;
+    }
+  
+    const segment1Duration = splitTime - start;
+    const segment2Duration = end - splitTime;
+  
+    const audioPart1 = new Audio({
+      ...audio,
+      name: audio.name + " (Parte 1)",
+      duration: segment1Duration,
+      startTime: start,
+      endTime: splitTime,
+    });
+  
+    const audioPart2 = new Audio({
+      ...audio,
+      name: audio.name + " (Parte 2)",
+      duration: segment2Duration,
+      startTime: splitTime,
+      endTime: end,
+    });
+  
+    const layerIndex = this.layers.findIndex(layer =>
+      this.listFilesInLayer(this.layers.indexOf(layer)).includes(audio)
+    );
+  
+    this.removeFileFromLayer({ file: audio, layerIndex });
+    this.addFileToLayer({ file: audioPart1, type: "audio", layerIndex });
+    this.addFileToLayer({ file: audioPart2, type: "audio", layerIndex });
+  }
+
   getCumulativeDurationBeforeVideo(layerIndex, video) {
     if (layerIndex < 0 || layerIndex >= this.layers.length) return 0;
   
