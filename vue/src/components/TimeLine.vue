@@ -34,6 +34,7 @@
         <option value="1.5">150%</option>
         <option value="2">200%</option>
         <option value="3">300%</option>
+        <option value="5">500%</option>
       </select>
     </div>
   </div>
@@ -74,7 +75,7 @@ export default {
       cursorPosition: 0,
       config: {
         minimumScale: 10,
-        minimumScaleTime: 6,
+        minimumScaleTime: 1,
       },
       selectedZoom: 1,
     };
@@ -228,14 +229,15 @@ export default {
 
     updateZoom() {
       const zoomMapping = {
-        0.1: 60, // 10%
-        0.25: 24, // 25%
-        0.5: 12, // 50%
-        0.75: 8, // 75%
-        1: 6, // 100% (referência padrão)
-        1.5: 4, // 150%
-        2: 3, //200%
-        3: 2,
+        0.1: 10,  // 10% zoom
+        0.25: 5,  // 25% zoom
+        0.5: 2,   // 50% zoom
+        0.75: 1.5, // 75% zoom
+        1: 1,     // 100% zoom (1:1)
+        1.5: 0.75, // 150% zoom
+        2: 0.5,   // 200% zoom
+        3: 0.33,  // 300% zoom
+        5: 0.2,   // 500% zoom
       };
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
     },
