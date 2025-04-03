@@ -36,6 +36,13 @@
         <option value="3">300%</option>
         <option value="5">500%</option>
       </select>
+
+      <div class="project-controls">
+      <button @click="saveProject">Salvar Projeto</button>
+      <button @click="loadProject">Carregar Projeto</button>
+      <button @click="downloadProject">Baixar Projeto</button>
+      <input type="file" @change="loadFromFile" />
+    </div>
     </div>
   </div>
 </template>
@@ -106,6 +113,48 @@ export default {
     document.removeEventListener("mouseup", this.grabDone);
   },
   methods: {
+    saveProject() {
+      try {
+        this.timeline.saveProject();
+        console.log("Projeto salvo no localStorage.");
+      } catch (error) {
+        console.error("Erro ao salvar o projeto:", error);
+      }
+    },
+    loadProject() {
+      try {
+        this.timeline.loadProject();
+        this.updateLayers(); // Atualiza as camadas no Vue
+        console.log("Projeto carregado do localStorage.");
+      } catch (error) {
+        console.error("Erro ao carregar o projeto:", error);
+      }
+    },
+    downloadProject() {
+      try {
+        this.timeline.downloadProject();
+        console.log("Projeto baixado como arquivo JSON.");
+      } catch (error) {
+        console.error("Erro ao baixar o projeto:", error);
+      }
+    },
+    loadFromFile(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            localStorage.setItem("savedProject", e.target.result);
+            this.timeline.loadProject();
+            this.updateLayers(); // Atualiza as camadas no Vue
+            console.log("Projeto carregado do arquivo.");
+          } catch (error) {
+            console.error("Erro ao carregar o projeto do arquivo:", error);
+          }
+        };
+        reader.readAsText(file);
+      }
+    },
     grabMove(event) {
       if (this.isGrabbing) {
         const timelineRect = this.$el
@@ -246,6 +295,33 @@ export default {
 </script>
 
 <style scoped>
+.project-controls {
+  position: fixed;
+  bottom: 50px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.project-controls button {
+  padding: 10px 15px;
+  background-color: #323c7d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.project-controls button:hover {
+  background-color: #4a5aa1;
+}
+
+.project-controls input[type="file"] {
+  display: none;
+}
+
 .selected {
   border: 2px solid rgb(255, 238, 0);
   /* ou qualquer estilo que destaque o item */
