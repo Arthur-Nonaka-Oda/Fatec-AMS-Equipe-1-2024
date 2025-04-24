@@ -23,20 +23,38 @@ export default class TimeLine {
     if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
       const newNode = this.createNode(fileData);
       const layer = this.layers[fileData.layerIndex];
-
+  
       if (layer.head === null) {
         layer.head = newNode;
         layer.end = newNode;
-      } else {
-        if (position === 'start') {
+      } else if (typeof position === 'number') {
+        let current = layer.head;
+        let prev = null;
+        let index = 0;
+  
+        while (current && index < position) {
+          prev = current;
+          current = current.next;
+          index++;
+        }
+  
+        if (prev) {
+          prev.next = newNode;
+          newNode.next = current;
+        } else {
           newNode.next = layer.head;
           layer.head = newNode;
-        } else if (position === 'end') {
-          layer.end.next = newNode;
-          layer.end = newNode;
-        } else if (position === 'middle') {
-          // Implementar lógica para adicionar no meio
         }
+  
+        if (!newNode.next) {
+          layer.end = newNode;
+        }
+      } else if (position === 'start') {
+        newNode.next = layer.head;
+        layer.head = newNode;
+      } else if (position === 'end') {
+        layer.end.next = newNode;
+        layer.end = newNode;
       }
     }
   }
@@ -185,13 +203,25 @@ export default class TimeLine {
       endTime: end,
     });
   
+    // Encontra o índice da camada e do vídeo original
     const layerIndex = this.layers.findIndex(layer =>
       this.listFilesInLayer(this.layers.indexOf(layer)).includes(video)
     );
   
+    const filesInLayer = this.listFilesInLayer(layerIndex);
+    const originalIndex = filesInLayer.indexOf(video);
+  
+    if (originalIndex === -1) {
+      console.error("Vídeo original não encontrado na camada.");
+      return;
+    }
+  
+    // Remove o vídeo original
     this.removeFileFromLayer({ file: video, layerIndex });
-    this.addFileToLayer({ file: videoPart1, type: "video", layerIndex });
-    this.addFileToLayer({ file: videoPart2, type: "video", layerIndex });
+  
+    // Adiciona as partes recortadas na mesma posição
+    this.addFileToLayer({ file: videoPart1, type: "video", layerIndex }, originalIndex);
+    this.addFileToLayer({ file: videoPart2, type: "video", layerIndex }, originalIndex + 1);
   }
 
   async splitAudioAtTime(audio, splitTime) {
@@ -226,9 +256,10 @@ export default class TimeLine {
       this.listFilesInLayer(this.layers.indexOf(layer)).includes(audio)
     );
   
+    const originalIndex = this.listFilesInLayer(layerIndex).indexOf(audio);
     this.removeFileFromLayer({ file: audio, layerIndex });
-    this.addFileToLayer({ file: audioPart1, type: "audio", layerIndex });
-    this.addFileToLayer({ file: audioPart2, type: "audio", layerIndex });
+    this.addFileToLayer({ file: audioPart1, type: "audio", layerIndex }, originalIndex);
+    this.addFileToLayer({ file: audioPart2, type: "audio", layerIndex }, originalIndex + 1);
   }
 
   getCumulativeDurationBeforeVideo(layerIndex, video) {
