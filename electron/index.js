@@ -290,7 +290,7 @@ async function combineVideos(videosInfo, outputFilePath) {
 }
 
 
-ipcMain.handle('renderize', async (event, { videos }) => {
+ipcMain.handle('renderize', async (event, { videos, audios }) => {
   const { filePath } = await dialog.showSaveDialog({
     title: "Save recording",
     defaultPath: `vid-${Date.now()}`,
@@ -298,124 +298,796 @@ ipcMain.handle('renderize', async (event, { videos }) => {
 
   if (filePath) {
     const outputFilePath = filePath.endsWith('.mp4') ? filePath : `${filePath}.mp4`;
-    await renderizeVideo(videos, outputFilePath);
-    return true;
+
+    // Verifica se o diretório de saída existe
+    const outputDir = path.dirname(outputFilePath);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    try {
+      await renderizeVideo([...videos, ...audios], outputFilePath);
+      return true;
+    } catch (error) {
+      console.error('Error during video rendering:', error.message || error);
+      throw new Error('Failed to render video.');
+    }
   } else {
     throw new Error('No file path selected');
   }
 });
 
 
-// async function renderizeVideo(videos, outputFilePath) {
-//   try {
-//     const normalizedVideoPaths = await Promise.all(
-//       videoPaths.map(videoPath => normalizeFrameRate(videoPath, app.getPath('userData')))
-//     );
-//     console.log('Normalized Video Paths:', normalizedVideoPaths);
-
-//     const listFilePath = path.join(app.getPath('userData'), 'videos.txt');
-//     const fileContent = normalizedVideoPaths.map(videoPath => `file '${videoPath}'`).join('\n');
-//     fs.writeFileSync(listFilePath, fileContent);
-
-//     return new Promise((resolve, reject) => {
-//       ffmpeg()
-//         .input(listFilePath)
-//         .inputOptions(['-f concat', '-safe 0'])
-//         .outputOptions([
-//           '-c:v libx264',
-//           '-crf 10',
-//           '-preset slow', 
-//           '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
-//           '-c:a aac',
-//           '-b:a 192k'
-//         ])
-//         .on('start', (commandLine) => {
-//           console.log('Spawned Ffmpeg with command: ' + commandLine);
-//         })
-//         .on('codecData', (data) => {
-//           console.log('Input is ' + data.audio + ' audio with ' + data.video + ' video');
-//         })
-//         .on('progress', (progress) => {
-//           console.log('Processing: ' + progress.percent + '% done');
-//         })
-//         .on('end', () => {
-//           console.log('Video rendered successfully');
-//           resolve();
-//         })
-//         .on('error', (err) => {
-//           console.error('Error rendering video:', err);
-//           reject(err);
-//         })
-//         .output(outputFilePath)
-//         .run();
-//     });
-//   } catch (error) {
-//     console.error('Error normalizing videos:', error);
-//     throw error;
-//   }
-// }
-
-async function renderizeVideo(videos, outputFilePath) {
+async function renderizeVideo(mediaItems, outputFilePath) {
   try {
-    return new Promise((resolve, reject) => {
-      const ffmpegCommand = ffmpeg();
 
-      let filterParts = [];
-      let concatInputs = '';
+    // Create a unique temp directory for this job
+    const tempDir = path.join(require('os').tmpdir(), `media_render_${Date.now()}`);
+    fs.mkdirSync(tempDir, { recursive: true });
 
-      videos.forEach((video, index) => {
-        const { filePath, startTime, endTime } = video;
+    console.log("Total media items to process:", mediaItems.length);
 
-        ffmpegCommand.input(filePath);
+    // Helper functions to detect file types
+    function isImageFile(filePath) {
+      const ext = path.extname(filePath).toLowerCase();
+      return ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'].includes(ext);
+    }
 
-        filterParts.push(
-          `[${index}:v]trim=start=${startTime}:end=${endTime},setpts=PTS-STARTPTS[v${index}]`
-        );
-        filterParts.push(
-          `[${index}:a]atrim=start=${startTime}:end=${endTime},asetpts=PTS-STARTPTS[a${index}]`
-        );
+    function isAudioFile(filePath) {
+      const ext = path.extname(filePath).toLowerCase();
+      return ['.mp3', '.wav', '.ogg', '.aac', '.flac', '.m4a'].includes(ext);
+    }
 
-        // Interleave each video and audio stream
-        concatInputs += `[v${index}][a${index}]`;
+    // Step 1: Separate videos/images and audios
+    const visuals = mediaItems.filter(item => !isAudioFile(item.filePath));
+    const audios = mediaItems.filter(item => isAudioFile(item.filePath));
+
+    console.log(`Processing ${visuals.length} visual items and ${audios.length} audio items`);
+
+    // Step 2: Process all visual items into video segments
+    const visualSegmentPromises = visuals.map((item, index) => {
+      return new Promise((resolve, reject) => {
+        const segmentPath = path.join(tempDir, `visual_segment_${index}.mp4`);
+
+        if (isImageFile(item.filePath)) {
+          // Handle image conversion to video segment
+          const duration = item.endTime - item.startTime || 5;
+
+          ffmpeg()
+            .input(item.filePath)
+            .inputOptions(['-loop 1'])
+            .outputOptions([
+              `-t ${duration}`,
+              '-c:v libx264',
+              '-pix_fmt yuv420p',
+              '-r 30',
+              '-an', // No audio
+              '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
+            ])
+            .output(segmentPath)
+            .on('start', () => {
+              console.log(`Converting image to video segment: ${item.filePath}`);
+            })
+            .on('end', () => {
+              console.log(`Created video from image: ${segmentPath}`);
+              resolve({
+                path: segmentPath,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                duration: duration
+              });
+            })
+            .on('error', (err) => {
+              console.error(`Error converting image:`, err);
+              reject(err);
+            })
+            .run();
+        } else {
+          // Handle video trimming
+          ffmpeg(item.filePath)
+            .setStartTime(item.startTime)
+            .setDuration(item.endTime - item.startTime)
+            .outputOptions([
+              '-c:v libx264',
+              '-an', // No audio
+              '-avoid_negative_ts make_zero',
+              '-reset_timestamps 1',
+              '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
+            ])
+            .output(segmentPath)
+            .on('start', () => {
+              console.log(`Trimming video segment: ${item.filePath}`);
+            })
+            .on('end', () => {
+              console.log(`Trimmed video segment: ${segmentPath}`);
+              resolve({
+                path: segmentPath,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                duration: item.endTime - item.startTime
+              });
+            })
+            .on('error', (err) => {
+              console.error(`Error trimming video:`, err);
+              reject(err);
+            })
+            .run();
+        }
       });
-
-      // Use the interleaved concatInputs string
-      filterParts.push(
-        `${concatInputs}concat=n=${videos.length}:v=1:a=1[outv][outa]`
-      );
-
-      const filterComplex = filterParts.join('; ');
-
-      ffmpegCommand
-        .complexFilter(filterComplex, ['outv', 'outa'])
-        .outputOptions([
-          '-c:v libx264',
-          '-crf 10',
-          '-preset slow',
-          '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
-          '-c:a aac',
-          '-b:a 192k',
-        ])
-        .on('start', (commandLine) => {
-          console.log('Spawned Ffmpeg with command: ' + commandLine);
-        })
-        .on('progress', (progress) => {
-          console.log('Processing: ' + progress.percent + '% done');
-        })
-        .on('end', () => {
-          console.log('Video rendered successfully');
-          resolve();
-        })
-        .on('error', (err) => {
-          console.error('Error rendering video:', err);
-          reject(err);
-        })
-        .output(outputFilePath)
-        .run();
     });
+
+    // Step 3: Process all audio items - IMPROVED APPROACH
+    const audioSegmentPromises = audios.map((item, index) => {
+      return new Promise((resolve, reject) => {
+        const segmentPath = path.join(tempDir, `audio_segment_${index}.wav`); // Use WAV for better compatibility
+
+        console.log(`Processing audio segment from ${item.filePath}, start: ${item.startTime}, end: ${item.endTime}`);
+
+        // Add more detailed error reporting
+        const command = ffmpeg(item.filePath)
+          .setStartTime(item.startTime)
+          .setDuration(item.endTime - item.startTime)
+          .outputOptions([
+            '-c:a pcm_s16le', // Use uncompressed audio for intermediates
+            '-ar 44100',      // Standard sample rate
+            '-ac 2',          // Stereo
+            '-vn'             // No video
+          ])
+          .output(segmentPath)
+          .on('start', (commandLine) => {
+            console.log(`Processing audio segment: ${item.filePath}`);
+            console.log(`Command: ${commandLine}`);
+          })
+          .on('end', () => {
+            console.log(`Processed audio segment: ${segmentPath}`);
+            resolve({
+              path: segmentPath,
+              startTime: item.startTime,
+              endTime: item.endTime,
+              duration: item.endTime - item.startTime,
+              position: item.startTime // Store position for timeline placement
+            });
+          })
+          .on('error', (err, stdout, stderr) => {
+            console.error(`Error processing audio:`);
+            console.error(err);
+            console.error(`FFmpeg stderr: ${stderr}`);
+            reject(err);
+          });
+
+        command.run();
+      });
+    });
+
+    // Step 4: Wait for all processing to complete
+    return Promise.all([
+      Promise.all(visualSegmentPromises),
+      Promise.all(audioSegmentPromises)
+    ]).then(([visualSegments, audioSegments]) => {
+      // Sort segments by start time to maintain timeline order
+      visualSegments.sort((a, b) => a.startTime - b.startTime);
+      audioSegments.sort((a, b) => a.startTime - b.startTime);
+
+      return new Promise((resolve, reject) => {
+        console.log("All segments processed. Creating final video...");
+
+        // Step 5: Create concat list for visual segments
+        const videoListPath = path.join(tempDir, 'video_list.txt');
+        let videoContent = '';
+        visualSegments.forEach(segment => {
+          videoContent += `file '${segment.path.replace(/'/g, "'\\''")}'` + '\n';
+        });
+        fs.writeFileSync(videoListPath, videoContent);
+
+        // Step 6: Concatenate visual segments
+        const concatVideoPath = path.join(tempDir, 'concat_video.mp4');
+
+        const concatVideoCmd = ffmpeg()
+          .input(videoListPath)
+          .inputOptions(['-f concat', '-safe 0'])
+          .outputOptions([
+            '-c:v libx264',
+            '-crf 10',
+            '-preset medium',
+            '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
+            '-an' // No audio yet
+          ])
+          .output(concatVideoPath);
+
+        concatVideoCmd.on('start', (cmdLine) => {
+          console.log('Concatenating visual segments...');
+          console.log(`Command: ${cmdLine}`);
+        })
+          .on('progress', (progress) => {
+            console.log('Video concat: ' + (progress.percent || 0).toFixed(2) + '% done');
+          })
+          .on('end', () => {
+            console.log('Visual segments concatenated.');
+
+            // Step 7: Handle audio processing - IMPROVED APPROACH
+            if (audioSegments.length > 0) {
+              console.log("Processing audio segments...");
+
+              // Create a silent audio base track with the same duration as the video
+              const silentAudioPath = path.join(tempDir, 'silent_base.wav');
+              const videoInfo = () => {
+                return new Promise((resolveInfo, rejectInfo) => {
+                  ffmpeg.ffprobe(concatVideoPath, (err, metadata) => {
+                    if (err) {
+                      console.error('Error getting video duration:', err);
+                      rejectInfo(err);
+                      return;
+                    }
+                    resolveInfo(metadata.format.duration);
+                  });
+                });
+              };
+
+              videoInfo().then((videoDuration) => {
+                console.log(`Creating silent audio base track of ${videoDuration} seconds`);
+
+                // Create silent audio base
+                ffmpeg()
+                  .input('anullsrc')
+                  .inputOptions(['-f lavfi', `-t ${videoDuration}`])
+                  .outputOptions([
+                    '-c:a pcm_s16le',
+                    '-ar 44100',
+                    '-ac 2'
+                  ])
+                  .output(silentAudioPath)
+                  .on('end', () => {
+                    console.log('Silent base audio created');
+
+                    // Now create the complex filter for audio
+                    let filterComplex = '';
+                    let inputLabels = [];
+
+                    // Add silent base as first input
+                    filterComplex += '[0:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[base];';
+
+                    // Add each audio segment with its position
+                    audioSegments.forEach((segment, index) => {
+                      const inputIndex = index + 1; // Index in ffmpeg command (0 is silent base)
+                      const inputLabel = `[${inputIndex}:a]`;
+                      const outputLabel = `[a${inputIndex}]`;
+
+                      filterComplex += `${inputLabel}aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,adelay=${Math.round(segment.position * 1000)}|${Math.round(segment.position * 1000)}${outputLabel};`;
+                      inputLabels.push(outputLabel);
+                    });
+
+                    // Mix all audio segments with base
+                    filterComplex += `[base]${inputLabels.join('')}amix=inputs=${inputLabels.length + 1}:duration=longest[aout]`;
+
+                    console.log("Using filter complex:", filterComplex);
+
+                    // Create final audio mix
+                    const finalAudioPath = path.join(tempDir, 'final_audio.wav');
+                    const audioCommand = ffmpeg();
+
+                    // Add silent base as first input
+                    audioCommand.input(silentAudioPath);
+
+                    // Add all audio segments
+                    audioSegments.forEach(segment => {
+                      audioCommand.input(segment.path);
+                    });
+
+                    audioCommand
+                      .complexFilter(filterComplex, ['aout'])
+                      .outputOptions(['-map [aout]', '-c:a pcm_s16le'])
+                      .output(finalAudioPath)
+                      .on('start', (cmdLine) => {
+                        console.log('Creating final audio mix...');
+                        console.log(`Command: ${cmdLine}`);
+                      })
+                      .on('error', (err, stdout, stderr) => {
+                        console.error('Error creating audio mix:');
+                        console.error(err);
+                        console.error(`FFmpeg stderr: ${stderr}`);
+                        reject(err);
+                      })
+                      .on('end', () => {
+                        console.log('Final audio mix created.');
+
+                        // Combine video with final audio
+                        ffmpeg()
+                          .input(concatVideoPath)
+                          .input(finalAudioPath)
+                          .outputOptions([
+                            '-c:v copy',
+                            '-c:a aac',
+                            '-b:a 192k',
+                            '-shortest'
+                          ])
+                          .output(outputFilePath)
+                          .on('start', (cmdLine) => {
+                            console.log('Creating final output with audio...');
+                            console.log(`Command: ${cmdLine}`);
+                          })
+                          .on('progress', (progress) => {
+                            console.log('Final render: ' + (progress.percent || 0).toFixed(2) + '% done');
+                          })
+                          .on('error', (err, stdout, stderr) => {
+                            console.error('Error creating final output:');
+                            console.error(err);
+                            console.error(`FFmpeg stderr: ${stderr}`);
+                            reject(err);
+                          })
+                          .on('end', () => {
+                            console.log('Media rendered successfully!');
+
+                            // Clean up
+                            try {
+                              // Delete all temp files
+                              visualSegments.forEach(segment => fs.existsSync(segment.path) && fs.unlinkSync(segment.path));
+                              audioSegments.forEach(segment => fs.existsSync(segment.path) && fs.unlinkSync(segment.path));
+                              fs.existsSync(videoListPath) && fs.unlinkSync(videoListPath);
+                              fs.existsSync(concatVideoPath) && fs.unlinkSync(concatVideoPath);
+                              fs.existsSync(silentAudioPath) && fs.unlinkSync(silentAudioPath);
+                              fs.existsSync(finalAudioPath) && fs.unlinkSync(finalAudioPath);
+                              fs.rmdirSync(tempDir, { recursive: true });
+                            } catch (err) {
+                              console.warn('Error cleaning up temp files:', err);
+                            }
+
+                            resolve();
+                          })
+                          .run();
+                      })
+                      .run();
+                  })
+                  .on('error', (err) => {
+                    console.error('Error creating silent audio:', err);
+                    reject(err);
+                  })
+                  .run();
+              }).catch(err => {
+                console.error('Error in video info processing:', err);
+                reject(err);
+              });
+            } else {
+              // No audio segments, just copy the video to final output
+              ffmpeg()
+                .input(concatVideoPath)
+                .outputOptions(['-c:v copy'])
+                .output(outputFilePath)
+                .on('end', () => {
+                  console.log('Media rendered successfully (video only)!');
+
+                  // Clean up
+                  try {
+                    visualSegments.forEach(segment => fs.existsSync(segment.path) && fs.unlinkSync(segment.path));
+                    fs.existsSync(videoListPath) && fs.unlinkSync(videoListPath);
+                    fs.existsSync(concatVideoPath) && fs.unlinkSync(concatVideoPath);
+                    fs.rmdirSync(tempDir, { recursive: true });
+                  } catch (err) {
+                    console.warn('Error cleaning up temp files:', err);
+                  }
+
+                  resolve();
+                })
+                .on('error', (err) => {
+                  console.error('Error creating final output:', err);
+                  reject(err);
+                })
+                .run();
+            }
+          })
+          .on('error', (err) => {
+            console.error('Error concatenating visual segments:', err);
+            reject(err);
+          })
+          .run();
+      });
+    })
+      .catch(err => {
+        console.error('Error processing media items:', err);
+        // Clean up
+        try {
+          if (fs.existsSync(tempDir)) {
+            fs.rmdirSync(tempDir, { recursive: true });
+          }
+        } catch (cleanupErr) {
+          console.warn('Error cleaning up temp directory:', cleanupErr);
+        }
+        throw new Error('Failed to process media items: ' + (err.message || err));
+      });
   } catch (error) {
-    console.error('Error rendering videos:', error);
-    throw error;
+    console.error('Fatal error in renderizeVideo:', error);
+    console.error('Error stack:', error.stack);
+    throw new Error('Failed to render video: ' + (error.message || error));
+  }
+} async function renderizeVideo(mediaItems, outputFilePath) {
+  try {
+    // Create a unique temp directory for this job
+    const tempDir = path.join(require('os').tmpdir(), `media_render_${Date.now()}`);
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    console.log("Total media items to process:", mediaItems.length);
+
+    // Helper functions to detect file types
+    function isImageFile(filePath) {
+      const ext = path.extname(filePath).toLowerCase();
+      return ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'].includes(ext);
+    }
+
+    function isAudioFile(filePath) {
+      const ext = path.extname(filePath).toLowerCase();
+      return ['.mp3', '.wav', '.ogg', '.aac', '.flac', '.m4a'].includes(ext);
+    }
+
+    // Step 1: Separate videos/images and audios
+    const visuals = mediaItems.filter(item => !isAudioFile(item.filePath));
+    const audios = mediaItems.filter(item => isAudioFile(item.filePath));
+
+    console.log(`Processing ${visuals.length} visual items and ${audios.length} audio items`);
+
+    // Step 2: Process all visual items into video segments
+    const visualSegmentPromises = visuals.map((item, index) => {
+      return new Promise((resolve, reject) => {
+        const segmentPath = path.join(tempDir, `visual_segment_${index}.mp4`);
+
+        if (isImageFile(item.filePath)) {
+          // Handle image conversion to video segment
+          const duration = item.endTime - item.startTime || 5;
+
+          ffmpeg()
+            .input(item.filePath)
+            .inputOptions(['-loop 1'])
+            .outputOptions([
+              `-t ${duration}`,
+              '-c:v libx264',
+              '-pix_fmt yuv420p',
+              '-r 30',
+              '-an', // No audio
+              '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
+            ])
+            .output(segmentPath)
+            .on('start', () => {
+              console.log(`Converting image to video segment: ${item.filePath}`);
+            })
+            .on('end', () => {
+              console.log(`Created video from image: ${segmentPath}`);
+              resolve({
+                path: segmentPath,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                duration: duration
+              });
+            })
+            .on('error', (err) => {
+              console.error(`Error converting image:`, err);
+              reject(err);
+            })
+            .run();
+        } else {
+          // Handle video trimming
+          ffmpeg(item.filePath)
+            .setStartTime(item.startTime)
+            .setDuration(item.endTime - item.startTime)
+            .outputOptions([
+              '-c:v libx264',
+              '-an', // No audio
+              '-avoid_negative_ts make_zero',
+              '-reset_timestamps 1',
+              '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
+            ])
+            .output(segmentPath)
+            .on('start', () => {
+              console.log(`Trimming video segment: ${item.filePath}`);
+            })
+            .on('end', () => {
+              console.log(`Trimmed video segment: ${segmentPath}`);
+              resolve({
+                path: segmentPath,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                duration: item.endTime - item.startTime
+              });
+            })
+            .on('error', (err) => {
+              console.error(`Error trimming video:`, err);
+              reject(err);
+            })
+            .run();
+        }
+      });
+    });
+
+    // Step 3: Process all audio items - IMPROVED APPROACH
+    const audioSegmentPromises = audios.map((item, index) => {
+      return new Promise((resolve, reject) => {
+        const segmentPath = path.join(tempDir, `audio_segment_${index}.wav`); // Use WAV for better compatibility
+
+        console.log(`Processing audio segment from ${item.filePath}, start: ${item.startTime}, end: ${item.endTime}`);
+
+        // Add more detailed error reporting
+        const command = ffmpeg(item.filePath)
+          .setStartTime(item.startTime)
+          .setDuration(item.endTime - item.startTime)
+          .outputOptions([
+            '-c:a pcm_s16le', // Use uncompressed audio for intermediates
+            '-ar 44100',      // Standard sample rate
+            '-ac 2',          // Stereo
+            '-vn'             // No video
+          ])
+          .output(segmentPath)
+          .on('start', (commandLine) => {
+            console.log(`Processing audio segment: ${item.filePath}`);
+            console.log(`Command: ${commandLine}`);
+          })
+          .on('end', () => {
+            console.log(`Processed audio segment: ${segmentPath}`);
+            resolve({
+              path: segmentPath,
+              startTime: item.startTime,
+              endTime: item.endTime,
+              duration: item.endTime - item.startTime,
+              position: item.startTime // Store position for timeline placement
+            });
+          })
+          .on('error', (err, stdout, stderr) => {
+            console.error(`Error processing audio:`);
+            console.error(err);
+            console.error(`FFmpeg stderr: ${stderr}`);
+            reject(err);
+          });
+
+        command.run();
+      });
+    });
+
+    // Step 4: Wait for all processing to complete
+    return Promise.all([
+      Promise.all(visualSegmentPromises),
+      Promise.all(audioSegmentPromises)
+    ]).then(([visualSegments, audioSegments]) => {
+      // Sort segments by start time to maintain timeline order
+      visualSegments.sort((a, b) => a.startTime - b.startTime);
+      audioSegments.sort((a, b) => a.startTime - b.startTime);
+
+      return new Promise((resolve, reject) => {
+        console.log("All segments processed. Creating final video...");
+
+        // Step 5: Create concat list for visual segments
+        const videoListPath = path.join(tempDir, 'video_list.txt');
+        let videoContent = '';
+        visualSegments.forEach(segment => {
+          videoContent += `file '${segment.path.replace(/'/g, "'\\''")}'` + '\n';
+        });
+        fs.writeFileSync(videoListPath, videoContent);
+
+        // Step 6: Concatenate visual segments
+        const concatVideoPath = path.join(tempDir, 'concat_video.mp4');
+
+        const concatVideoCmd = ffmpeg()
+          .input(videoListPath)
+          .inputOptions(['-f concat', '-safe 0'])
+          .outputOptions([
+            '-c:v libx264',
+            '-crf 10',
+            '-preset medium',
+            '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
+            '-an' // No audio yet
+          ])
+          .output(concatVideoPath);
+
+        concatVideoCmd.on('start', (cmdLine) => {
+          console.log('Concatenating visual segments...');
+          console.log(`Command: ${cmdLine}`);
+        })
+          .on('progress', (progress) => {
+            console.log('Video concat: ' + (progress.percent || 0).toFixed(2) + '% done');
+          })
+          .on('end', () => {
+            console.log('Visual segments concatenated.');
+
+            // Step 7: Handle audio processing - IMPROVED APPROACH WITH NO SILENT AUDIO REQUIREMENT
+            if (audioSegments.length > 0) {
+              console.log("Processing audio segments...");
+
+              // Get video duration for reference
+              const videoInfo = () => {
+                return new Promise((resolveInfo, rejectInfo) => {
+                  ffmpeg.ffprobe(concatVideoPath, (err, metadata) => {
+                    if (err) {
+                      console.error('Error getting video duration:', err);
+                      rejectInfo(err);
+                      return;
+                    }
+                    resolveInfo(metadata.format.duration);
+                  });
+                });
+              };
+
+              videoInfo().then((videoDuration) => {
+                console.log(`Video duration: ${videoDuration} seconds`);
+
+                // Create final audio mix without silent base
+                const finalAudioPath = path.join(tempDir, 'final_audio.wav');
+
+                // If there's only one audio segment, we can just copy it
+                if (audioSegments.length === 1) {
+                  const audioSegment = audioSegments[0];
+
+                  // Handle positioning for single audio segment
+                  if (audioSegment.position > 0) {
+                    // Need to add silence before the audio
+                    ffmpeg()
+                      .input(audioSegment.path)
+                      .audioFilters(`adelay=${Math.round(audioSegment.position * 1000)}|${Math.round(audioSegment.position * 1000)}`)
+                      .outputOptions([
+                        '-c:a pcm_s16le',
+                        '-ar 44100',
+                        '-ac 2'
+                      ])
+                      .output(finalAudioPath)
+                      .on('end', () => {
+                        console.log('Positioned single audio segment');
+                        combineVideoAndAudio();
+                      })
+                      .on('error', (err) => {
+                        console.error('Error positioning audio:', err);
+                        reject(err);
+                      })
+                      .run();
+                  } else {
+                    // Just copy the audio as is
+                    fs.copyFileSync(audioSegment.path, finalAudioPath);
+                    console.log('Copied single audio segment as final audio');
+                    combineVideoAndAudio();
+                  }
+                } else {
+                  // For multiple audio segments, use filter_complex to position them correctly
+                  const audioCommand = ffmpeg();
+
+                  // Create filter complex for positioning audio segments
+                  let filterComplex = '';
+                  let mixInputs = [];
+
+                  audioSegments.forEach((segment, index) => {
+                    audioCommand.input(segment.path);
+
+                    // Position audio with adelay filter
+                    if (segment.position > 0) {
+                      filterComplex += `[${index}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,adelay=${Math.round(segment.position * 1000)}|${Math.round(segment.position * 1000)}[a${index}];`;
+                    } else {
+                      filterComplex += `[${index}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a${index}];`;
+                    }
+
+                    mixInputs.push(`[a${index}]`);
+                  });
+
+                  // Mix all audio segments
+                  if (mixInputs.length > 1) {
+                    filterComplex += `${mixInputs.join('')}amix=inputs=${mixInputs.length}:duration=longest[aout]`;
+                  } else {
+                    filterComplex += `${mixInputs[0]}aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[aout]`;
+                  }
+
+                  audioCommand
+                    .complexFilter(filterComplex, ['aout'])
+                    .outputOptions(['-map [aout]', '-c:a pcm_s16le'])
+                    .output(finalAudioPath)
+                    .on('start', (cmdLine) => {
+                      console.log('Creating final audio mix...');
+                      console.log(`Command: ${cmdLine}`);
+                    })
+                    .on('error', (err, stdout, stderr) => {
+                      console.error('Error creating audio mix:');
+                      console.error(err);
+                      console.error(`FFmpeg stderr: ${stderr}`);
+                      reject(err);
+                    })
+                    .on('end', () => {
+                      console.log('Final audio mix created.');
+                      combineVideoAndAudio();
+                    })
+                    .run();
+                }
+
+                // Helper function to combine video with audio
+                function combineVideoAndAudio() {
+                  ffmpeg()
+                    .input(concatVideoPath)
+                    .input(finalAudioPath)
+                    .outputOptions([
+                      '-c:v copy',
+                      '-c:a aac',
+                      '-b:a 192k',
+                      '-shortest'
+                    ])
+                    .output(outputFilePath)
+                    .on('start', (cmdLine) => {
+                      console.log('Creating final output with audio...');
+                      console.log(`Command: ${cmdLine}`);
+                    })
+                    .on('progress', (progress) => {
+                      console.log('Final render: ' + (progress.percent || 0).toFixed(2) + '% done');
+                    })
+                    .on('error', (err, stdout, stderr) => {
+                      console.error('Error creating final output:');
+                      console.error(err);
+                      console.error(`FFmpeg stderr: ${stderr}`);
+                      reject(err);
+                    })
+                    .on('end', () => {
+                      console.log('Media rendered successfully!');
+
+                      // Clean up
+                      try {
+                        // Delete all temp files
+                        visualSegments.forEach(segment => fs.existsSync(segment.path) && fs.unlinkSync(segment.path));
+                        audioSegments.forEach(segment => fs.existsSync(segment.path) && fs.unlinkSync(segment.path));
+                        fs.existsSync(videoListPath) && fs.unlinkSync(videoListPath);
+                        fs.existsSync(concatVideoPath) && fs.unlinkSync(concatVideoPath);
+                        fs.existsSync(finalAudioPath) && fs.unlinkSync(finalAudioPath);
+                        fs.rmdirSync(tempDir, { recursive: true });
+                      } catch (err) {
+                        console.warn('Error cleaning up temp files:', err);
+                      }
+
+                      resolve();
+                    })
+                    .run();
+                }
+
+              }).catch(err => {
+                console.error('Error in video info processing:', err);
+                reject(err);
+              });
+            } else {
+              // No audio segments, just copy the video to final output
+              ffmpeg()
+                .input(concatVideoPath)
+                .outputOptions(['-c:v copy'])
+                .output(outputFilePath)
+                .on('end', () => {
+                  console.log('Media rendered successfully (video only)!');
+
+                  // Clean up
+                  try {
+                    visualSegments.forEach(segment => fs.existsSync(segment.path) && fs.unlinkSync(segment.path));
+                    fs.existsSync(videoListPath) && fs.unlinkSync(videoListPath);
+                    fs.existsSync(concatVideoPath) && fs.unlinkSync(concatVideoPath);
+                    fs.rmdirSync(tempDir, { recursive: true });
+                  } catch (err) {
+                    console.warn('Error cleaning up temp files:', err);
+                  }
+
+                  resolve();
+                })
+                .on('error', (err) => {
+                  console.error('Error creating final output:', err);
+                  reject(err);
+                })
+                .run();
+            }
+          })
+          .on('error', (err) => {
+            console.error('Error concatenating visual segments:', err);
+            reject(err);
+          })
+          .run();
+      });
+    })
+      .catch(err => {
+        console.error('Error processing media items:', err);
+        // Clean up
+        try {
+          if (fs.existsSync(tempDir)) {
+            fs.rmdirSync(tempDir, { recursive: true });
+          }
+        } catch (cleanupErr) {
+          console.warn('Error cleaning up temp directory:', cleanupErr);
+        }
+        throw new Error('Failed to process media items: ' + (err.message || err));
+      });
+  } catch (error) {
+    console.error('Fatal error in renderizeVideo:', error);
+    console.error('Error stack:', error.stack);
+    throw new Error('Failed to render video: ' + (error.message || error));
   }
 }
 
