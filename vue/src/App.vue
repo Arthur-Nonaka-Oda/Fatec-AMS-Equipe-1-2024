@@ -71,6 +71,7 @@ import VideoPreview from "./components/VideoPreview.vue";
 import TextEditor from "./components/TextEditor.vue";
 import Video from "./models/Video"; // Certifique-se de que o caminho está correto
 import Audio from "./models/Audio"; // Certifique-se de que o caminho está correto
+import Image from "./models/Image";
 import "./assets/main.css";
 
 export default {
@@ -195,33 +196,35 @@ export default {
         this.handleDeleteVideo();
       }
     },
-    handleTrimVideo() {
-      const selectedItem = this.selectedItem.item;
-      const layerIndex = this.selectedItem.layerIndex;
+handleTrimVideo() {
+  const selectedItem = this.selectedItem.item;
+  const layerIndex = this.selectedItem.layerIndex;
 
-      if (!selectedItem) {
-        alert("Nenhum item selecionado para recortar.");
-        return;
-      }
+  if (!selectedItem) {
+    alert("Nenhum item selecionado para recortar.");
+    return;
+  }
 
-      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
-      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
+  const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
+  const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
 
-      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
-        alert("Posicione o cursor dentro do item para dividir.");
-        return;
-      }
+  if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
+    alert("Posicione o cursor dentro do item para dividir.");
+    return;
+  }
 
-      const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
+  const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
 
-      if (selectedItem instanceof Video) {
-        this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
-      } else if (selectedItem instanceof Audio) {
-        this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
-      }
+  if (selectedItem instanceof Video) {
+    this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
+  } else if (selectedItem instanceof Audio) {
+    this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
+  } else if (selectedItem instanceof Image) {
+    this.timeline.splitImageAtTime(selectedItem, splitPointInOriginal);
+  }
 
-      this.updateLayers();
-    },
+  this.updateLayers();
+},
     async createVideoFromBlobs() {
       this.isLoading = true;
       const videosInfo = this.layers[0].items.map(video => ({
