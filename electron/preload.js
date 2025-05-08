@@ -37,6 +37,9 @@ contextBridge.exposeInMainWorld("electron", {
   },
   importDialog: async () => {
     return await ipcRenderer.invoke("import-dialog")
+  },
+  baixarVideo: async () => {
+    return await ipcRenderer.invoke("baixar-video")
   }
 }); 
 

@@ -33,9 +33,9 @@
 
     <!-- Controles de salvar e carregar -->
     <div class="project-controls">
-      <button @click="saveProject">Salvar Projeto</button>
       <button @click="loadProject">Carregar Projeto</button>
-      <button @click="downloadProject">Baixar Projeto</button>
+      <button @click="downloadProject">Salvar Projeto</button>
+
       <input type="file" @change="loadFromFile" />
     </div>
   </div>
@@ -115,23 +115,28 @@ export default {
         console.error("Erro ao salvar o projeto:", error);
       }
     },
-    loadProject() {
-      try {
-        this.timeline.loadProject();
-        this.updateLayers(); // Atualiza as camadas no Vue
-        console.log("Projeto carregado do localStorage.");
-      } catch (error) {
-        console.error("Erro ao carregar o projeto:", error);
-      }
-    },
-    downloadProject() {
-      try {
-        this.timeline.downloadProject();
-        console.log("Projeto baixado como arquivo JSON.");
-      } catch (error) {
-        console.error("Erro ao baixar o projeto:", error);
-      }
-    },
+  
+    async downloadProject() {
+  const projectName = prompt("Digite o nome do projeto:");
+  if (!projectName) return;
+
+  const ffmpegCommand = `ffmpeg -i input.mp4 -vf "scale=1280:720" -c:a copy`; // Exemplo
+
+  try {
+    const result = await window.electron.invoke('baixar-video', {
+      projectName,
+      ffmpegCommand
+    });
+
+    if (result.success) {
+      console.log("Vídeo salvo em:", result.outputPath);
+    } else {
+      console.error("Erro:", result.message);
+    }
+  } catch (err) {
+    console.error("Falha ao processar vídeo:", err);
+  }
+},
     loadFromFile(event) {
       const file = event.target.files[0];
       if (file) {
