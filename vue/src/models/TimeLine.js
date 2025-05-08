@@ -262,6 +262,51 @@ export default class TimeLine {
     this.addFileToLayer({ file: audioPart2, type: "audio", layerIndex }, originalIndex + 1);
   }
 
+  async splitImageAtTime(image, splitTime) {
+  const start = image.startTime || 0;
+  const end = image.endTime || image.duration;
+
+  if (splitTime <= start || splitTime >= end) {
+    console.error("Tempo de divisão inválido para imagem.");
+    return;
+  }
+
+  const segment1Duration = splitTime - start;
+  const segment2Duration = end - splitTime;
+
+  const imagePart1 = {
+    ...image,
+    name: image.name + " (Parte 1)",
+    duration: segment1Duration,
+    startTime: start,
+    endTime: splitTime,
+  };
+
+  const imagePart2 = {
+    ...image,
+    name: image.name + " (Parte 2)",
+    duration: segment2Duration,
+    startTime: splitTime,
+    endTime: end,
+  };
+
+  const layerIndex = this.layers.findIndex(layer =>
+    this.listFilesInLayer(this.layers.indexOf(layer)).includes(image)
+  );
+
+  const filesInLayer = this.listFilesInLayer(layerIndex);
+  const originalIndex = filesInLayer.indexOf(image);
+
+  if (originalIndex === -1) {
+    console.error("Imagem original não encontrada na camada.");
+    return;
+  }
+
+  this.removeFileFromLayer({ file: image, layerIndex });
+  this.addFileToLayer({ file: imagePart1, type: "image", layerIndex }, originalIndex);
+  this.addFileToLayer({ file: imagePart2, type: "image", layerIndex }, originalIndex + 1);
+}
+
   getCumulativeDurationBeforeVideo(layerIndex, video) {
     if (layerIndex < 0 || layerIndex >= this.layers.length) return 0;
   
