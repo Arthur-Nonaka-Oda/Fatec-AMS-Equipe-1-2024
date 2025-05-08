@@ -99,6 +99,7 @@ export default {
         const video = this.$refs.videoPlayer;
         this.$nextTick(() => {
           video.currentTime = currentItem.startTime;
+          video.volume = (currentItem.volume ?? 1) * this.volume;
           this.updatePlayPauseIcon();
         });
         video.load();
@@ -112,13 +113,15 @@ export default {
     },
     loadAudio() {
       const audios = this.timeline.listFilesInLayer(1);
-      if(audios.length > 0) {
+      if (audios.length > 0) {
         const currentAudioItem = audios[this.currentAudioIndex];
         this.currentAudio = URL.createObjectURL(currentAudioItem.blob);
 
         const audio = this.$refs.audioPlayer;
         this.$nextTick(() => {
           audio.currentTime = currentAudioItem.startTime;
+          // Aplica o volume combinado para o áudio
+          audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
           this.updatePlayPauseIcon();
         });
         audio.load();
@@ -132,13 +135,13 @@ export default {
     initializeAudioSync() {
       const videos = this.timeline.listFilesInLayer(0);
       const audios = this.timeline.listFilesInLayer(1);
-      
+
       this.audioSyncMap = audios.map((audioItem, index) => {
         let globalStartTime = 0;
         for (let i = 0; i < index; i++) {
           globalStartTime += videos[i].duration;
         }
-        
+
         return {
           audioItem,
           globalStartTime,
@@ -161,8 +164,8 @@ export default {
           console.log(videos[this.currentIndex].startTime);
           video.pause();
           if (this.$refs.audioPlayer) {
-        this.$refs.audioPlayer.pause();
-      }
+            this.$refs.audioPlayer.pause();
+          }
           this.updatePlayPauseIcon();
         })
 
@@ -189,18 +192,18 @@ export default {
       if (video.paused) {
         video.play();
         if (audio && this.currentAudio) {
-        audio.play().then(() => {
-          console.log('Audio started playing successfully');
-        }).catch(error => {
-          console.error('Audio play error:', error);
-          // Log additional audio details
-          console.log('Audio details:', {
-            src: audio.src,
-            currentTime: audio.currentTime,
-            duration: audio.duration
+          audio.play().then(() => {
+            console.log('Audio started playing successfully');
+          }).catch(error => {
+            console.error('Audio play error:', error);
+            // Log additional audio details
+            console.log('Audio details:', {
+              src: audio.src,
+              currentTime: audio.currentTime,
+              duration: audio.duration
+            });
           });
-        });
-      }
+        }
         this.playPauseIcon = "/pausaicon2.png";
       } else {
         video.pause();
@@ -216,9 +219,24 @@ export default {
     },
     updateVolume() {
       const video = this.$refs.videoPlayer;
-      video.volume = this.volume;
+      const videos = this.timeline.listFilesInLayer(0);
+      if (videos.length > 0) {
+        const currentItem = videos[this.currentIndex];
+        video.volume = (currentItem.volume ?? 1) * this.volume;
+      } else {
+        video.volume = this.volume;
+      }
 
-      // 
+      // Atualiza o volume do áudio também
+      const audio = this.$refs.audioPlayer;
+      const audios = this.timeline.listFilesInLayer(1);
+      if (audio && audios.length > 0) {
+        const currentAudioItem = audios[this.currentAudioIndex];
+        audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
+      } else if (audio) {
+        audio.volume = this.volume;
+      }
+
       this.volumeIcon = this.volume <= 0.0 ? "/mudo.png" : "/volume.png";
     },
     toggleVolumeControl() {
@@ -264,19 +282,19 @@ export default {
       }
       if (videos.length > 0) {
         this.currentGlobalTime = accumulated + (video.currentTime - videos[this.currentIndex].startTime);
-        
-        
+
+
         if (audio && this.currentAudio && this.audioSyncMap) {
           // Find the matching audio segment
-          const matchingSegment = this.audioSyncMap.find(segment => 
-            this.currentGlobalTime >= segment.globalStartTime && 
+          const matchingSegment = this.audioSyncMap.find(segment =>
+            this.currentGlobalTime >= segment.globalStartTime &&
             this.currentGlobalTime < segment.globalEndTime
           );
-          
+
           if (matchingSegment) {
             // Calculate relative time within the audio segment
             const relativeAudioTime = this.currentGlobalTime - matchingSegment.globalStartTime;
-            
+
             // Only update if there's a significant difference
             if (Math.abs(audio.currentTime - relativeAudioTime) > 0.1) {
               audio.currentTime = relativeAudioTime;
@@ -294,9 +312,9 @@ export default {
         }
 
         const currentAudio = audios[this.currentAudioIndex];
-        if(this.currentAudio) {
+        if (this.currentAudio) {
           if (audio.currentTime >= currentAudio.endTime) {
-          this.handleAudioEnded();
+            this.handleAudioEnded();
           }
         }
 
@@ -331,39 +349,39 @@ export default {
         targetIndex = videos.length - 1;
         globalTime = videos[targetIndex].duration;
       }
-      
+
       // If we need to change the video segment
       if (targetIndex !== this.currentIndex) {
         this.currentIndex = targetIndex;
-        
+
         // Revoke the previous blob URL if needed
         if (this.currentVideo) {
           URL.revokeObjectURL(this.currentVideo);
         }
-        
+
         const videoBlob = videos[targetIndex].blob;
         const videoDuration = videos[targetIndex].duration;
-        
+
         // Start and end time from the video's metadata
         const startTime = videos[targetIndex].startTime; // Assume these times are provided in the video metadata
         const endTime = videos[targetIndex].endTime;     // These are the start and end times of the video segment
-        
-        
+
+
         // Calculate the byte range for the slice
         const startByte = (startTime / videoDuration) * videoBlob.size;
         const endByte = (endTime / videoDuration) * videoBlob.size;
-        
+
         // Slice the video blob from startByte to endByte
         const slicedBlob = videoBlob.slice(startByte, endByte, "video/mp4");
         this.currentVideo = URL.createObjectURL(slicedBlob);
-        
+
         this.$nextTick(() => {
           const video = this.$refs.videoPlayer;
           video.currentTime = relativeTime;
           video.load();
           this.updatePlayPauseIcon();
         });
-        
+
       }
 
       const relativeTime = globalTime - accumulated;

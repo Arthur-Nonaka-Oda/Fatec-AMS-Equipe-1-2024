@@ -43,8 +43,9 @@
         <button @click="downloadProject">Baixar Projeto</button>
         <input type="file" @change="loadFromFile" />
       </div>
-      <div class="volume-controls">>
-        <VolumeSlider :volume="50" />
+      <div class="volume-controls">
+        <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1" @update-volume="updateItemVolume" />
+
       </div>
 
     </div>
@@ -94,6 +95,9 @@ export default {
     };
   },
   computed: {
+    isItemSelected() {
+      return this.selectedItem !== null;
+    },
     totalVideoDuration() {
       return this.layers[0].items.reduce(
         (total, video) => total + (video.duration || 0),
@@ -119,6 +123,11 @@ export default {
     document.removeEventListener("mouseup", this.grabDone);
   },
   methods: {
+    updateItemVolume(newVolume) {
+      if (this.selectedItem && this.selectedItem.item) {
+        this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
+      }
+    },
     saveProject() {
       try {
         this.timeline.saveProject();
@@ -312,11 +321,12 @@ export default {
 
 .volume-controls {
   position: fixed;
-  bottom: 50px;
+  bottom: 0px;
   left: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* background-color: #323C7D; */
 }
 
 .project-controls button {
@@ -359,7 +369,7 @@ export default {
   bottom: 0;
   border: 1px solid #0F153C;
   background-color: #0F153C;
-  height: 30%;
+  height: 33%;
   overflow-y: hidden;
   overflow-x: scroll;
   width: 100%;

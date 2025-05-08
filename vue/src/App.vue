@@ -57,7 +57,7 @@
       </div>
       <TimeLine ref="timeline" @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline"
         :layers="layers" :update-layers="updateLayers" :current-time="currentGlobalTime"
-        @cursor-moved="handleCursorMoved" />
+        @cursor-moved="handleCursorMoved" @update-item-volume="handleUpdateItemVolume" />
     </section>
   </div>
 </template>
@@ -113,6 +113,13 @@ export default {
     window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
+    handleUpdateItemVolume(payload) {
+      if (payload && payload.item) {
+        payload.item.volume = payload.volume;
+        this.updateLayers();
+        this.$refs.videoPreview.updateVolume();
+      }
+    },
     updateLayers(newLayers) {
       this.layers = newLayers || this.timeline.getLayersForVue();
 
@@ -196,35 +203,35 @@ export default {
         this.handleDeleteVideo();
       }
     },
-handleTrimVideo() {
-  const selectedItem = this.selectedItem.item;
-  const layerIndex = this.selectedItem.layerIndex;
+    handleTrimVideo() {
+      const selectedItem = this.selectedItem.item;
+      const layerIndex = this.selectedItem.layerIndex;
 
-  if (!selectedItem) {
-    alert("Nenhum item selecionado para recortar.");
-    return;
-  }
+      if (!selectedItem) {
+        alert("Nenhum item selecionado para recortar.");
+        return;
+      }
 
-  const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
-  const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
+      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
+      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
 
-  if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
-    alert("Posicione o cursor dentro do item para dividir.");
-    return;
-  }
+      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
+        alert("Posicione o cursor dentro do item para dividir.");
+        return;
+      }
 
-  const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
+      const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
 
-  if (selectedItem instanceof Video) {
-    this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
-  } else if (selectedItem instanceof Audio) {
-    this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
-  } else if (selectedItem instanceof Image) {
-    this.timeline.splitImageAtTime(selectedItem, splitPointInOriginal);
-  }
+      if (selectedItem instanceof Video) {
+        this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
+      } else if (selectedItem instanceof Audio) {
+        this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
+      } else if (selectedItem instanceof Image) {
+        this.timeline.splitImageAtTime(selectedItem, splitPointInOriginal);
+      }
 
-  this.updateLayers();
-},
+      this.updateLayers();
+    },
     async createVideoFromBlobs() {
       this.isLoading = true;
       const videosInfo = this.layers[0].items.map(video => ({
