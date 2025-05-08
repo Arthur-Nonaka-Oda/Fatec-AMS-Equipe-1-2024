@@ -318,6 +318,7 @@ ipcMain.handle('renderize', async (event, { videos, audios }) => {
   }
 });
 
+
 async function renderizeVideo(mediaItems, outputFilePath) {
   try {
     // Create a unique temp directory for this job
@@ -424,6 +425,7 @@ async function renderizeVideo(mediaItems, outputFilePath) {
 
         // Add more detailed error reporting
         const command = ffmpeg(item.filePath)
+          .audioFilters(`volume=${(item.volume ?? 100) / 100}`) // Apply volume filter if needed
           .setStartTime(item.startTime)
           .setDuration(item.endTime - item.startTime)
           .outputOptions([

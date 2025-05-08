@@ -369,7 +369,7 @@ export default {
   bottom: 0;
   border: 1px solid #0F153C;
   background-color: #0F153C;
-  height: 33%;
+  height: 30%;
   overflow-y: hidden;
   overflow-x: scroll;
   width: 100%;
