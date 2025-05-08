@@ -262,7 +262,7 @@ async function combineVideos(videosInfo, outputFilePath) {
 
     console.log("Filter Complex:", filterComplex);
 
-    ffmpeg()
+    window.conversor = ffmpeg()
       // .complexFilter(filterComplex)
       .input(listFilePath)
       .inputOptions(['-f concat', '-safe 0'])
@@ -274,6 +274,7 @@ async function combineVideos(videosInfo, outputFilePath) {
         console.log('Input is ' + data.audio + ' audio with ' + data.video + ' video');
       })
       .on('progress', (progress) => {
+        console.log(progress);
         console.log('Processing: ' + progress.percentage + '% done');
       })
       .on('end', () => {
@@ -499,6 +500,8 @@ async function renderizeVideo(mediaItems, outputFilePath) {
           console.log(`Command: ${cmdLine}`);
         })
           .on('progress', (progress) => {
+            console.log(progress);
+            console.log("AQUI!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             console.log('Video concat: ' + (progress.percent || 0).toFixed(2) + '% done');
           })
           .on('end', () => {
@@ -606,6 +609,8 @@ async function renderizeVideo(mediaItems, outputFilePath) {
                             console.log(`Command: ${cmdLine}`);
                           })
                           .on('progress', (progress) => {
+                            console.log(progress);
+                            console.log("AQUI!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                             console.log('Final render: ' + (progress.percent || 0).toFixed(2) + '% done');
                           })
                           .on('error', (err, stdout, stderr) => {

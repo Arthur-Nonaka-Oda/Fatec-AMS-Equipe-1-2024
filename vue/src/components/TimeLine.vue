@@ -38,11 +38,15 @@
       </select>
 
       <div class="project-controls">
-      <button @click="saveProject">Salvar Projeto</button>
-      <button @click="loadProject">Carregar Projeto</button>
-      <button @click="downloadProject">Baixar Projeto</button>
-      <input type="file" @change="loadFromFile" />
-    </div>
+        <button @click="saveProject">Salvar Projeto</button>
+        <button @click="loadProject">Carregar Projeto</button>
+        <button @click="downloadProject">Baixar Projeto</button>
+        <input type="file" @change="loadFromFile" />
+      </div>
+      <div class="volume-controls">>
+        <VolumeSlider :volume="50" />
+      </div>
+
     </div>
   </div>
 </template>
@@ -50,6 +54,7 @@
 <script>
 import TimeLineItem from "./TimeLineItem.vue";
 import VideoEditingTimeline from "video-editing-timeline-vue";
+import VolumeSlider from "./VolumeSlider.vue";
 
 export default {
   props: {
@@ -73,6 +78,7 @@ export default {
   },
   components: {
     TimeLineItem,
+    VolumeSlider,
     VideoEditingTimeline,
   },
   data() {
@@ -304,6 +310,15 @@ export default {
   gap: 10px;
 }
 
+.volume-controls {
+  position: fixed;
+  bottom: 50px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .project-controls button {
   padding: 10px 15px;
   background-color: #323c7d;
@@ -426,7 +441,7 @@ export default {
 
 .layers {
   top: 3.125rem;
-  height: 50%;
+  height: 30%;
   display: flex;
   flex-direction: column;
   width: fit-content;
