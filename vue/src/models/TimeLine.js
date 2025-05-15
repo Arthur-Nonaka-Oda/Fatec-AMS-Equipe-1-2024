@@ -2,11 +2,168 @@ import Video from "../models/Video";
 import Audio from "./Audio";
 import Image from "./Image";
 import Node from "../models/Node";
+import { TimelineHistory } from './TimelineHistory'; // NOVO
 
 export default class TimeLine {
   constructor() {
     this.layers = [{ head: null, end: null }, { head: null, end: null }, { head: null, end: null }];
     this.currentSecond = 0;
+    this.history = new TimelineHistory(); // NOVO
+    this.executeCommand = this.executeCommand.bind(this); // NOVO
+  }
+
+  executeCommand(command) {
+    command.execute();
+    this.history.addAction(command.execute, command.undo);
+  }
+
+  // Modificado para usar o sistema de histórico
+  addFileToLayer(fileData, position = 'end') {
+    const originalState = this.getSnapshot();
+    const layerIndex = fileData.layerIndex;
+    const execute = () => {
+      // Implementação original:
+      if (layerIndex >= 0 && layerIndex < this.layers.length) {
+        const newNode = this.createNode(fileData);
+        const layer = this.layers[layerIndex];
+
+        if (layer.head === null) {
+          layer.head = newNode;
+          layer.end = newNode;
+        } else if (typeof position === 'number') {
+          let current = layer.head;
+          let prev = null;
+          let index = 0;
+
+          while (current && index < position) {
+            prev = current;
+            current = current.next;
+            index++;
+          }
+
+          if (prev) {
+            prev.next = newNode;
+            newNode.next = current;
+          } else {
+            newNode.next = layer.head;
+            layer.head = newNode;
+          }
+
+          if (!newNode.next) {
+            layer.end = newNode;
+          }
+        } else if (position === 'start') {
+          newNode.next = layer.head;
+          layer.head = newNode;
+        } else if (position === 'end') {
+          layer.end.next = newNode;
+          layer.end = newNode;
+        }
+      }
+      this.updateVueLayers();
+    };
+
+    const undo = () => {
+      this.restoreSnapshot(originalState);
+      this.updateVueLayers();
+    };
+
+    this.executeCommand({ execute, undo });
+  }
+
+  // Métodos auxiliares para snapshots
+  getSnapshot() {
+    return JSON.parse(JSON.stringify({
+      layers: this.layers.map(layer => this.listFilesInLayer(this.layers.indexOf(layer))),
+      currentSecond: this.currentSecond
+    }));
+  }
+
+  restoreSnapshot(snapshot) {
+    this.layers = snapshot.layers.map(layerFiles => {
+      const layer = { head: null, end: null };
+      layerFiles.forEach(file => {
+        const node = new Node(file);
+        if (!layer.head) {
+          layer.head = node;
+          layer.end = node;
+        } else {
+          layer.end.next = node;
+          layer.end = node;
+        }
+      });
+      return layer;
+    });
+    this.currentSecond = snapshot.currentSecond;
+  }
+
+  // Atualizar outros métodos para usar executeCommand...
+  moveItem(sourceLayerIndex, sourceIndex, targetLayerIndex, targetIndex) {
+    const originalState = this.getSnapshot();
+    const execute = () => {
+      // Implementação original do moveItem:
+      const sourceLayer = this.layers[sourceLayerIndex];
+      let current = sourceLayer.head;
+      let prev = null;
+      let count = 0;
+
+      while (current && count < sourceIndex) {
+        prev = current;
+        current = current.next;
+        count++;
+      }
+
+      if (!current) return;
+
+      if (prev) {
+        prev.next = current.next;
+      } else {
+        sourceLayer.head = current.next;
+      }
+
+      const targetLayer = this.layers[targetLayerIndex];
+      let targetCurrent = targetLayer.head;
+      let targetPrev = null;
+      count = 0;
+
+      while (targetCurrent && count < targetIndex) {
+        targetPrev = targetCurrent;
+        targetCurrent = targetCurrent.next;
+        count++;
+      }
+
+      if (targetPrev) {
+        targetPrev.next = current;
+        current.next = targetCurrent;
+      } else {
+        current.next = targetLayer.head;
+        targetLayer.head = current;
+      }
+
+      if (!current.next) {
+        targetLayer.end = current;
+      }
+      this.updateVueLayers();
+    };
+
+    const undo = () => {
+      this.restoreSnapshot(originalState);
+      this.updateVueLayers();
+    };
+
+    this.executeCommand({ execute, undo });
+  }
+
+  // Método para atualizar as camadas no Vue
+  updateVueLayers() {
+    if (this.updateLayersCallback) {
+      this.updateLayersCallback(this.getLayersForVue());
+    }
+  }
+
+  // Registrar callback para atualização do Vue
+  registerUpdateLayers(callback) {
+    this.updateLayersCallback = callback;
   }
 
   addLayer() {
@@ -16,46 +173,6 @@ export default class TimeLine {
   removeLayer(index) {
     if (index >= 0 && index < this.layers.length) {
       this.layers.splice(index, 1);
-    }
-  }
-
-  addFileToLayer(fileData, position = 'end') {
-    if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
-      const newNode = this.createNode(fileData);
-      const layer = this.layers[fileData.layerIndex];
-  
-      if (layer.head === null) {
-        layer.head = newNode;
-        layer.end = newNode;
-      } else if (typeof position === 'number') {
-        let current = layer.head;
-        let prev = null;
-        let index = 0;
-  
-        while (current && index < position) {
-          prev = current;
-          current = current.next;
-          index++;
-        }
-  
-        if (prev) {
-          prev.next = newNode;
-          newNode.next = current;
-        } else {
-          newNode.next = layer.head;
-          layer.head = newNode;
-        }
-  
-        if (!newNode.next) {
-          layer.end = newNode;
-        }
-      } else if (position === 'start') {
-        newNode.next = layer.head;
-        layer.head = newNode;
-      } else if (position === 'end') {
-        layer.end.next = newNode;
-        layer.end = newNode;
-      }
     }
   }
 
@@ -176,52 +293,16 @@ export default class TimeLine {
   }
 
   async splitVideoAtTime(video, splitTime) {
-    const start = video.startTime || 0;
-    const end = video.endTime || video.duration;
-  
-    if (splitTime <= start || splitTime >= end) {
-      console.error("Tempo de divisão inválido.");
-      return;
-    }
-  
-    const segment1Duration = splitTime - start;
-    const segment2Duration = end - splitTime;
-  
-    const videoPart1 = new Video({
-      ...video,
-      name: video.name + " (Parte 1)",
-      duration: segment1Duration,
-      startTime: start,
-      endTime: splitTime,
-    });
-  
-    const videoPart2 = new Video({
-      ...video,
-      name: video.name + " (Parte 2)",
-      duration: segment2Duration,
-      startTime: splitTime,
-      endTime: end,
-    });
-  
-    // Encontra o índice da camada e do vídeo original
+    // Descobre o layerIndex do vídeo
     const layerIndex = this.layers.findIndex(layer =>
       this.listFilesInLayer(this.layers.indexOf(layer)).includes(video)
     );
-  
-    const filesInLayer = this.listFilesInLayer(layerIndex);
-    const originalIndex = filesInLayer.indexOf(video);
-  
-    if (originalIndex === -1) {
+    if (layerIndex === -1) {
       console.error("Vídeo original não encontrado na camada.");
       return;
     }
-  
-    // Remove o vídeo original
-    this.removeFileFromLayer({ file: video, layerIndex });
-  
-    // Adiciona as partes recortadas na mesma posição
-    this.addFileToLayer({ file: videoPart1, type: "video", layerIndex }, originalIndex);
-    this.addFileToLayer({ file: videoPart2, type: "video", layerIndex }, originalIndex + 1);
+    const command = new SplitCommand(this, video, splitTime, layerIndex);
+    this.executeCommand(command);
   }
 
   async splitAudioAtTime(audio, splitTime) {
@@ -323,56 +404,68 @@ export default class TimeLine {
     return 0;
   }
 
-  
-  moveItem(sourceLayerIndex, sourceIndex, targetLayerIndex, targetIndex) {
-    const sourceLayer = this.layers[sourceLayerIndex];
-    let current = sourceLayer.head;
-    let prev = null;
-    let count = 0;
-
-    while (current && count < sourceIndex) {
-      prev = current;
-      current = current.next;
-      count++;
-    }
-
-    if (!current) return;
-
-    if (prev) {
-      prev.next = current.next;
-    } else {
-      sourceLayer.head = current.next;
-    }
-
-    const targetLayer = this.layers[targetLayerIndex];
-    let targetCurrent = targetLayer.head;
-    let targetPrev = null;
-    count = 0;
-
-    while (targetCurrent && count < targetIndex) {
-      targetPrev = targetCurrent;
-      targetCurrent = targetCurrent.next;
-      count++;
-    }
-
-    if (targetPrev) {
-      targetPrev.next = current;
-      current.next = targetCurrent;
-    } else {
-      current.next = targetLayer.head;
-      targetLayer.head = current;
-    }
-
-    if (!current.next) {
-      targetLayer.end = current;
-    }
-  }
-
   getLayersForVue() {
     return this.layers.map(layer => ({
       items: this.listFilesInLayer(this.layers.indexOf(layer))
     }));
   }
 
+}
 
+// Comando para split de vídeo com suporte a undo/redo
+class SplitCommand {
+  constructor(timeline, item, splitTime, layerIndex) {
+    this.timeline = timeline;
+    this.item = item;
+    this.splitTime = splitTime;
+    this.layerIndex = layerIndex;
+    this.originalState = timeline.getSnapshot();
+  }
+
+  execute() {
+    const video = this.item;
+    const start = video.startTime || 0;
+    const end = video.endTime || video.duration;
+
+    if (this.splitTime <= start || this.splitTime >= end) {
+      console.error("Tempo de divisão inválido.");
+      return;
+    }
+
+    const segment1Duration = this.splitTime - start;
+    const segment2Duration = end - this.splitTime;
+
+    const videoPart1 = new Video({
+      ...video,
+      name: video.name + " (Parte 1)",
+      duration: segment1Duration,
+      startTime: start,
+      endTime: this.splitTime,
+    });
+
+    const videoPart2 = new Video({
+      ...video,
+      name: video.name + " (Parte 2)",
+      duration: segment2Duration,
+      startTime: this.splitTime,
+      endTime: end,
+    });
+
+    const filesInLayer = this.timeline.listFilesInLayer(this.layerIndex);
+    const originalIndex = filesInLayer.indexOf(video);
+
+    if (originalIndex === -1) {
+      console.error("Vídeo original não encontrado na camada.");
+      return;
+    }
+
+    this.timeline.removeFileFromLayer({ file: video, layerIndex: this.layerIndex });
+    this.timeline.addFileToLayer({ file: videoPart1, type: "video", layerIndex: this.layerIndex }, originalIndex);
+    this.timeline.addFileToLayer({ file: videoPart2, type: "video", layerIndex: this.layerIndex }, originalIndex + 1);
+  }
+
+  undo() {
+    this.timeline.restoreSnapshot(this.originalState);
+    this.timeline.updateVueLayers();
+  }
 }
