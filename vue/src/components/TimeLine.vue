@@ -107,36 +107,24 @@ export default {
     document.removeEventListener("mouseup", this.grabDone);
   },
   methods: {
-    saveProject() {
-      try {
-        this.timeline.saveProject();
-        console.log("Projeto salvo no localStorage.");
-      } catch (error) {
-        console.error("Erro ao salvar o projeto:", error);
-      }
-    },
-  
-    async downloadProject() {
-  const projectName = prompt("Digite o nome do projeto:");
-  if (!projectName) return;
-
-  const ffmpegCommand = `ffmpeg -i input.mp4 -vf "scale=1280:720" -c:a copy`; // Exemplo
-
-  try {
-    const result = await window.electron.invoke('baixar-video', {
-      projectName,
-      ffmpegCommand
-    });
-
-    if (result.success) {
-      console.log("Vídeo salvo em:", result.outputPath);
-    } else {
-      console.error("Erro:", result.message);
+  saveProject() {
+    try {
+      this.timeline.saveProject();
+      console.log("Projeto salvo no localStorage.");
+    } catch (error) {
+      console.error("Erro ao salvar o projeto:", error);
     }
-  } catch (err) {
-    console.error("Falha ao processar vídeo:", err);
-  }
-},
+  },
+
+  loadProject() {
+    try {
+      this.timeline.loadProject(); 
+      this.updateLayers();
+      console.log("Projeto carregado do localStorage.");
+    } catch (error) {
+      console.error("Erro ao carregar o projeto:", error);
+    }
+  },
     loadFromFile(event) {
       const file = event.target.files[0];
       if (file) {
