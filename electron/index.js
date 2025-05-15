@@ -9,6 +9,7 @@ const {
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const fs = require("fs");
+const { v4: uuidv4 } = require('uuid');
 
 let mainWindow;
 
@@ -361,7 +362,6 @@ async function renderizeVideo(mediaItems, outputFilePath) {
               '-c:v libx264',
               '-pix_fmt yuv420p',
               '-r 30',
-              '-an', // No audio
               '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
             ])
             .output(segmentPath)
@@ -387,12 +387,13 @@ async function renderizeVideo(mediaItems, outputFilePath) {
           ffmpeg(item.filePath)
             .setStartTime(item.startTime)
             .setDuration(item.endTime - item.startTime)
+            .videoFilters('scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2')
+            .audioFilters(`volume=${(item.volume ?? 100)}`)
             .outputOptions([
               '-c:v libx264',
-              '-an', // No audio
+              '-c:a aac',
               '-avoid_negative_ts make_zero',
-              '-reset_timestamps 1',
-              '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
+              '-reset_timestamps 1'
             ])
             .output(segmentPath)
             .on('start', () => {
@@ -425,7 +426,7 @@ async function renderizeVideo(mediaItems, outputFilePath) {
 
         // Add more detailed error reporting
         const command = ffmpeg(item.filePath)
-          .audioFilters(`volume=${(item.volume ?? 100) / 100}`) // Apply volume filter if needed
+          .audioFilters(`volume=${(item.volume ?? 100)}`) // Apply volume filter if needed
           .setStartTime(item.startTime)
           .setDuration(item.endTime - item.startTime)
           .outputOptions([
@@ -491,7 +492,6 @@ async function renderizeVideo(mediaItems, outputFilePath) {
             '-crf 10',
             '-preset medium',
             '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
-            '-an' // No audio yet
           ])
           .output(concatVideoPath);
 

@@ -136,12 +136,15 @@ export default {
         filePath: video.filePath,
         startTime: video.startTime,
         endTime: video.endTime,
+        volume: video.volume,
       }));
       const audios = this.layers[1].items.map(audio => ({
         filePath: audio.filePath,
         startTime: audio.startTime,
         endTime: audio.endTime,
+        volume: audio.volume
       }));
+      console.log(audios);
       try {
         await window.electron.ipcRenderer.invoke("renderize", {
           videos,
