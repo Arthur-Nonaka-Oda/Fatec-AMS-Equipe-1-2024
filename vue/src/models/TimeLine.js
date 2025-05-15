@@ -93,34 +93,38 @@ export default class TimeLine {
     if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
       const newNode = this.createNode(fileData);
       const layer = this.layers[fileData.layerIndex];
-
+  
       if (layer.head === null) {
         layer.head = newNode;
         layer.end = newNode;
-      } else {
-        if (position === 'start') {
+      } else if (typeof position === 'number') {
+        let current = layer.head;
+        let prev = null;
+        let index = 0;
+  
+        while (current && index < position) {
+          prev = current;
+          current = current.next;
+          index++;
+        }
+  
+        if (prev) {
+          prev.next = newNode;
+          newNode.next = current;
+        } else {
           newNode.next = layer.head;
           layer.head = newNode;
-        } else if (position === 'end') {
-          layer.end.next = newNode;
-          layer.end = newNode;
-        } else if (position === 'middle') {
-          let current = layer.head;
-          let prev = null;
-          let count = 0;
-          const middleIndex = Math.floor(this.listFilesInLayer(fileData.layerIndex).length / 2);
-
-          while (current && count < middleIndex) {
-            prev = current;
-            current = current.next;
-            count++;
-          }
-
-          if (prev) {
-            prev.next = newNode;
-            newNode.next = current;
-          }
         }
+  
+        if (!newNode.next) {
+          layer.end = newNode;
+        }
+      } else if (position === 'start') {
+        newNode.next = layer.head;
+        layer.head = newNode;
+      } else if (position === 'end') {
+        layer.end.next = newNode;
+        layer.end = newNode;
       }
     }
   }
@@ -128,30 +132,97 @@ export default class TimeLine {
   removeFileFromLayer(fileData) {
     if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
       const layer = this.layers[fileData.layerIndex];
-      if (!layer.head) {
-        console.warn("Camada vazia. Nenhum arquivo para remover.");
-        return;
-      }
-
-      let current = layer.head;
-      let before = null;
-
-      while (current) {
+      if (layer.head !== null) {
+        let current = layer.head;
+        let before = null;
         if (current.item === fileData.file) {
-          if (before) {
-            before.next = current.next;
-          } else {
-            layer.head = current.next;
+          layer.head = current.next;
+          if (layer.end === current) {
+            layer.end = null;
           }
-
-          if (!current.next) {
-            layer.end = before;
-          }
-
           return;
         }
+        while (current !== null) {
+          if (current.item === fileData.file) {
+            if (layer.end === current) {
+              layer.end = before;
+            }
+            if (before !== null) {
+              before.next = current.next;
+            }
+            return;
+          }
+          before = current;
+          current = current.next;
+        }
+      }
+    }
+  }
 
-        before = current;
+  saveProject() {
+    const projectData = JSON.stringify({
+      layers: this.layers.map((layer) => ({
+        files: this.listFilesInLayer(this.layers.indexOf(layer)).map((file) => ({
+          type: file.constructor.name.toLowerCase(),
+          data: file,
+        })),
+      })),
+      currentSecond: this.currentSecond,
+    });
+
+    localStorage.setItem("savedProject", projectData);
+    console.log("Projeto salvo!");
+  }
+
+  loadProject() {
+    const savedData = localStorage.getItem("savedProject");
+    if (!savedData) {
+      console.warn("Nenhum projeto salvo encontrado.");
+      return;
+    }
+
+    const parsedData = JSON.parse(savedData);
+    this.layers = parsedData.layers.map(() => ({
+      head: null,
+      end: null,
+    }));
+
+    parsedData.layers.forEach((layer, layerIndex) => {
+      layer.files.forEach(({ type, data }) => {
+        this.addFileToLayer({ file: data, type, layerIndex });
+      });
+    });
+
+    this.currentSecond = parsedData.currentSecond;
+    console.log("Projeto carregado!");
+  }
+
+  downloadProject() {
+    const blob = new Blob([localStorage.getItem("savedProject")], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "projeto.json"; // Nome do arquivo baixado
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  loadFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      localStorage.setItem("savedProject", event.target.result); // Salva o conteúdo no localStorage
+      this.loadProject(); // Restaura o estado do projeto
+    };
+    reader.readAsText(file); // Lê o arquivo como texto
+  }
+
+
+  listFilesInLayer(layerIndex) {
+    if (layerIndex >= 0 && layerIndex < this.layers.length) {
+      let files = [];
+      let current = this.layers[layerIndex].head;
+      while (current !== null) {
+        files.push(current.item);
         current = current.next;
       }
 
@@ -177,8 +248,8 @@ export default class TimeLine {
   }
 
   async splitVideoAtTime(video, splitTime) {
-    const start = video.startTime !== undefined ? video.startTime : 0;
-    const end = video.endTime !== undefined ? video.endTime : video.duration;
+    const start = video.startTime || 0;
+    const end = video.endTime || video.duration;
   
     if (splitTime <= start || splitTime >= end) {
       console.error("Tempo de divisão inválido.");
@@ -189,31 +260,125 @@ export default class TimeLine {
     const segment2Duration = end - splitTime;
   
     const videoPart1 = new Video({
-      filePath: video.filePath,
+      ...video,
       name: video.name + " (Parte 1)",
       duration: segment1Duration,
-      size: video.size,
-      blob: video.blob,
-      url: video.url,
       startTime: start,
-      endTime: splitTime
+      endTime: splitTime,
     });
   
     const videoPart2 = new Video({
-      filePath: video.filePath,
+      ...video,
       name: video.name + " (Parte 2)",
       duration: segment2Duration,
-      size: video.size,
-      blob: video.blob,
-      url: video.url,
       startTime: splitTime,
-      endTime: end
+      endTime: end,
     });
   
-    this.removeFileFromLayer({ file: video, layerIndex: 0 });
-    this.addFileToLayer({ file: videoPart1, type: 'video', layerIndex: 0 });
-    this.addFileToLayer({ file: videoPart2, type: 'video', layerIndex: 0 });
+    // Encontra o índice da camada e do vídeo original
+    const layerIndex = this.layers.findIndex(layer =>
+      this.listFilesInLayer(this.layers.indexOf(layer)).includes(video)
+    );
+  
+    const filesInLayer = this.listFilesInLayer(layerIndex);
+    const originalIndex = filesInLayer.indexOf(video);
+  
+    if (originalIndex === -1) {
+      console.error("Vídeo original não encontrado na camada.");
+      return;
+    }
+  
+    // Remove o vídeo original
+    this.removeFileFromLayer({ file: video, layerIndex });
+  
+    // Adiciona as partes recortadas na mesma posição
+    this.addFileToLayer({ file: videoPart1, type: "video", layerIndex }, originalIndex);
+    this.addFileToLayer({ file: videoPart2, type: "video", layerIndex }, originalIndex + 1);
   }
+
+  async splitAudioAtTime(audio, splitTime) {
+    const start = audio.startTime || 0;
+    const end = audio.endTime || audio.duration;
+  
+    if (splitTime <= start || splitTime >= end) {
+      console.error("Tempo de divisão inválido.");
+      return;
+    }
+  
+    const segment1Duration = splitTime - start;
+    const segment2Duration = end - splitTime;
+  
+    const audioPart1 = new Audio({
+      ...audio,
+      name: audio.name + " (Parte 1)",
+      duration: segment1Duration,
+      startTime: start,
+      endTime: splitTime,
+    });
+  
+    const audioPart2 = new Audio({
+      ...audio,
+      name: audio.name + " (Parte 2)",
+      duration: segment2Duration,
+      startTime: splitTime,
+      endTime: end,
+    });
+  
+    const layerIndex = this.layers.findIndex(layer =>
+      this.listFilesInLayer(this.layers.indexOf(layer)).includes(audio)
+    );
+  
+    const originalIndex = this.listFilesInLayer(layerIndex).indexOf(audio);
+    this.removeFileFromLayer({ file: audio, layerIndex });
+    this.addFileToLayer({ file: audioPart1, type: "audio", layerIndex }, originalIndex);
+    this.addFileToLayer({ file: audioPart2, type: "audio", layerIndex }, originalIndex + 1);
+  }
+
+  async splitImageAtTime(image, splitTime) {
+  const start = image.startTime || 0;
+  const end = image.endTime || image.duration;
+
+  if (splitTime <= start || splitTime >= end) {
+    console.error("Tempo de divisão inválido para imagem.");
+    return;
+  }
+
+  const segment1Duration = splitTime - start;
+  const segment2Duration = end - splitTime;
+
+  const imagePart1 = {
+    ...image,
+    name: image.name + " (Parte 1)",
+    duration: segment1Duration,
+    startTime: start,
+    endTime: splitTime,
+  };
+
+  const imagePart2 = {
+    ...image,
+    name: image.name + " (Parte 2)",
+    duration: segment2Duration,
+    startTime: splitTime,
+    endTime: end,
+  };
+
+  const layerIndex = this.layers.findIndex(layer =>
+    this.listFilesInLayer(this.layers.indexOf(layer)).includes(image)
+  );
+
+  const filesInLayer = this.listFilesInLayer(layerIndex);
+  const originalIndex = filesInLayer.indexOf(image);
+
+  if (originalIndex === -1) {
+    console.error("Imagem original não encontrada na camada.");
+    return;
+  }
+
+  this.removeFileFromLayer({ file: image, layerIndex });
+  this.addFileToLayer({ file: imagePart1, type: "image", layerIndex }, originalIndex);
+  this.addFileToLayer({ file: imagePart2, type: "image", layerIndex }, originalIndex + 1);
+}
+
   getCumulativeDurationBeforeVideo(layerIndex, video) {
     if (layerIndex < 0 || layerIndex >= this.layers.length) return 0;
   
@@ -232,51 +397,36 @@ export default class TimeLine {
 
   
   moveItem(sourceLayerIndex, sourceIndex, targetLayerIndex, targetIndex) {
-    if (sourceLayerIndex < 0 || sourceLayerIndex >= this.layers.length ||
-        targetLayerIndex < 0 || targetLayerIndex >= this.layers.length) {
-      console.error("Índices de camada inválidos.");
-      return;
-    }
-  
     const sourceLayer = this.layers[sourceLayerIndex];
     let current = sourceLayer.head;
     let prev = null;
     let count = 0;
-  
+
     while (current && count < sourceIndex) {
       prev = current;
       current = current.next;
       count++;
     }
-  
-    if (!current) {
-      console.error("Índice de arquivo inválido na camada de origem.");
-      return;
-    }
-  
+
+    if (!current) return;
+
     if (prev) {
       prev.next = current.next;
     } else {
       sourceLayer.head = current.next;
     }
-  
-    if (!sourceLayer.head) {
-      sourceLayer.end = null;
-    } else if (!prev && !current.next) {
-      sourceLayer.end = prev;
-    }
-  
+
     const targetLayer = this.layers[targetLayerIndex];
     let targetCurrent = targetLayer.head;
     let targetPrev = null;
     count = 0;
-  
+
     while (targetCurrent && count < targetIndex) {
       targetPrev = targetCurrent;
       targetCurrent = targetCurrent.next;
       count++;
     }
-  
+
     if (targetPrev) {
       targetPrev.next = current;
       current.next = targetCurrent;
@@ -284,7 +434,7 @@ export default class TimeLine {
       current.next = targetLayer.head;
       targetLayer.head = current;
     }
-  
+
     if (!current.next) {
       targetLayer.end = current;
     }

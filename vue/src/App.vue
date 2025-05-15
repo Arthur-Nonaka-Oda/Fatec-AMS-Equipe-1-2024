@@ -52,12 +52,12 @@
           <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
-        <VideoPreview ref="videoPreview" :timeline="timeline" @delete-video="handleDeleteVideo" @trim-video="handleTrimVideo"
-          @update-time="handleUpdateTime" />
+        <VideoPreview ref="videoPreview" :timeline="timeline" @delete-video="handleDeleteVideo"
+          @trim-video="handleTrimVideo" @update-time="handleUpdateTime" />
       </div>
       <TimeLine ref="timeline" @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline"
         :layers="layers" :update-layers="updateLayers" :current-time="currentGlobalTime"
-        @cursor-moved="handleCursorMoved" />
+        @cursor-moved="handleCursorMoved" @update-item-volume="handleUpdateItemVolume" />
     </section>
   </div>
 </template>
@@ -69,6 +69,9 @@ import TimeLineComponent from "./components/TimeLine.vue";
 import TimeLine from "./models/TimeLine.js";
 import VideoPreview from "./components/VideoPreview.vue";
 import TextEditor from "./components/TextEditor.vue";
+import Video from "./models/Video"; // Certifique-se de que o caminho está correto
+import Audio from "./models/Audio"; // Certifique-se de que o caminho está correto
+import Image from "./models/Image";
 import "./assets/main.css";
 
 export default {
@@ -110,6 +113,13 @@ export default {
     window.removeEventListener("keydown", this.handleKeyDown);
   },
   methods: {
+    handleUpdateItemVolume(payload) {
+      if (payload && payload.item) {
+        payload.item.volume = payload.volume;
+        this.updateLayers();
+        this.$refs.videoPreview.updateVolume();
+      }
+    },
     updateLayers(newLayers) {
       this.layers = newLayers || this.timeline.getLayersForVue();
 
@@ -122,11 +132,20 @@ export default {
     },
     async renderizeVideo() {
       this.isLoading = true;
-      const videosPaths = this.layers[0].items.map((video) => video.filePath);
-      console.log(videosPaths);
+      const videos = this.layers[0].items.map(video => ({
+        filePath: video.filePath,
+        startTime: video.startTime,
+        endTime: video.endTime,
+      }));
+      const audios = this.layers[1].items.map(audio => ({
+        filePath: audio.filePath,
+        startTime: audio.startTime,
+        endTime: audio.endTime,
+      }));
       try {
         await window.electron.ipcRenderer.invoke("renderize", {
-          videosPaths,
+          videos,
+          audios,
         });
       } finally {
         this.isLoading = false;
@@ -185,19 +204,32 @@ export default {
       }
     },
     handleTrimVideo() {
-      const selectedVideo = this.selectedItem.item;
+      const selectedItem = this.selectedItem.item;
       const layerIndex = this.selectedItem.layerIndex;
 
-      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedVideo);
-      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
-
-      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedVideo.duration) {
-        alert("Posicione o cursor dentro do vídeo para dividir.");
+      if (!selectedItem) {
+        alert("Nenhum item selecionado para recortar.");
         return;
       }
 
-      const splitPointInOriginal = selectedVideo.startTime + splitPointInTimeline;
-      this.timeline.splitVideoAtTime(selectedVideo, splitPointInOriginal);
+      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
+      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
+
+      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
+        alert("Posicione o cursor dentro do item para dividir.");
+        return;
+      }
+
+      const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
+
+      if (selectedItem instanceof Video) {
+        this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
+      } else if (selectedItem instanceof Audio) {
+        this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
+      } else if (selectedItem instanceof Image) {
+        this.timeline.splitImageAtTime(selectedItem, splitPointInOriginal);
+      }
+
       this.updateLayers();
     },
     async createVideoFromBlobs() {
@@ -251,7 +283,7 @@ export default {
         );
 
         this.videoUrl = `data:video/mp4;base64,${base64Video}`;
-        this.closeCutEditor(); 
+        this.closeCutEditor();
       } catch (error) {
         console.error("Erro ao cortar o vídeo:", error);
       }

@@ -4,6 +4,15 @@ const path = require("path");
 function Recorder() {
     this.mediaRecorder = null;
     this.chunks = [];
+    this.startCamera = async function () {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoElement.srcObject = stream;
+          videoElement.play();
+        } catch (error) {
+          console.error('Erro ao acessar a câmera:', error);
+        }
+      }
 
     this.startRecording = async function () {
         try {
@@ -15,6 +24,7 @@ function Recorder() {
                     mandatory: {
                         chromeMediaSource: "desktop",
                     },
+                    video:true,
                 },
                 // audio: true,
                 video: {

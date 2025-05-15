@@ -1,0 +1,17 @@
+{
+    "nome": "Videos",
+    "items": [
+        {
+            "arquivo": "video1.mp4",
+            "tipo": "video",
+            "inicio": "0",
+            "fim": "90"
+        },
+        {
+            "arquivo": "video1.mp4",
+            "tipo": "video",
+            "inicio": "0",
+            "fim": "90"
+        }
+    ]
+}

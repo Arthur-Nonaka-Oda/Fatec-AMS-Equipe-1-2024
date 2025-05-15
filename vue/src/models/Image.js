@@ -8,5 +8,6 @@ export default class Image {
         this.url = url;
         this.startTime = startTime;
         this.endTime = endTime || duration;
+        this.volume = 1.0;
     }
 }

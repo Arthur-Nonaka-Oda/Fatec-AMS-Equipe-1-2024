@@ -15,5 +15,6 @@ export default class Audio {
     this.blob = blob;
     this.startTime = startTime;
     this.endTime = endTime || duration;
+    this.volume = 1.0;
   }
 }

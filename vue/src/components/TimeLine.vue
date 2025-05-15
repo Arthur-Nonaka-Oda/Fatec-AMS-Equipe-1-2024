@@ -9,6 +9,13 @@
     <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">
       {{ currentTime }}
     </div>
+    <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
+            <div class="time-markers">
+                <div v-for="second in filteredSeconds" :key="second" class="time-marker">
+                    {{ formatTime(second) }}
+                </div>
+            </div>
+        </div> -->
     <div class="layers">
       <div v-for="(layer, layerIndex) in layers" :key="layerIndex" class="layer">
         <div class="items">
@@ -28,7 +35,20 @@
         <option value="1.5">150%</option>
         <option value="2">200%</option>
         <option value="3">300%</option>
+        <option value="5">500%</option>
       </select>
+
+      <div class="project-controls">
+        <button @click="saveProject">Salvar Projeto</button>
+        <button @click="loadProject">Carregar Projeto</button>
+        <button @click="downloadProject">Baixar Projeto</button>
+        <input type="file" @change="loadFromFile" />
+      </div>
+      <div class="volume-controls">
+        <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1" @update-volume="updateItemVolume" />
+
+      </div>
+
     </div>
 
     <!-- Controles de salvar e carregar -->
@@ -44,6 +64,7 @@
 <script>
 import TimeLineItem from "./TimeLineItem.vue";
 import VideoEditingTimeline from "video-editing-timeline-vue";
+import VolumeSlider from "./VolumeSlider.vue";
 
 export default {
   props: {
@@ -67,6 +88,7 @@ export default {
   },
   components: {
     TimeLineItem,
+    VolumeSlider,
     VideoEditingTimeline,
   },
   data() {
@@ -76,12 +98,15 @@ export default {
       cursorPosition: 0,
       config: {
         minimumScale: 10,
-        minimumScaleTime: 6,
+        minimumScaleTime: 1,
       },
       selectedZoom: 1,
     };
   },
   computed: {
+    isItemSelected() {
+      return this.selectedItem !== null;
+    },
     totalVideoDuration() {
       return this.layers[0].items.reduce(
         (total, video) => total + (video.duration || 0),
@@ -107,24 +132,36 @@ export default {
     document.removeEventListener("mouseup", this.grabDone);
   },
   methods: {
-  saveProject() {
-    try {
-      this.timeline.saveProject();
-      console.log("Projeto salvo no localStorage.");
-    } catch (error) {
-      console.error("Erro ao salvar o projeto:", error);
-    }
-  },
-
-  loadProject() {
-    try {
-      this.timeline.loadProject(); 
-      this.updateLayers();
-      console.log("Projeto carregado do localStorage.");
-    } catch (error) {
-      console.error("Erro ao carregar o projeto:", error);
-    }
-  },
+    updateItemVolume(newVolume) {
+      if (this.selectedItem && this.selectedItem.item) {
+        this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
+      }
+    },
+    saveProject() {
+      try {
+        this.timeline.saveProject();
+        console.log("Projeto salvo no localStorage.");
+      } catch (error) {
+        console.error("Erro ao salvar o projeto:", error);
+      }
+    },
+    loadProject() {
+      try {
+        this.timeline.loadProject();
+        this.updateLayers(); // Atualiza as camadas no Vue
+        console.log("Projeto carregado do localStorage.");
+      } catch (error) {
+        console.error("Erro ao carregar o projeto:", error);
+      }
+    },
+    downloadProject() {
+      try {
+        this.timeline.downloadProject();
+        console.log("Projeto baixado como arquivo JSON.");
+      } catch (error) {
+        console.error("Erro ao baixar o projeto:", error);
+      }
+    },
     loadFromFile(event) {
       const file = event.target.files[0];
       if (file) {
@@ -265,14 +302,15 @@ export default {
 
     updateZoom() {
       const zoomMapping = {
-        0.1: 60, // 10%
-        0.25: 24, // 25%
-        0.5: 12, // 50%
-        0.75: 8, // 75%
-        1: 6, // 100% (referência padrão)
-        1.5: 4, // 150%
-        2: 3, //200%
-        3: 2,
+        0.1: 10,  // 10% zoom
+        0.25: 5,  // 25% zoom
+        0.5: 2,   // 50% zoom
+        0.75: 1.5, // 75% zoom
+        1: 1,     // 100% zoom (1:1)
+        1.5: 0.75, // 150% zoom
+        2: 0.5,   // 200% zoom
+        3: 0.33,  // 300% zoom
+        5: 0.2,   // 500% zoom
       };
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
     },
@@ -282,7 +320,6 @@ export default {
 </script>
 
 <style scoped>
-
 .project-controls {
   position: fixed;
   bottom: 50px;
@@ -290,6 +327,16 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.volume-controls {
+  position: fixed;
+  bottom: 0px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* background-color: #323C7D; */
 }
 
 .project-controls button {
@@ -414,7 +461,7 @@ export default {
 
 .layers {
   top: 3.125rem;
-  height: 50%;
+  height: 30%;
   display: flex;
   flex-direction: column;
   width: fit-content;
