@@ -40,7 +40,6 @@
       <div class="project-controls">
         <button @click="saveProject">Salvar Projeto</button>
         <button @click="loadProject">Carregar Projeto</button>
-        <button @click="downloadProject">Baixar Projeto</button>
         <input type="file" @change="loadFromFile" />
       </div>
       <div class="volume-controls">
@@ -128,48 +127,26 @@ export default {
         this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
       }
     },
-    saveProject() {
-      try {
-        this.timeline.saveProject();
-        console.log("Projeto salvo no localStorage.");
-      } catch (error) {
-        console.error("Erro ao salvar o projeto:", error);
-      }
-    },
-    loadProject() {
-      try {
-        this.timeline.loadProject();
-        this.updateLayers(); // Atualiza as camadas no Vue
-        console.log("Projeto carregado do localStorage.");
-      } catch (error) {
-        console.error("Erro ao carregar o projeto:", error);
-      }
-    },
-    downloadProject() {
-      try {
-        this.timeline.downloadProject();
-        console.log("Projeto baixado como arquivo JSON.");
-      } catch (error) {
-        console.error("Erro ao baixar o projeto:", error);
-      }
-    },
-    loadFromFile(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            localStorage.setItem("savedProject", e.target.result);
-            this.timeline.loadProject();
-            this.updateLayers(); // Atualiza as camadas no Vue
-            console.log("Projeto carregado do arquivo.");
-          } catch (error) {
-            console.error("Erro ao carregar o projeto do arquivo:", error);
-          }
-        };
-        reader.readAsText(file);
-      }
-    },
+  methods: {
+  saveProject() {
+    try {
+      this.timeline.saveProject();
+      console.log("Projeto salvo no localStorage.");
+    } catch (error) {
+      console.error("Erro ao salvar o projeto:", error);
+    }
+  },
+
+  loadProject() {
+    try {
+      this.timeline.loadProject(); 
+      this.updateLayers();
+      console.log("Projeto carregado do localStorage.");
+    } catch (error) {
+      console.error("Erro ao carregar o projeto:", error);
+    }
+  },
+},
     grabMove(event) {
       if (this.isGrabbing) {
         const timelineRect = this.$el
