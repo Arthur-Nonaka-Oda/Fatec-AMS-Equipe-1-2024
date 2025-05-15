@@ -25,6 +25,8 @@
       </div>
     </div>
     <div class="zoom-controls">
+    <button @click="undo" :disabled="!timeline.history.canUndo">↩ Undo</button>
+    <button @click="redo" :disabled="!timeline.history.canRedo">↪ Redo</button>
       <select id="zoom" v-model="selectedZoom" @change="updateZoom">
         <option value="0.1">10%</option>
         <option value="0.25">25%</option>
@@ -40,7 +42,6 @@
       <div class="project-controls">
         <button @click="saveProject">Salvar Projeto</button>
         <button @click="loadProject">Carregar Projeto</button>
-        <button @click="downloadProject">Baixar Projeto</button>
         <input type="file" @change="loadFromFile" />
       </div>
       <div class="volume-controls">
@@ -115,12 +116,15 @@ export default {
     },
   },
   mounted() {
+    this.timeline.registerUpdateLayers(this.updateLayers);
     document.addEventListener("mousemove", this.grabMove);
     document.addEventListener("mouseup", this.grabDone);
+    document.addEventListener('keydown', this.handleKeyEvents);
   },
   beforeDestroy() {
     document.removeEventListener("mousemove", this.grabMove);
     document.removeEventListener("mouseup", this.grabDone);
+    document.removeEventListener('keydown', this.handleKeyEvents);
   },
   methods: {
     updateItemVolume(newVolume) {
@@ -128,48 +132,25 @@ export default {
         this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
       }
     },
-    saveProject() {
-      try {
-        this.timeline.saveProject();
-        console.log("Projeto salvo no localStorage.");
-      } catch (error) {
-        console.error("Erro ao salvar o projeto:", error);
-      }
-    },
-    loadProject() {
-      try {
-        this.timeline.loadProject();
-        this.updateLayers(); // Atualiza as camadas no Vue
-        console.log("Projeto carregado do localStorage.");
-      } catch (error) {
-        console.error("Erro ao carregar o projeto:", error);
-      }
-    },
-    downloadProject() {
-      try {
-        this.timeline.downloadProject();
-        console.log("Projeto baixado como arquivo JSON.");
-      } catch (error) {
-        console.error("Erro ao baixar o projeto:", error);
-      }
-    },
-    loadFromFile(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            localStorage.setItem("savedProject", e.target.result);
-            this.timeline.loadProject();
-            this.updateLayers(); // Atualiza as camadas no Vue
-            console.log("Projeto carregado do arquivo.");
-          } catch (error) {
-            console.error("Erro ao carregar o projeto do arquivo:", error);
-          }
-        };
-        reader.readAsText(file);
-      }
-    },
+  saveProject() {
+    try {
+      this.timeline.saveProject();
+      console.log("Projeto salvo no localStorage.");
+    } catch (error) {
+      console.error("Erro ao salvar o projeto:", error);
+    }
+  },
+
+  loadProject() {
+    try {
+      this.timeline.loadProject(); 
+      this.updateLayers();
+      console.log("Projeto carregado do localStorage.");
+    } catch (error) {
+      console.error("Erro ao carregar o projeto:", error);
+    }
+  },
+
     grabMove(event) {
       if (this.isGrabbing) {
         const timelineRect = this.$el
@@ -304,6 +285,27 @@ export default {
         5: 0.2,   // 500% zoom
       };
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
+    },
+    undo() {
+      this.timeline.history.undo();
+    },
+    redo() {
+      this.timeline.history.redo();
+    },
+    handleKeyEvents(event) {
+      // Ctrl+Z para desfazer
+      if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
+        event.preventDefault();
+        this.undo();
+      }
+      // Ctrl+Shift+Z ou Ctrl+Y para refazer
+      else if (
+        (event.ctrlKey && event.shiftKey && (event.key === 'z' || event.key === 'Z')) ||
+        (event.ctrlKey && (event.key === 'y' || event.key === 'Y'))
+      ) {
+        event.preventDefault();
+        this.redo();
+      }
     },
   },
 };
