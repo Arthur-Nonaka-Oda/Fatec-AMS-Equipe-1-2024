@@ -2,6 +2,9 @@ import Video from "../models/Video";
 import Audio from "./Audio";
 import Image from "./Image";
 import Node from "../models/Node";
+import fs from "fs";
+import path from "path";
+import { app } from "electron";
 
 export default class TimeLine {
   constructor() {
@@ -87,63 +90,6 @@ export default class TimeLine {
         }
       }
     }
-  }
-
-  saveProject() {
-    const projectData = JSON.stringify({
-      layers: this.layers.map((layer) => ({
-        files: this.listFilesInLayer(this.layers.indexOf(layer)).map((file) => ({
-          type: file.constructor.name.toLowerCase(),
-          data: file,
-        })),
-      })),
-      currentSecond: this.currentSecond,
-    });
-
-    localStorage.setItem("savedProject", projectData);
-    console.log("Projeto salvo!");
-  }
-
-  loadProject() {
-    const savedData = localStorage.getItem("savedProject");
-    if (!savedData) {
-      console.warn("Nenhum projeto salvo encontrado.");
-      return;
-    }
-
-    const parsedData = JSON.parse(savedData);
-    this.layers = parsedData.layers.map(() => ({
-      head: null,
-      end: null,
-    }));
-
-    parsedData.layers.forEach((layer, layerIndex) => {
-      layer.files.forEach(({ type, data }) => {
-        this.addFileToLayer({ file: data, type, layerIndex });
-      });
-    });
-
-    this.currentSecond = parsedData.currentSecond;
-    console.log("Projeto carregado!");
-  }
-
-  downloadProject() {
-    const blob = new Blob([localStorage.getItem("savedProject")], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "projeto.json"; // Nome do arquivo baixado
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  loadFromFile(file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      localStorage.setItem("savedProject", event.target.result); // Salva o conteúdo no localStorage
-      this.loadProject(); // Restaura o estado do projeto
-    };
-    reader.readAsText(file); // Lê o arquivo como texto
   }
 
 
@@ -373,6 +319,60 @@ export default class TimeLine {
       items: this.listFilesInLayer(this.layers.indexOf(layer))
     }));
   }
+// SALVAR VIDEO
 
+toJSON() {
+  return {
+    layers: this.layers.map((_, index) => ({
+      files: this.listFilesInLayer(index).map(file => ({
+        type: file.constructor.name.toLowerCase(),
+        data: file,
+      })),
+    })),
+    currentSecond: this.currentSecond,
+  };
+}
+
+fromJSON(json) {
+  this.layers = json.layers.map(() => ({ head: null, end: null }));
+
+  json.layers.forEach((layer, index) => {
+    layer.files.forEach(({ type, data }) => {
+      this.addFileToLayer({ file: data, type, layerIndex: index });
+    });
+  });
+
+  this.currentSecond = json.currentSecond;
+}
+
+saveProjectToDisk(fileName = "meuProjeto.json") {
+  // Obtém o caminho da pasta Documentos do usuário
+  const documentsPath = app.getPath("documents");
+
+  // Cria a pasta "projetos" dentro dos Documentos
+  const projectDir = path.join(documentsPath, "projetos");
+
+  if (!fs.existsSync(projectDir)) {
+    fs.mkdirSync(projectDir, { recursive: true });
+  }
+
+  // Caminho completo do arquivo a ser salvo
+  const fullFilePath = path.join(projectDir, fileName);
+
+  // Monta os dados do projeto
+  const projectData = JSON.stringify({
+    layers: this.layers.map((layer) => ({
+      files: this.listFilesInLayer(this.layers.indexOf(layer)).map((file) => ({
+        type: file.constructor.name.toLowerCase(),
+        data: file,
+      })),
+    })),
+    currentSecond: this.currentSecond,
+  }, null, 2); // com indentação para melhor leitura
+
+  // Escreve o arquivo no disco
+  fs.writeFileSync(fullFilePath, projectData, "utf-8");
+  console.log("Projeto salvo em:", fullFilePath);
+}
 
 }
