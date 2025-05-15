@@ -9,5 +9,7 @@ export default class Video {
         this.startTime = startTime;
         this.endTime = endTime || duration;
         this.volume = 1.0;
+        this.startTime = startTime;
+        this.endTime = endTime || duration;
     }
 }

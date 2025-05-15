@@ -1,3 +1,4 @@
+<!-- filepath: c:\Users\aluno\Fatec-AMS-Equipe-1-2024\vue\src\components\TimeLine.vue -->
 <template>
   <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
     <VideoEditingTimeline :config="{
@@ -47,6 +48,14 @@
 
       </div>
 
+    </div>
+
+    <!-- Controles de salvar e carregar -->
+    <div class="project-controls">
+      <button @click="loadProject">Carregar Projeto</button>
+      <button @click="downloadProject">Salvar Projeto</button>
+
+      <input type="file" @change="loadFromFile" />
     </div>
   </div>
 </template>
@@ -283,6 +292,7 @@ export default {
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
     },
   },
+  
 };
 </script>
 

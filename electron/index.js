@@ -9,6 +9,9 @@ const {
 const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const fs = require("fs");
+const { exec } = require('child_process');
+
+
 
 let mainWindow;
 
@@ -182,6 +185,33 @@ function createVideoFromImage(imagePath, duration, outputFilePath) {
       .run();
   });
 }
+
+ipcMain.handle('baixar-video', async (event, { projectName, ffmpegCommand }) => {
+  try {
+    const baseDir = path.join(__dirname, 'projects');
+    const projectDir = path.join(baseDir, projectName);
+
+    if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir);
+    if (!fs.existsSync(projectDir)) fs.mkdirSync(projectDir);
+
+    const outputPath = path.join(projectDir, 'output.mp4');
+    const command = `${ffmpegCommand} "${outputPath}"`;
+
+    return await new Promise((resolve, reject) => {
+      exec(command, (error, stdout, stderr) => {
+        if (error) {
+          console.error("Erro ao rodar FFmpeg:", error);
+          reject({ error: true, message: stderr });
+        } else {
+          console.log("FFmpeg executado com sucesso");
+          resolve({ success: true, outputPath });
+        }
+      });
+    });
+  } catch (err) {
+    return { error: true, message: err.message };
+  }
+});
 
 function checkVideoDurations(videoPaths) {
   return Promise.all(videoPaths.map(videoPath => {
