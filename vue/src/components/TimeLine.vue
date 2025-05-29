@@ -20,13 +20,14 @@
         <div class="items">
           <TimeLineItem v-for="(item, index) in layer.items" :key="index" :layerIndex="layerIndex" :item="item"
             :title="item.name" :minimumScaleTime="config.minimumScaleTime" :index="index" :selectedItem="selectedItem"
-            :select-video="selectVideo" @item-clicked="handleItemClicked" />
+            :select-video="selectVideo" @item-clicked="handleItemClicked"
+            @context-menu-action="handleContextMenuAction" />
         </div>
       </div>
     </div>
     <div class="zoom-controls">
-    <button @click="undo" :disabled="!timeline.history.canUndo">↩ Undo</button>
-    <button @click="redo" :disabled="!timeline.history.canRedo">↪ Redo</button>
+      <button @click="undo" :disabled="!timeline.history.canUndo">↩ Undo</button>
+      <button @click="redo" :disabled="!timeline.history.canRedo">↪ Redo</button>
       <select id="zoom" v-model="selectedZoom" @change="updateZoom">
         <option value="0.1">10%</option>
         <option value="0.25">25%</option>
@@ -46,7 +47,8 @@
         <input type="file" @change="loadFromFile" />
       </div>
       <div class="volume-controls">
-        <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1" @update-volume="updateItemVolume" />
+        <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1"
+          @update-volume="updateItemVolume" />
 
       </div>
 
@@ -131,6 +133,18 @@ export default {
     updateItemVolume(newVolume) {
       if (this.selectedItem && this.selectedItem.item) {
         this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
+      }
+    },
+    handleContextMenuAction({ action, item, layerIndex }) {
+      if (action === 'remover') {
+        this.timeline.removeFileFromLayer({ file: item, layerIndex });
+        this.updateLayers();
+      } else if (action === 'recortar') {
+        this.$emit('cut-item', { item, layerIndex });
+      } else if (action === 'copiar') {
+        this.$emit('copy-item', { item, layerIndex });
+      } else if (action === 'colar') {
+        this.$emit('paste-item', { item, layerIndex });
       }
     },
     saveProject() {
