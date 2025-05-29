@@ -385,11 +385,12 @@ async function renderizeVideo(mediaItems, outputFilePath) {
         } else {
           // Handle video trimming
           ffmpeg(item.filePath)
+          .audioFilters(`volume=${(item.volume ?? 1)}`) 
             .setStartTime(item.startTime)
             .setDuration(item.endTime - item.startTime)
             .outputOptions([
               '-c:v libx264',
-              '-an', // No audio
+              '-c:a aac',
               '-avoid_negative_ts make_zero',
               '-reset_timestamps 1',
               '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2'
@@ -425,7 +426,7 @@ async function renderizeVideo(mediaItems, outputFilePath) {
 
         // Add more detailed error reporting
         const command = ffmpeg(item.filePath)
-          .audioFilters(`volume=${(item.volume ?? 100) / 100}`) // Apply volume filter if needed
+          .audioFilters(`volume=${(item.volume ?? 1)}`) // Apply volume filter if needed
           .setStartTime(item.startTime)
           .setDuration(item.endTime - item.startTime)
           .outputOptions([
@@ -491,7 +492,6 @@ async function renderizeVideo(mediaItems, outputFilePath) {
             '-crf 10',
             '-preset medium',
             '-vf scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2',
-            '-an' // No audio yet
           ])
           .output(concatVideoPath);
 
@@ -615,6 +615,9 @@ async function renderizeVideo(mediaItems, outputFilePath) {
                     .input(concatVideoPath)
                     .input(finalAudioPath)
                     .outputOptions([
+                      '-filter_complex', '[0:a][1:a]amix=inputs=2:duration=longest:dropout_transition=3[aout]',
+                      '-map', '0:v',
+                      '-map', '[aout]',
                       '-c:v copy',
                       '-c:a aac',
                       '-b:a 192k',
