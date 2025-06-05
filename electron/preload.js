@@ -40,6 +40,9 @@ contextBridge.exposeInMainWorld("electron", {
   },
   baixarVideo: async () => {
     return await ipcRenderer.invoke("baixar-video")
-  }
+  },
+  saveProject: (projectData) => ipcRenderer.invoke('save-project', projectData),
+  loadProject: () => ipcRenderer.invoke('load-project'),
+  
 }); 
 

@@ -15,6 +15,31 @@ const { exec } = require('child_process');
 
 let mainWindow;
 
+
+
+// Exemplo de handler para salvar projeto
+ipcMain.handle('salvar-projeto', async (event, projeto) => {
+  const filePath = path.join(app.getPath('documents'), 'projeto.json');
+  try {
+    await fs.promises.writeFile(filePath, JSON.stringify(projeto, null, 2), 'utf-8');
+    return { success: true, path: filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// Exemplo de handler para carregar projeto
+ipcMain.handle('carregar-projeto', async () => {
+  const filePath = path.join(app.getPath('documents'), 'projeto.json');
+  try {
+    const data = await fs.promises.readFile(filePath, 'utf-8');
+    const projeto = JSON.parse(data);
+    return { success: true, projeto };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
@@ -23,7 +48,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       sandbox: false,
-      nodeIntegration: true,
+      nodeIntegration: false,
     },
   });
   mainWindow.loadURL('http://localhost:8080');
