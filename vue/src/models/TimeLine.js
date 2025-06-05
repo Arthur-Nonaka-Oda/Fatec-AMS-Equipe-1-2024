@@ -177,33 +177,52 @@ export default class TimeLine {
   }
 
   removeFileFromLayer(fileData) {
-    if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
-      const layer = this.layers[fileData.layerIndex];
-      if (layer.head !== null) {
-        let current = layer.head;
-        let before = null;
-        if (current.item === fileData.file) {
-          layer.head = current.next;
-          if (layer.end === current) {
-            layer.end = null;
-          }
-          return;
-        }
-        while (current !== null) {
+    // Captura o estado original antes da remoção
+    const originalState = this.getSnapshot();
+    
+    const execute = () => {
+      if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
+        const layer = this.layers[fileData.layerIndex];
+        if (layer.head !== null) {
+          let current = layer.head;
+          let before = null;
+          
+          // Se for o primeiro item da lista
           if (current.item === fileData.file) {
+            layer.head = current.next;
             if (layer.end === current) {
-              layer.end = before;
+              layer.end = null;
             }
-            if (before !== null) {
-              before.next = current.next;
-            }
+            this.updateVueLayers();
             return;
           }
-          before = current;
-          current = current.next;
+          
+          // Procura o item na lista
+          while (current !== null) {
+            if (current.item === fileData.file) {
+              if (layer.end === current) {
+                layer.end = before;
+              }
+              if (before !== null) {
+                before.next = current.next;
+              }
+              this.updateVueLayers();
+              return;
+            }
+            before = current;
+            current = current.next;
+          }
         }
       }
-    }
+    };
+
+    const undo = () => {
+      this.restoreSnapshot(originalState);
+      this.updateVueLayers();
+    };
+
+    // Registra a ação no histórico e executa
+    this.executeCommand({ execute, undo });
   }
 
   saveProject() {
@@ -293,16 +312,20 @@ export default class TimeLine {
   }
 
   async splitVideoAtTime(video, splitTime) {
-    // Descobre o layerIndex do vídeo
     const layerIndex = this.layers.findIndex(layer =>
       this.listFilesInLayer(this.layers.indexOf(layer)).includes(video)
     );
+    
     if (layerIndex === -1) {
       console.error("Vídeo original não encontrado na camada.");
       return;
     }
+    
     const command = new SplitCommand(this, video, splitTime, layerIndex);
-    this.executeCommand(command);
+    this.executeCommand({
+      execute: () => command.execute(),
+      undo: () => command.undo()
+    });
   }
 
   async splitAudioAtTime(audio, splitTime) {
@@ -410,6 +433,21 @@ export default class TimeLine {
     }));
   }
 
+  // Adicione estes métodos
+  undo() {
+    if (this.history) {
+      this.history.undo();
+      this.updateVueLayers();
+    }
+  }
+
+  redo() {
+    if (this.history) {
+      this.history.redo();
+      this.updateVueLayers();
+    }
+  }
+
 }
 
 // Comando para split de vídeo com suporte a undo/redo
@@ -465,7 +503,13 @@ class SplitCommand {
   }
 
   undo() {
+    // Corrigido: Removida a referência a this.history
     this.timeline.restoreSnapshot(this.originalState);
     this.timeline.updateVueLayers();
+  }
+
+  redo() {
+    // Corrigido: Adicionada implementação correta do redo
+    this.execute();
   }
 }

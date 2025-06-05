@@ -285,13 +285,22 @@ export default {
       this.$emit('item-clicked', item);
     },
     handleDeleteVideo(video) {
-      const index = this.videos.indexOf(video);
-      if (index !== -1) {
-        this.videos.splice(index, 1);
-        this.timeline.removeFileFromLayer({
-          file: video,
-          layerIndex: 0,
-        });
+      this.timeline.removeFileFromLayer({
+        file: video,
+        layerIndex: 0
+      });
+      this.updateLayers();
+    },
+    handleUndo() {
+      if (this.timeline && this.timeline.history) {
+        this.timeline.undo();
+        this.updateLayers();
+      }
+    },
+
+    handleRedo() {
+      if (this.timeline && this.timeline.history) {
+        this.timeline.redo();
         this.updateLayers();
       }
     },
@@ -334,15 +343,12 @@ export default {
       // Ctrl+Z para desfazer
       if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
         event.preventDefault();
-        this.undo();
+        this.handleUndo();
       }
-      // Ctrl+Shift+Z ou Ctrl+Y para refazer
-      else if (
-        (event.ctrlKey && event.shiftKey && (event.key === 'z' || event.key === 'Z')) ||
-        (event.ctrlKey && (event.key === 'y' || event.key === 'Y'))
-      ) {
+      // Ctrl+Y para refazer
+      else if (event.ctrlKey && (event.key === 'y' || event.key === 'Y')) {
         event.preventDefault();
-        this.redo();
+        this.handleRedo();
       }
     },
   },
