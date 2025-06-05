@@ -2,39 +2,24 @@
   <div>
     <header>
       <div v-if="isLoading" class="loading-modal-overlay">
-      <div class="loading-modal-content">
-        <p class="loading-message">{{ loadingMessage }}</p>
+        <div class="loading-modal-content">
+          <p class="loading-message">{{ loadingMessage }}</p>
 
-        <div class="circular-progress-display">
-          <svg class="progress-ring" width="120" height="120">
-            <circle
-              class="progress-ring-bg"
-              stroke="#e0e0e0"
-              stroke-width="8"
-              fill="transparent"
-              r="52"
-              cx="60"
-              cy="60"
-            />
-            <circle
-              class="progress-ring-fg"
-              stroke="#4CAF50"
-              stroke-width="8"
-              fill="transparent"
-              r="52"
-              cx="60"
-              cy="60"
-              :style="{ 'stroke-dasharray': circumference, 'stroke-dashoffset': strokeDashoffset }"
-            />
-          </svg>
-          <p class="progress-text-centered">{{ progressPercentage }}%</p>
+          <div class="circular-progress-display">
+            <svg class="progress-ring" width="120" height="120">
+              <circle class="progress-ring-bg" stroke="#e0e0e0" stroke-width="8" fill="transparent" r="52" cx="60"
+                cy="60" />
+              <circle class="progress-ring-fg" stroke="#4CAF50" stroke-width="8" fill="transparent" r="52" cx="60"
+                cy="60" :style="{ 'stroke-dasharray': circumference, 'stroke-dashoffset': strokeDashoffset }" />
+            </svg>
+            <p class="progress-text-centered">{{ progressPercentage }}%</p>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
+          </div>
+          <button @click="cancelLoading" class="cancel-button">Cancelar</button>
         </div>
-        <div class="progress-bar-container">
-          <div class="progress-bar" :style="{ width: progressPercentage + '%' }"></div>
-        </div>
-        <button @click="cancelLoading" class="cancel-button">Cancelar</button>
       </div>
-    </div>
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
@@ -149,8 +134,8 @@ export default {
     this.layers = this.timeline.getLayersForVue();
 
     window.addEventListener("keydown", this.handleKeyDown);
-    window.electron.ipcRenderer.on('renderize-progress', (event, percentage) => { //Listener para o progresso da renderização
-      this.updateProgress(percentage);
+    window.electron.ipcRenderer.on('render-progress', (percent) => { //Listener para o progresso da renderização
+      this.updateProgress(percent);
     });
   },
   beforeDestroy() {
@@ -160,239 +145,197 @@ export default {
     window.electron.ipcRenderer.removeListener('renderize-progress', this.updateProgress);
   },
   methods: {
-  handleUpdateItemVolume(payload) {
-    if (payload && payload.item) {
-      payload.item.volume = payload.volume;
-      this.updateLayers();
-      this.$refs.videoPreview.updateVolume();
-    }
-  },
-  updateLayers(newLayers) {
-    this.layers = newLayers || this.timeline.getLayersForVue();
+    handleUpdateItemVolume(payload) {
+      if (payload && payload.item) {
+        payload.item.volume = payload.volume;
+        this.updateLayers();
+        this.$refs.videoPreview.updateVolume();
+      }
+    },
+    updateLayers(newLayers) {
+      this.layers = newLayers || this.timeline.getLayersForVue();
 
-    const hasItems = this.layers.some((layer) => layer.items.length > 0);
-    if (hasItems) {
-      // this.createVideoFromBlobs(); // Removido ou comentado aqui, pois pode causar carregamentos indesejados
-    } else {
-      this.videoUrl = `data:video/mp4;base64,${""}`;
-    }
-  },
+      const hasItems = this.layers.some((layer) => layer.items.length > 0);
+      if (hasItems) {
+        // this.createVideoFromBlobs(); // Removido ou comentado aqui, pois pode causar carregamentos indesejados
+      } else {
+        this.videoUrl = `data:video/mp4;base64,${""}`;
+      }
+    },
 
-  // --- NOVOS MÉTODOS PARA O MODAL DE CARREGAMENTO ---
-  startLoading(message = 'Carregando...') {
-    this.isLoading = true;
-    this.progressPercentage = 0;
-    this.loadingMessage = message;
-    // Se você tiver uma API que emita progresso, você a iniciaria aqui
-    // Ex: window.electron.ipcRenderer.on('renderize-progress', (event, percentage) => {
-    //   this.updateProgress(percentage);
-    // });
-  },
-  updateProgress(percentage) {
-    if (percentage >= 0 && percentage <= 100) {
-      this.progressPercentage = Math.floor(percentage); // Garante número inteiro
-    }
-  },
-  finishLoading(message = 'Concluído!') {
-    this.isLoading = false;
-    this.progressPercentage = 100;
-    this.loadingMessage = message;
-    // Certifique-se de remover o listener de progresso se ele for adicionado
-    // window.electron.ipcRenderer.removeListener('renderize-progress');
-  },
-  cancelLoading() {
-    if (confirm('Tem certeza que deseja cancelar esta operação?')) {
-      // **Lógica para ABORTAR a operação do FFMPEG/Electron aqui.**
-      // Isso é CRUCIAL. Você precisará de um método no seu processo main do Electron
-      // para realmente parar a renderização. Por exemplo, enviar um evento IPC.
-      window.electron.ipcRenderer.send('cancel-renderization'); // Exemplo de evento
-      
-      this.isLoading = false;
+    // --- NOVOS MÉTODOS PARA O MODAL DE CARREGAMENTO ---
+    startLoading(message = 'Carregando...') {
+      this.isLoading = true;
       this.progressPercentage = 0;
-      this.loadingMessage = 'Operação cancelada!';
-      alert('Operação cancelada!');
-    }
-  },
-  // --- FIM DOS NOVOS MÉTODOS ---
-
-
-  async renderizeVideo() {
-    this.startLoading('Renderizando vídeo...'); // Inicia o modal de carregamento
-    const videos = this.layers[0].items.map(video => ({
-      filePath: video.filePath,
-      startTime: video.startTime,
-      endTime: video.endTime,
-        volume: video.volume || 1,
-    }));
-    const audios = this.layers[1].items.map(audio => ({
-      filePath: audio.filePath,
-      startTime: audio.startTime,
-      endTime: audio.endTime,
-        volume: audio.volume || 1,
-    }));
-
-    try {
-      // Se a sua função 'renderize' no Electron puder enviar updates de progresso,
-      // você precisará configurar um listener aqui antes da chamada.
+      this.loadingMessage = message;
+      // Se você tiver uma API que emita progresso, você a iniciaria aqui
       // Ex: window.electron.ipcRenderer.on('renderize-progress', (event, percentage) => {
       //   this.updateProgress(percentage);
       // });
+    },
+    updateProgress(percentage) {
+      if (percentage >= 0 && percentage <= 100) {
+        this.progressPercentage = Math.floor(percentage); // Garante número inteiro
+      }
+    },
+    finishLoading(message = 'Concluído!') {
+      this.isLoading = false;
+      this.progressPercentage = 100;
+      this.loadingMessage = message;
+    },
+    cancelLoading() {
+      if (confirm('Tem certeza que deseja cancelar esta operação?')) {
+        window.electron.ipcRenderer.send('cancel-renderization');
 
-      await window.electron.ipcRenderer.invoke("renderize", {
-        videos,
-        audios,
+        this.isLoading = false;
+        this.progressPercentage = 0;
+        this.loadingMessage = 'Operação cancelada!';
+      }
+    },
+
+
+    async renderizeVideo() {
+      this.startLoading('Renderizando vídeo...'); // Inicia o modal de carregamento
+      const videos = this.layers[0].items.map(video => ({
+        filePath: video.filePath,
+        startTime: video.startTime,
+        endTime: video.endTime,
+        volume: video.volume || 1,
+      }));
+      const audios = this.layers[1].items.map(audio => ({
+        filePath: audio.filePath,
+        startTime: audio.startTime,
+        endTime: audio.endTime,
+        volume: audio.volume || 1,
+      }));
+
+      try {
+        await window.electron.ipcRenderer.invoke("renderize", {
+          videos,
+          audios,
+        });
+      } finally {
+        this.finishLoading();
+      }
+    },
+
+    async toggleRecording() {
+      this.isRecording = !this.isRecording;
+      if (this.isRecording) {
+        window.electron.recorder().startRecording();
+      } else {
+        window.electron.recorder().stopRecording();
+        // window.electron.importer().importRecordedFiles();
+      }
+      this.recordImageSrc = this.isRecording
+        ? "/pararIcone.png"
+        : "/gravarIcone.png";
+    },
+    pauseRecording() {
+      this.isPaused = !this.isPaused;
+      this.pauseImageSrc = this.isPaused
+        ? "/gravarIcone.png"
+        : "/pauseIcone.png";
+    },
+    handleFileAdded(fileData) {
+      this.timeline.addFileToLayer(fileData);
+      this.updateLayers();
+    },
+    handleItemClicked(item) {
+      this.selectedItem = this.selectedItem === item ? null : item;
+    },
+    openTextEditor() {
+      this.isTextEditorOpen = true;
+    },
+    closeTextEditor() {
+      this.isTextEditorOpen = false;
+    },
+    handleDeleteVideo() {
+      this.timeline.removeFileFromLayer({
+        file: this.selectedItem.item,
+        layerIndex: this.selectedItem.layerIndex,
       });
-      this.finishLoading('Renderização concluída!'); // Finaliza o modal com sucesso
-       window.electron.ipcRenderer.removeListener('renderize-progress'); // Remove o listener após o uso
-    } catch (error) {
-      console.error("Erro ao renderizar o vídeo:", error);
-      this.finishLoading('Erro na renderização!'); // Finaliza o modal com erro
-      alert('Ocorreu um erro ao renderizar o vídeo.');
-    }
-  },
+      console.log("delete");
+      console.log(this.timeline.listFilesInLayer(0));
+      console.log(this.timeline.listFilesInLayer(1));
+      console.log(this.timeline.listFilesInLayer(2));
+      this.updateLayers();
+    },
+    handleKeyDown(event) {
+      if (event.key === "Delete") {
+        this.handleDeleteVideo();
+      }
+    },
+    handleTrimVideo() {
+      const selectedItem = this.selectedItem.item;
+      const layerIndex = this.selectedItem.layerIndex;
 
-  async toggleRecording() {
-    this.isRecording = !this.isRecording;
-    if (this.isRecording) {
-      window.electron.recorder().startRecording();
-    } else {
-      window.electron.recorder().stopRecording();
-      // window.electron.importer().importRecordedFiles();
-    }
-    this.recordImageSrc = this.isRecording
-      ? "/pararIcone.png"
-      : "/gravarIcone.png";
-  },
-  pauseRecording() {
-    this.isPaused = !this.isPaused;
-    this.pauseImageSrc = this.isPaused
-      ? "/gravarIcone.png"
-      : "/pauseIcone.png";
-  },
-  handleFileAdded(fileData) {
-    this.timeline.addFileToLayer(fileData);
-    this.updateLayers();
-  },
-  handleItemClicked(item) {
-    this.selectedItem = this.selectedItem === item ? null : item;
-  },
-  openTextEditor() {
-    this.isTextEditorOpen = true;
-  },
-  closeTextEditor() {
-    this.isTextEditorOpen = false;
-  },
-  handleDeleteVideo() {
-    this.timeline.removeFileFromLayer({
-      file: this.selectedItem.item,
-      layerIndex: this.selectedItem.layerIndex,
-    });
-    console.log("delete");
-    console.log(this.timeline.listFilesInLayer(0));
-    console.log(this.timeline.listFilesInLayer(1));
-    console.log(this.timeline.listFilesInLayer(2));
-    this.updateLayers();
-  },
-  handleKeyDown(event) {
-    if (event.key === "Delete") {
-      this.handleDeleteVideo();
-    }
-  },
-  handleTrimVideo() {
-    const selectedItem = this.selectedItem.item;
-    const layerIndex = this.selectedItem.layerIndex;
+      if (!selectedItem) {
+        alert("Nenhum item selecionado para recortar.");
+        return;
+      }
 
-    if (!selectedItem) {
-      alert("Nenhum item selecionado para recortar.");
-      return;
-    }
+      const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
+      const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
 
-    const cumulativeDuration = this.timeline.getCumulativeDurationBeforeVideo(layerIndex, selectedItem);
-    const splitPointInTimeline = this.currentGlobalTime - cumulativeDuration;
+      if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
+        alert("Posicione o cursor dentro do item para dividir.");
+        return;
+      }
 
-    if (splitPointInTimeline <= 0 || splitPointInTimeline >= selectedItem.duration) {
-      alert("Posicione o cursor dentro do item para dividir.");
-      return;
-    }
+      const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
 
-    const splitPointInOriginal = (selectedItem.startTime || 0) + splitPointInTimeline;
+      if (selectedItem instanceof Video) {
+        this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
+      } else if (selectedItem instanceof Audio) {
+        this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
+      } else if (selectedItem instanceof Image) {
+        this.timeline.splitImageAtTime(selectedItem, splitPointInOriginal);
+      }
 
-    if (selectedItem instanceof Video) {
-      this.timeline.splitVideoAtTime(selectedItem, splitPointInOriginal);
-    } else if (selectedItem instanceof Audio) {
-      this.timeline.splitAudioAtTime(selectedItem, splitPointInOriginal);
-    } else if (selectedItem instanceof Image) {
-      this.timeline.splitImageAtTime(selectedItem, splitPointInOriginal);
-    }
+      this.updateLayers();
+    },
+    handleCursorPosition(currentTimeInSeconds) {
+      this.startTime = currentTimeInSeconds;
+    },
+    handleUpdateTime(currentTime) {
+      this.currentGlobalTime = currentTime;
+      this.$refs.timeline.updateCurrentTime(currentTime);
+    },
+    handleCursorMoved(currentTimeInSeconds) {
+      this.currentGlobalTime = currentTimeInSeconds;
+      this.$refs.videoPreview.updateCurrentTime(currentTimeInSeconds);
+    },
 
-    this.updateLayers();
+    async cutVideo() {
+      if (this.startTime === null) {
+        alert("Por favor, mova o cursor para o ponto de corte.");
+        return;
+      }
+
+      const filePath = this.videoFilePath;
+
+      this.startLoading('Cortando vídeo...'); // Inicia o modal para esta operação também
+
+      try {
+        const base64Video = await window.electron.ipcRenderer.invoke(
+          "cut-video",
+          {
+            filePath,
+            startTime: this.startTime,
+            duration: this.duration,
+          }
+        );
+
+        this.videoUrl = `data:video/mp4;base64,${base64Video}`;
+        this.closeCutEditor(); // Assumindo que você tem um método para fechar o editor de corte
+        this.finishLoading('Corte concluído!');
+      } catch (error) {
+        console.error("Erro ao cortar o vídeo:", error);
+        this.finishLoading('Erro ao cortar o vídeo!');
+      }
+    },
   },
-  async createVideoFromBlobs() {
-    // Este método parece ser uma alternativa ou uma função antiga para "combine-videos".
-    // Se 'renderizeVideo' já faz o que você precisa, talvez você não precise mais deste.
-    // Mantenho a estrutura de carregamento aqui por segurança, mas avalie a necessidade.
-    this.startLoading('Combinando vídeos...');
-    const videosInfo = this.layers[0].items.map(video => ({
-      filePath: video.filePath,
-      startTime: video.startTime,
-      endTime: video.endTime
-    }));
-    console.log("front/combine/ " + videosInfo);
-
-    try {
-      const result = await window.electron.ipcRenderer.invoke(
-        "combine-videos",
-        { videosInfo }
-      );
-      this.videoUrl = `data:video/mp4;base64,${result}`;
-      this.finishLoading('Combinação concluída!');
-    } catch (error) {
-      console.error("Erro ao combinar os vídeos:", error);
-      this.finishLoading('Erro na combinação!');
-    }
-  },
-
-  handleCursorPosition(currentTimeInSeconds) {
-    this.startTime = currentTimeInSeconds;
-  },
-  handleUpdateTime(currentTime) {
-    this.currentGlobalTime = currentTime;
-    this.$refs.timeline.updateCurrentTime(currentTime);
-  },
-  handleCursorMoved(currentTimeInSeconds) {
-    this.currentGlobalTime = currentTimeInSeconds;
-    this.$refs.videoPreview.updateCurrentTime(currentTimeInSeconds);
-  },
-
-  async cutVideo() {
-    if (this.startTime === null) {
-      alert("Por favor, mova o cursor para o ponto de corte.");
-      return;
-    }
-
-    const filePath = this.videoFilePath;
-
-    this.startLoading('Cortando vídeo...'); // Inicia o modal para esta operação também
-
-    try {
-      const base64Video = await window.electron.ipcRenderer.invoke(
-        "cut-video",
-        {
-          filePath,
-          startTime: this.startTime,
-          duration: this.duration,
-        }
-      );
-
-      this.videoUrl = `data:video/mp4;base64,${base64Video}`;
-      this.closeCutEditor(); // Assumindo que você tem um método para fechar o editor de corte
-      this.finishLoading('Corte concluído!');
-    } catch (error) {
-      console.error("Erro ao cortar o vídeo:", error);
-      this.finishLoading('Erro ao cortar o vídeo!');
-    }
-  },
-},
 };
 </script>
 
@@ -437,16 +380,19 @@ export default {
 }
 
 .loading-modal-overlay {
-  position: fixed; /* Fixa o modal na tela */
+  position: fixed;
+  /* Fixa o modal na tela */
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Fundo semi-transparente escuro */
+  background-color: rgba(0, 0, 0, 0.7);
+  /* Fundo semi-transparente escuro */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* Garante que o modal esteja acima de todo o conteúdo */
+  z-index: 9999;
+  /* Garante que o modal esteja acima de todo o conteúdo */
 }
 
 .loading-modal-content {
@@ -477,10 +423,12 @@ export default {
 
 .progress-bar {
   height: 100%;
-  background-color: #4CAF50; /* Cor verde para o progresso */
+  background-color: #4CAF50;
+  /* Cor verde para o progresso */
   width: 0%;
   border-radius: 5px;
-  transition: width 0.3s ease-in-out; /* Animação suave no progresso */
+  transition: width 0.3s ease-in-out;
+  /* Animação suave no progresso */
 }
 
 .progress-text {
@@ -492,39 +440,53 @@ export default {
 
 /* ESTILOS PARA O CONTÊINER DO CÍRCULO E O TEXTO CENTRALIZADO */
 .circular-progress-display {
-  position: relative; /* Fundamental para posicionar o texto absoluto dentro */
-  width: 120px; /* Largura do SVG */
-  height: 120px; /* Altura do SVG */
-  margin: 20px auto; /* Centraliza o container e dá espaço */
+  position: relative;
+  /* Fundamental para posicionar o texto absoluto dentro */
+  width: 120px;
+  /* Largura do SVG */
+  height: 120px;
+  /* Altura do SVG */
+  margin: 20px auto;
+  /* Centraliza o container e dá espaço */
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .progress-ring {
-  transform: rotate(-90deg); /* Começa o preenchimento do topo */
-  position: absolute; /* Para que o texto possa ficar por cima */
+  transform: rotate(-90deg);
+  /* Começa o preenchimento do topo */
+  position: absolute;
+  /* Para que o texto possa ficar por cima */
   top: 0;
   left: 0;
 }
 
 .progress-ring-bg,
 .progress-ring-fg {
-  transition: stroke-dashoffset 0.35s ease-out; /* Transição suave do preenchimento */
-  transform-origin: 50% 50%; /* Garante que a rotação seja a partir do centro */
+  transition: stroke-dashoffset 0.35s ease-out;
+  /* Transição suave do preenchimento */
+  transform-origin: 50% 50%;
+  /* Garante que a rotação seja a partir do centro */
 }
 
-.progress-text-centered { /* CLASSE para o texto dentro do círculo */
+.progress-text-centered {
+  /* CLASSE para o texto dentro do círculo */
   position: absolute;
   /* Use 'inset: 0' para cobrir a área do pai relativo (circular-progress-display) */
   inset: 0;
-  display: flex; /* Use flexbox para centralizar o conteúdo do parágrafo */
-  justify-content: center; /* Centraliza horizontalmente */
-  align-items: center; /* Centraliza verticalmente */
-  font-size: 1.8em; /* Mantenha o tamanho da porcentagem */
+  display: flex;
+  /* Use flexbox para centralizar o conteúdo do parágrafo */
+  justify-content: center;
+  /* Centraliza horizontalmente */
+  align-items: center;
+  /* Centraliza verticalmente */
+  font-size: 1.8em;
+  /* Mantenha o tamanho da porcentagem */
   font-weight: bold;
   color: #333;
-  z-index: 1; /* Garante que o texto fique acima do círculo */
+  z-index: 1;
+  /* Garante que o texto fique acima do círculo */
   /* Removidos top, left e transform, pois o flexbox fará o trabalho */
 }
 
@@ -534,17 +496,21 @@ export default {
   background-color: #e0e0e0;
   border-radius: 5px;
   height: 20px;
-  margin-top: 20px; /* Espaço entre o círculo e a barra */
-  margin-bottom: 25px; /* Espaço para o botão de cancelar */
+  margin-top: 20px;
+  /* Espaço entre o círculo e a barra */
+  margin-bottom: 25px;
+  /* Espaço para o botão de cancelar */
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
   background-color: #4CAF50;
-  width: 0%; /* Será controlado pelo Vue */
+  width: 0%;
+  /* Será controlado pelo Vue */
   border-radius: 5px;
-  transition: width 0.3s ease-in-out; /* Animação suave no progresso */
+  transition: width 0.3s ease-in-out;
+  /* Animação suave no progresso */
 }
 
 /* Estilos do botão Cancelar (mantidos) */

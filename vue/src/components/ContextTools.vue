@@ -2,8 +2,6 @@
     <div class="tools" :style="{ top: y + 'px', left: x + 'px', position: 'fixed' }">
         <button class="tool" @click="$emit('action', 'remover')">Excluir</button>
         <button class="tool" @click="$emit('action', 'recortar')">Recortar</button>
-        <button class="tool" @click="$emit('action', 'copiar')">Copiar</button>
-        <button class="tool" @click="$emit('action', 'colar')">Colar</button>
     </div>
 </template>
 
