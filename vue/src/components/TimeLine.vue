@@ -43,7 +43,6 @@
       <div class="project-controls">
         <button @click="saveProject">Salvar Projeto</button>
         <button @click="loadProject">Carregar Projeto</button>
-        <button @click="downloadProject">Baixar Projeto</button>
         <input type="file" @change="loadFromFile" />
       </div>
       <div class="volume-controls">
@@ -147,46 +146,24 @@ export default {
         this.$emit('paste-item', { item, layerIndex });
       }
     },
-    saveProject() {
+    async saveProject() {
       try {
-        this.timeline.saveProject();
-        console.log("Projeto salvo no localStorage.");
+        await window.electronAPI.saveProject(this.timeline.getProjectData());
+        console.log('Projeto salvo com sucesso!');
       } catch (error) {
-        console.error("Erro ao salvar o projeto:", error);
+        console.error('Erro ao salvar projeto:', error);
       }
     },
-    loadProject() {
+    async loadProject() {
       try {
-        this.timeline.loadProject();
-        this.updateLayers(); // Atualiza as camadas no Vue
-        console.log("Projeto carregado do localStorage.");
+        const projectData = await window.electronAPI.loadProject();
+        if (projectData) {
+          this.timeline.loadProjectData(projectData);
+          this.updateLayers();
+          console.log('Projeto carregado com sucesso!');
+        }
       } catch (error) {
-        console.error("Erro ao carregar o projeto:", error);
-      }
-    },
-    downloadProject() {
-      try {
-        this.timeline.downloadProject();
-        console.log("Projeto baixado como arquivo JSON.");
-      } catch (error) {
-        console.error("Erro ao baixar o projeto:", error);
-      }
-    },
-    loadFromFile(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            localStorage.setItem("savedProject", e.target.result);
-            this.timeline.loadProject();
-            this.updateLayers(); // Atualiza as camadas no Vue
-            console.log("Projeto carregado do arquivo.");
-          } catch (error) {
-            console.error("Erro ao carregar o projeto do arquivo:", error);
-          }
-        };
-        reader.readAsText(file);
+        console.error('Erro ao carregar projeto:', error);
       }
     },
     grabMove(event) {
