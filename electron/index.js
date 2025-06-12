@@ -12,6 +12,9 @@ const fs = require("fs");
 
 let mainWindow;
 
+let activeFFmpegProcesses = [];
+let renderCanceled = false;
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 800,
@@ -291,6 +294,21 @@ async function combineVideos(videosInfo, outputFilePath, eventSender) { // Adici
   });
 }
 
+function registerProcess(proc) {
+  activeFFmpegProcesses.push(proc);
+}
+
+function cancelAllProcesses() {
+  renderCanceled = true;
+  activeFFmpegProcesses.forEach(proc => {
+    try {
+      proc.kill('SIGKILL'); // Kill forcefully
+    } catch (e) {
+      console.warn('Error killing process:', e);
+    }
+  });
+  activeFFmpegProcesses = [];
+}
 
 ipcMain.handle('renderize', async (event, { videos, audios }) => {
   const { filePath } = await dialog.showSaveDialog({
@@ -360,7 +378,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
           // Handle image conversion to video segment
           const duration = item.endTime - item.startTime || 5;
 
-          ffmpeg()
+          const proc = ffmpeg()
             .input(item.filePath)
             .inputOptions(['-loop 1'])
             .outputOptions([
@@ -389,10 +407,14 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
               console.error(`Error converting image:`, err);
               reject(err);
             })
-            .run();
+
+
+          registerProcess(proc);
+
+          proc.run();
         } else {
           // Handle video trimming
-          ffmpeg(item.filePath)
+          const proc = ffmpeg(item.filePath)
             .audioFilters(`volume=${(item.volume ?? 1)}`)
             .setStartTime(item.startTime)
             .setDuration(item.endTime - item.startTime)
@@ -422,7 +444,9 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
 
               reject(err);
             })
-            .run();
+
+          registerProcess(proc);
+          proc.run();
         }
       });
     });
@@ -437,7 +461,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
         console.log(`Processing audio segment from ${item.filePath}, start: ${item.startTime}, end: ${item.endTime}`);
 
         // Add more detailed error reporting
-        const command = ffmpeg(item.filePath)
+        const proc = ffmpeg(item.filePath)
           .audioFilters(`volume=${(item.volume ?? 1)}`) // Apply volume filter if needed
           .setStartTime(item.startTime)
           .setDuration(item.endTime - item.startTime)
@@ -469,7 +493,9 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
             reject(err);
           });
 
-        command.run();
+        registerProcess(proc);
+
+        proc.run();
       });
     });
 
@@ -550,7 +576,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                   // Handle positioning for single audio segment
                   if (audioSegment.position > 0) {
                     // Need to add silence before the audio
-                    ffmpeg()
+                    const proc = ffmpeg()
                       .input(audioSegment.path)
                       .audioFilters(`adelay=${Math.round(audioSegment.position * 1000)}|${Math.round(audioSegment.position * 1000)}`)
                       .outputOptions([
@@ -567,7 +593,9 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                         console.error('Error positioning audio:', err);
                         reject(err);
                       })
-                      .run();
+
+                    registerProcess(proc);
+                    proc.run();
                   } else {
                     // Just copy the audio as is
                     fs.copyFileSync(audioSegment.path, finalAudioPath);
@@ -620,12 +648,14 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                       console.log('Final audio mix created.');
                       combineVideoAndAudio();
                     })
-                    .run();
+
+                  registerProcess(audioCommand);
+                  audioCommand.run();
                 }
 
                 // Helper function to combine video with audio
                 function combineVideoAndAudio() {
-                  ffmpeg()
+                  const proc = ffmpeg()
                     .input(concatVideoPath)
                     .input(finalAudioPath)
                     .outputOptions([
@@ -670,7 +700,8 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
 
                       resolve();
                     })
-                    .run();
+                  registerProcess(proc);
+                  proc.run();
                 }
 
               }).catch(err => {
@@ -678,8 +709,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                 reject(err);
               });
             } else {
-              // No audio segments, just copy the video to final output
-              ffmpeg()
+              const proc = ffmpeg()
                 .input(concatVideoPath)
                 .outputOptions(['-c:v copy'])
                 .output(outputFilePath)
@@ -702,14 +732,16 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                   console.error('Error creating final output:', err);
                   reject(err);
                 })
-                .run();
+              registerProcess(proc);
+              proc.run();
             }
           })
           .on('error', (err) => {
             console.error('Error concatenating visual segments:', err);
             reject(err);
           })
-          .run();
+        registerProcess(concatVideoCmd);
+        concatVideoCmd.run();
       });
     })
       .catch(err => {
@@ -907,5 +939,5 @@ function cutVideo(filePath, startTime, duration, outputFilePath, eventSender) { 
 }
 
 ipcMain.on('cancel-renderization', (event) => {
-  
+  cancelAllProcesses();
 });

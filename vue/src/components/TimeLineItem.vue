@@ -64,11 +64,11 @@ export default {
   methods: {
     handleRightClick(event) {
       event.preventDefault();
-      this.showContextMenu = true;
-      this.contextMenuPosition = { x: event.clientX, y: event.clientY };
-      setTimeout(() => {
-        document.addEventListener('mousedown', this.closeContextMenu);
-      }, 0);
+      // this.showContextMenu = true;
+      // this.contextMenuPosition = { x: event.clientX, y: event.clientY };
+      // setTimeout(() => {
+      //   document.addEventListener('mousedown', this.closeContextMenu);
+      // }, 0);
     },
     closeContextMenu(event) {
       console.log('fechou');
