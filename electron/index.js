@@ -10,6 +10,8 @@ const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const fs = require("fs");
 
+const { saveImports, getProjects } = require("./saveProject.js");
+
 let mainWindow;
 
 let activeFFmpegProcesses = [];
@@ -42,6 +44,12 @@ function createWindow() {
         callback(false);
       }
     });
+}
+
+const projectsDir = path.join(__dirname, 'projects');
+
+if (!fs.existsSync(projectsDir)) {
+  fs.mkdirSync(projectsDir, { recursive: true });
 }
 
 function createModalWindow(parentWindow) {
@@ -132,11 +140,24 @@ fileToBlob = function (filePath) {
   });
 }
 
+ipcMain.handle('load-project', async (event, { projectId }) => {
+  const projectData = await loadProject(projectId);
+  return projectData;
+})
+
+ipcMain.handle('get-projects', async (event) => {
+  const projects = await getProjects();
+  return projects;
+})
+
+ipcMain.handle('save-imports', async (event, { filePath }) => {
+  const result = await saveImports(filePath);
+  return result;
+})
+
 ipcMain.handle('combine-videos', async (event, { videosInfo }) => {
-  console.log("combine");
   const outputFilePath = path.join(app.getPath('userData'), 'combined.mp4');
 
-  // Passa o 'event' para combineVideos para que o progresso possa ser enviado
   await combineVideos(videosInfo, outputFilePath, event);
 
   const videoBase64 = await fileToBase64(outputFilePath);
@@ -809,18 +830,6 @@ ipcMain.handle('save-dialog', (event) => {
       resolve({ result: 'cancel' });
     });
   });
-
-  // ipcMain.once('dialog-ok', (event, fileName) => {
-  //   modalWindow.close();
-  //   event.sender.send('custom-dialog-result', { result: 'ok', fileName });
-  // });
-
-  // ipcMain.once('dialog-cancel', () => {
-  //   modalWindow.close();
-  //   event.sender.send('custom-dialog-result', { result: 'cancel' });
-  // });
-
-  // return { fileName };
 });
 
 ipcMain.handle("import-dialog", async () => {
@@ -828,16 +837,8 @@ ipcMain.handle("import-dialog", async () => {
     title: "Selecione o arquivo",
     properties: ["openFile"],
   });
-  // fs.stat(filePaths[0], (err, stats) => {
-  //   const sizeBytes = stats.size;
-  //   const sizeMb = sizeBytes / (1024 * 1024);
-  // })
   return { filePath: filePaths[0], name: path.basename(filePaths[0]) };
 });
-
-ipcMain.handle("teste", async () => {
-  console.log("teste");
-})
 
 ipcMain.handle("permission-dialog", async () => {
   const response = dialog.showMessageBoxSync({
@@ -892,51 +893,6 @@ ipcMain.handle("select-screen", async () => {
     console.log(err);
   }
 });
-
-ipcMain.handle("cut-video", async (event, { filePath, startTime, duration }) => {
-  const outputFilePath = path.join(app.getPath("userData"), "cut-video.mp4");
-
-  try {
-    // Passa o 'event' para a função para que ela possa enviar atualizações de progresso
-    await cutVideo(filePath, startTime, duration, outputFilePath, event);
-    const videoBase64 = await fileToBase64(outputFilePath);
-    return videoBase64; // Retorna o vídeo cortado em base64 para o frontend
-  } catch (error) {
-    console.error("Error cutting video:", error);
-    throw new Error("Error cutting video.");
-  }
-});
-
-function cutVideo(filePath, startTime, duration, outputFilePath, eventSender) { // Adicionado eventSender
-  return new Promise((resolve, reject) => {
-    const command = ffmpeg(filePath)
-      .setStartTime(startTime)
-      .setDuration(duration)
-      .output(outputFilePath)
-      .outputOptions("-c:v libx264", "-crf 23", "-preset fast", "-c:a aac")
-      .on("start", (commandLine) => {
-        console.log("Spawned Ffmpeg with command: " + commandLine);
-        currentFfmpegProcess = command; // <--- ATRIBUI O PROCESSO ATUAL
-      })
-      .on("progress", (progress) => {
-        console.log(`Processing: ${progress.percent}% done`);
-        if (eventSender) {
-          eventSender.sender.send('renderize-progress', progress.percent); // <--- ENVIA O PROGRESSO
-        }
-      })
-      .on("end", () => {
-        console.log("Video cut successfully.");
-        currentFfmpegProcess = null; // <--- LIMPA O PROCESSO
-        resolve();
-      })
-      .on("error", (err) => {
-        console.error("Error cutting video:", err);
-        currentFfmpegProcess = null; // <--- LIMPA O PROCESSO EM CASO DE ERRO
-        reject(err);
-      });
-    command.run();
-  });
-}
 
 ipcMain.on('cancel-renderization', (event) => {
   cancelAllProcesses();

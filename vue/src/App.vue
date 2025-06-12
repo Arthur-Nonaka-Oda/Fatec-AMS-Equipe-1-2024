@@ -306,35 +306,6 @@ export default {
       this.currentGlobalTime = currentTimeInSeconds;
       this.$refs.videoPreview.updateCurrentTime(currentTimeInSeconds);
     },
-
-    async cutVideo() {
-      if (this.startTime === null) {
-        alert("Por favor, mova o cursor para o ponto de corte.");
-        return;
-      }
-
-      const filePath = this.videoFilePath;
-
-      this.startLoading('Cortando vídeo...'); // Inicia o modal para esta operação também
-
-      try {
-        const base64Video = await window.electron.ipcRenderer.invoke(
-          "cut-video",
-          {
-            filePath,
-            startTime: this.startTime,
-            duration: this.duration,
-          }
-        );
-
-        this.videoUrl = `data:video/mp4;base64,${base64Video}`;
-        this.closeCutEditor(); // Assumindo que você tem um método para fechar o editor de corte
-        this.finishLoading('Corte concluído!');
-      } catch (error) {
-        console.error("Erro ao cortar o vídeo:", error);
-        this.finishLoading('Erro ao cortar o vídeo!');
-      }
-    },
   },
 };
 </script>

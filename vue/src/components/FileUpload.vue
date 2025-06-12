@@ -23,14 +23,17 @@ export default {
     },
     async handleFileUpload(event) {
       const files = Array.from(event.target.files);
-      const promises = files.map(file => {
+      const promises = files.map(async file => {
         const fileType = this.getFileType(file);
+
+        const newPath = await window.electron.ipcRenderer.invoke('save-imports', { filePath: file.path })
+
         if (fileType === 'video') {
-          return this.handleVideoFile(file);
+          return this.handleVideoFile(file, newPath);
         } else if (fileType === 'image') {
-          return this.handleImageFile(file);
+          return this.handleImageFile(file, newPath);
         } else if (fileType === 'audio') {
-          return this.handleAudioFile(file);
+          return this.handleAudioFile(file, newPath);
         } else {
           console.log('Unsupported file type:', file.type);
           return Promise.resolve();
@@ -123,16 +126,16 @@ export default {
         videoElement.src = blobUrl;
       });
     },
-    async handleAudioFile(file) {
+    async handleAudioFile(file, path) {
       if (!file) return;
       console.log(file);
 
       const duration = await this.getAudioDuration(file);
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
 
-      this.$files.addAudio({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: file });
+      this.$files.addAudio({ filePath: path, name: file.name, duration: duration, size: sizeInMB, blob: file });
     },
-    async handleImageFile(file) {
+    async handleImageFile(file, path) {
       if (!file) return;
       console.log(file);
 
@@ -142,7 +145,7 @@ export default {
       }
 
       const videoBase64 = await window.electron.ipcRenderer.invoke('create-video-from-image', {
-        filePath: file.path,
+        filePath: path,
         duration: 5
       });
 
@@ -158,9 +161,9 @@ export default {
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
       const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(videoBlob), duration);
 
-      this.$files.addImage({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: videoBlob, url: thumbnailURL });
+      this.$files.addImage({ filePath: path, name: file.name, duration: duration, size: sizeInMB, blob: videoBlob, url: thumbnailURL });
     },
-    async handleVideoFile(file) {
+    async handleVideoFile(file, path) {
       console.log(file);
       if (!file) return;
 
@@ -168,7 +171,7 @@ export default {
       const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
       const thumbnailURL = await this.getVideoThumbnail(URL.createObjectURL(file), duration);
 
-      this.$files.addVideo({ filePath: file.path, name: file.name, duration: duration, size: sizeInMB, blob: file, url: thumbnailURL });
+      this.$files.addVideo({ filePath: path, name: file.name, duration: duration, size: sizeInMB, blob: file, url: thumbnailURL });
     },
     // async getVideoThumbnailElectron (blobUrl) {
     //     return new Promise((resolve, reject) => {

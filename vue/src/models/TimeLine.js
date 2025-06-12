@@ -179,14 +179,14 @@ export default class TimeLine {
   removeFileFromLayer(fileData) {
     // Captura o estado original antes da remoção
     const originalState = this.getSnapshot();
-    
+
     const execute = () => {
       if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
         const layer = this.layers[fileData.layerIndex];
         if (layer.head !== null) {
           let current = layer.head;
           let before = null;
-          
+
           // Se for o primeiro item da lista
           if (current.item === fileData.file) {
             layer.head = current.next;
@@ -196,7 +196,7 @@ export default class TimeLine {
             this.updateVueLayers();
             return;
           }
-          
+
           // Procura o item na lista
           while (current !== null) {
             if (current.item === fileData.file) {
@@ -225,19 +225,18 @@ export default class TimeLine {
     this.executeCommand({ execute, undo });
   }
 
-  saveProject() {
-    const projectData = JSON.stringify({
-      layers: this.layers.map((layer) => ({
-        files: this.listFilesInLayer(this.layers.indexOf(layer)).map((file) => ({
+  exportToJSON() {
+    const data = {
+      layers: this.layers.map((layer, index) => ({
+        files: this.listFilesInLayer(index).map((file) => ({
           type: file.constructor.name.toLowerCase(),
-          data: file,
-        })),
+          data: file
+        }))
       })),
-      currentSecond: this.currentSecond,
-    });
+      currentSecond: this.currentSecond
+    };
 
-    localStorage.setItem("savedProject", projectData);
-    console.log("Projeto salvo!");
+    return JSON.stringify(data, null, 2);
   }
 
   loadProject() {
@@ -315,12 +314,12 @@ export default class TimeLine {
     const layerIndex = this.layers.findIndex(layer =>
       this.listFilesInLayer(this.layers.indexOf(layer)).includes(video)
     );
-    
+
     if (layerIndex === -1) {
       console.error("Vídeo original não encontrado na camada.");
       return;
     }
-    
+
     const command = new SplitCommand(this, video, splitTime, layerIndex);
     this.executeCommand({
       execute: () => command.execute(),
@@ -331,15 +330,15 @@ export default class TimeLine {
   async splitAudioAtTime(audio, splitTime) {
     const start = audio.startTime || 0;
     const end = audio.endTime || audio.duration;
-  
+
     if (splitTime <= start || splitTime >= end) {
       console.error("Tempo de divisão inválido.");
       return;
     }
-  
+
     const segment1Duration = splitTime - start;
     const segment2Duration = end - splitTime;
-  
+
     const audioPart1 = new Audio({
       ...audio,
       name: audio.name + " (Parte 1)",
@@ -347,7 +346,7 @@ export default class TimeLine {
       startTime: start,
       endTime: splitTime,
     });
-  
+
     const audioPart2 = new Audio({
       ...audio,
       name: audio.name + " (Parte 2)",
@@ -355,11 +354,11 @@ export default class TimeLine {
       startTime: splitTime,
       endTime: end,
     });
-  
+
     const layerIndex = this.layers.findIndex(layer =>
       this.listFilesInLayer(this.layers.indexOf(layer)).includes(audio)
     );
-  
+
     const originalIndex = this.listFilesInLayer(layerIndex).indexOf(audio);
     this.removeFileFromLayer({ file: audio, layerIndex });
     this.addFileToLayer({ file: audioPart1, type: "audio", layerIndex }, originalIndex);
@@ -367,63 +366,63 @@ export default class TimeLine {
   }
 
   async splitImageAtTime(image, splitTime) {
-  const start = image.startTime || 0;
-  const end = image.endTime || image.duration;
+    const start = image.startTime || 0;
+    const end = image.endTime || image.duration;
 
-  if (splitTime <= start || splitTime >= end) {
-    console.error("Tempo de divisão inválido para imagem.");
-    return;
+    if (splitTime <= start || splitTime >= end) {
+      console.error("Tempo de divisão inválido para imagem.");
+      return;
+    }
+
+    const segment1Duration = splitTime - start;
+    const segment2Duration = end - splitTime;
+
+    const imagePart1 = {
+      ...image,
+      name: image.name + " (Parte 1)",
+      duration: segment1Duration,
+      startTime: start,
+      endTime: splitTime,
+    };
+
+    const imagePart2 = {
+      ...image,
+      name: image.name + " (Parte 2)",
+      duration: segment2Duration,
+      startTime: splitTime,
+      endTime: end,
+    };
+
+    const layerIndex = this.layers.findIndex(layer =>
+      this.listFilesInLayer(this.layers.indexOf(layer)).includes(image)
+    );
+
+    const filesInLayer = this.listFilesInLayer(layerIndex);
+    const originalIndex = filesInLayer.indexOf(image);
+
+    if (originalIndex === -1) {
+      console.error("Imagem original não encontrada na camada.");
+      return;
+    }
+
+    this.removeFileFromLayer({ file: image, layerIndex });
+    this.addFileToLayer({ file: imagePart1, type: "image", layerIndex }, originalIndex);
+    this.addFileToLayer({ file: imagePart2, type: "image", layerIndex }, originalIndex + 1);
   }
-
-  const segment1Duration = splitTime - start;
-  const segment2Duration = end - splitTime;
-
-  const imagePart1 = {
-    ...image,
-    name: image.name + " (Parte 1)",
-    duration: segment1Duration,
-    startTime: start,
-    endTime: splitTime,
-  };
-
-  const imagePart2 = {
-    ...image,
-    name: image.name + " (Parte 2)",
-    duration: segment2Duration,
-    startTime: splitTime,
-    endTime: end,
-  };
-
-  const layerIndex = this.layers.findIndex(layer =>
-    this.listFilesInLayer(this.layers.indexOf(layer)).includes(image)
-  );
-
-  const filesInLayer = this.listFilesInLayer(layerIndex);
-  const originalIndex = filesInLayer.indexOf(image);
-
-  if (originalIndex === -1) {
-    console.error("Imagem original não encontrada na camada.");
-    return;
-  }
-
-  this.removeFileFromLayer({ file: image, layerIndex });
-  this.addFileToLayer({ file: imagePart1, type: "image", layerIndex }, originalIndex);
-  this.addFileToLayer({ file: imagePart2, type: "image", layerIndex }, originalIndex + 1);
-}
 
   getCumulativeDurationBeforeVideo(layerIndex, video) {
     if (layerIndex < 0 || layerIndex >= this.layers.length) return 0;
-  
+
     const layer = this.layers[layerIndex];
     let current = layer.head;
     let cumulativeDuration = 0;
-  
+
     while (current !== null) {
       if (current.item === video) return cumulativeDuration;
       cumulativeDuration += current.item.duration;
       current = current.next;
     }
-  
+
     return 0;
   }
 
