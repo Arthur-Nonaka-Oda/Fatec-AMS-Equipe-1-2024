@@ -1,5 +1,5 @@
 <template>
-  <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
+  <div class="timeline" @dragover="handleDragOver" @drop="handleDrop" @click="onTimelineClick($event)">
     <VideoEditingTimeline :config="{
       canvasWidth: dynamicCanvasWidth,
       minimumScale: 10,
@@ -43,25 +43,15 @@
       <div class="project-controls">
         <button @click="saveProject">Salvar Projeto</button>
         <button @click="loadProject">Carregar Projeto</button>
-        <!-- <button @click="downloadProject">Baixar Projeto</button> -->
-        <!-- <input type="file" @change="loadFromFile" /> -->
+        <button @click="downloadProject">Baixar Projeto</button>
+        <input type="file" @change="loadFromFile" />
       </div>
       <div class="volume-controls">
         <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1"
           @update-volume="updateItemVolume" />
 
       </div>
-      <div v-if="showModal" class="modal-overlay">
-        <div class="modal-content">
-          <h2>Projetos</h2>
-          <div class="projects-content">
-            <button v-for="project in projects" :key="project" @click="selectProject(project)" class="project-btn">
-              {{ project }}
-            </button>
-          </div>
-          <button @click="showModal = false" class="close-btn">Fechar</button>
-        </div>
-      </div>
+
     </div>
   </div>
 </template>
@@ -105,8 +95,6 @@ export default {
         minimumScale: 10,
         minimumScaleTime: 1,
       },
-      projects: [],
-      showModal: false,
       selectedZoom: 1,
     };
   },
@@ -142,18 +130,6 @@ export default {
     document.removeEventListener('keydown', this.handleKeyEvents);
   },
   methods: {
-    selectProject(name) {
-      window.electron.ipcRenderer.invoke('load-project', { projectId: name })
-        // .then(() => {
-        //   this.timeline.loadProject();
-        //   this.updateLayers();
-        //   console.log("Projeto carregado:", name);
-        // })
-        // .catch((error) => {
-        //   console.error("Erro ao carregar o projeto:", error);
-        // });
-      this.showModal = false;
-    },
     updateItemVolume(newVolume) {
       if (this.selectedItem && this.selectedItem.item) {
         this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
@@ -171,24 +147,34 @@ export default {
         this.$emit('paste-item', { item, layerIndex });
       }
     },
+    onTimelineClick(event) {
+      // Calcula o clique relativo à timeline
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      
+      // Converte posição em pixels para segundos
+      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
+      const timeInSeconds = clickX * secondsPerPixel;
+      
+      // Atualiza o cursor para a posição do clique
+      this.updateCurrentTime(timeInSeconds);
+      
+      // Se quiser, emite evento pro pai com o tempo clicado
+      this.$emit('cursor-moved', timeInSeconds);
+    },
     saveProject() {
       try {
-        this.timeline.exportToJSON();
-        console.log("Projeto salvo.");
+        this.timeline.saveProject();
+        console.log("Projeto salvo no localStorage.");
       } catch (error) {
         console.error("Erro ao salvar o projeto:", error);
       }
     },
-    async loadProject() {
+    loadProject() {
       try {
-        const result = await window.electron.ipcRenderer.invoke('get-projects');
-        this.projects = result;
-        this.showModal = true;
-
-        // console.log("Projetos disponíveis:", projects);
-        // this.timeline.loadProject();
-        // this.updateLayers();
-        // console.log("Projeto carregado do localStorage.");
+        this.timeline.loadProject();
+        this.updateLayers(); // Atualiza as camadas no Vue
+        console.log("Projeto carregado do localStorage.");
       } catch (error) {
         console.error("Erro ao carregar o projeto:", error);
       }
@@ -311,8 +297,11 @@ export default {
       }
     },
     handleItemClicked(item) {
-      this.$emit('item-clicked', item);
-    },
+  this.$emit('item-clicked', item);
+  if(item.startTime) {  // Supondo que seu item tenha tempo inicial
+    this.updateCurrentTime(item.startTime);
+  }
+},
     handleDeleteVideo(video) {
       this.timeline.removeFileFromLayer({
         file: video,
@@ -637,62 +626,5 @@ export default {
   background-color: #ffffff;
   border-color: #bbb;
   color: #000
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 24px;
-  border-radius: 8px;
-  min-width: 400px;
-  max-width: 500px;
-  max-height: 400px;
-}
-
-.projects-content {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  flex-wrap: wrap;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.project-btn {
-  display: block;
-  width: max-content;
-  margin: 8px 0;
-  color: #fff;
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  border: 1px solid transparent;
-  border-radius: 0.375rem;
-  transition: color 0.15s, background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
-  cursor: pointer;
-}
-
-.project-btn:hover,
-.project-btn:focus {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
-}
-
-.close-btn {
-  margin-top: 16px;
 }
 </style>
