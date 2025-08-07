@@ -92,11 +92,12 @@ export default {
   methods: {
     loadVideo() {
       const videos = this.timeline.listFilesInLayer(0);
-      if (videos.length > 0) {
+      const video = this.$refs.videoPlayer;
+
+      if (videos.length > 0 && videos[this.currentIndex] && videos[this.currentIndex].blob) {
         const currentItem = videos[this.currentIndex];
         this.currentVideo = URL.createObjectURL(currentItem.blob);
 
-        const video = this.$refs.videoPlayer;
         this.$nextTick(() => {
           video.currentTime = currentItem.startTime;
           video.volume = (currentItem.volume ?? 1) * this.volume;
@@ -105,9 +106,9 @@ export default {
         video.load();
       } else {
         this.currentVideo = null;
-        const video = this.$refs.videoPlayer;
-        video.load();
-
+        if (video) {
+          video.load();
+        }
         this.updatePlayPauseIcon();
       }
     },
@@ -242,9 +243,20 @@ export default {
     toggleVolumeControl() {
       this.showVolumeControl = !this.showVolumeControl;
     },
-    deleteVideo() {
-      // Implementar lógica de exclusão
-      this.$emit('delete-video', this.video);
+    deleteVideo(index) {
+      const videos = this.timeline.listFilesInLayer(0);
+      // Remove o vídeo do array (ajuste conforme sua lógica)
+      videos.splice(index, 1);
+
+      // Ajusta o índice do cursor
+      if (this.currentIndex > 0) {
+        this.currentIndex--;
+      } else {
+        this.currentIndex = 0;
+      }
+
+      // Atualiza o vídeo exibido
+      this.loadVideo();
     },
     trimVideo() {
       this.$emit('trim-video', this.video);
@@ -276,6 +288,13 @@ export default {
       const audio = this.$refs.audioPlayer;
       const videos = this.timeline.listFilesInLayer(0);
       const audios = this.timeline.listFilesInLayer(1);
+
+      // Adicione esta verificação:
+      if (videos.length === 0 || !videos[this.currentIndex]) {
+        this.currentGlobalTime = 0;
+        return;
+      }
+
       let accumulated = 0;
       for (let i = 0; i < this.currentIndex; i++) {
         accumulated += videos[i].duration;
