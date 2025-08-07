@@ -21,7 +21,6 @@ contextBridge.exposeInMainWorld("electron", {
     invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
   },
 
-
   saveRecording: async (chunks, filePath) => ipcRenderer.invoke('write-file', chunks, filePath),
   saveDialog: async () => {
     return await ipcRenderer.send('save-dialog');
@@ -34,5 +33,17 @@ contextBridge.exposeInMainWorld("electron", {
   },
   importDialog: async () => {
     return await ipcRenderer.invoke("import-dialog")
+  },
+  saveProject: async (projectData) => {
+    return await ipcRenderer.invoke("save-project", { projectData })
+  },
+  loadProject: async (projectId) => {
+    return await ipcRenderer.invoke("load-project", { projectId })
+  },
+  getProjects: async () => {
+    return await ipcRenderer.invoke("get-projects")
+  },
+  saveImports: async (filePath) => {
+    return await ipcRenderer.invoke("save-imports", { filePath })
   }
 });

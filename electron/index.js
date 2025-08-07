@@ -10,7 +10,7 @@ const ffmpeg = require("fluent-ffmpeg");
 const path = require("path");
 const fs = require("fs");
 
-const { saveImports, getProjects } = require("./saveProject.js");
+const { saveImports, getProjects, saveProject, loadProject, setProjectId, getCurrentProjectId } = require("./saveProject.js");
 
 let mainWindow;
 
@@ -145,6 +145,12 @@ ipcMain.handle('load-project', async (event, { projectId }) => {
   return projectData;
 })
 
+ipcMain.handle('save-project', async (event, { projectData }) => {
+  const projectId = await saveProject(projectData);
+  setProjectId(projectId);
+  return projectId;
+})
+
 ipcMain.handle('get-projects', async (event) => {
   const projects = await getProjects();
   return projects;
@@ -153,6 +159,16 @@ ipcMain.handle('get-projects', async (event) => {
 ipcMain.handle('save-imports', async (event, { filePath }) => {
   const result = await saveImports(filePath);
   return result;
+})
+
+ipcMain.handle('load-video-file', async (event, { filePath }) => {
+  try {
+    const data = fs.readFileSync(filePath);
+    return data.toString('base64');
+  } catch (error) {
+    console.error('Erro ao carregar arquivo de vídeo:', error);
+    throw error;
+  }
 })
 
 ipcMain.handle('combine-videos', async (event, { videosInfo }) => {

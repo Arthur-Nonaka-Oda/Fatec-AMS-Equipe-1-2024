@@ -10,6 +10,9 @@ export default class TimeLine {
     this.currentSecond = 0;
     this.history = new TimelineHistory(); // NOVO
     this.executeCommand = this.executeCommand.bind(this); // NOVO
+    this.projectId = null;
+    this.projectName = null;
+    this.createdAt = null;
   }
 
   executeCommand(command) {
@@ -227,6 +230,10 @@ export default class TimeLine {
 
   exportToJSON() {
     const data = {
+      id: this.projectId || Math.floor(Date.now() / 1000).toString(),
+      name: this.projectName || `Projeto ${new Date().toLocaleDateString()}`,
+      createdAt: this.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(), // Sempre atualiza o timestamp de modificação
       layers: this.layers.map((layer, index) => ({
         files: this.listFilesInLayer(index).map((file) => ({
           type: file.constructor.name.toLowerCase(),
@@ -239,46 +246,123 @@ export default class TimeLine {
     return JSON.stringify(data, null, 2);
   }
 
-  loadProject() {
-    const savedData = localStorage.getItem("savedProject");
-    if (!savedData) {
-      console.warn("Nenhum projeto salvo encontrado.");
-      return;
+  async saveProject() {
+    try {
+      const projectData = JSON.parse(this.exportToJSON());
+
+      // Se já existe um projectId, usar ele para atualizar o projeto existente
+      if (this.projectId) {
+        projectData.id = this.projectId;
+        projectData.updatedAt = new Date().toISOString(); // Adiciona timestamp de atualização
+        console.log(`Atualizando projeto existente com ID: ${this.projectId}`);
+      } else {
+        // Se não existe projectId, criar um novo projeto
+        console.log("Criando novo projeto...");
+      }
+
+      const projectId = await window.electron.saveProject(projectData);
+
+      // Se era um projeto novo, salvar o ID retornado
+      if (!this.projectId) {
+        this.projectId = projectId;
+      }
+
+      console.log(`Projeto salvo com ID: ${projectId}`);
+      return projectId;
+
+    } catch (error) {
+      console.error("Erro ao salvar o projeto:", error);
+      throw error;
     }
+  }
 
-    const parsedData = JSON.parse(savedData);
-    this.layers = parsedData.layers.map(() => ({
-      head: null,
-      end: null,
-    }));
+  async loadProject(projectId = null) {
+    try {
+      let parsedData;
 
-    parsedData.layers.forEach((layer, layerIndex) => {
-      layer.files.forEach(({ type, data }) => {
-        this.addFileToLayer({ file: data, type, layerIndex });
+      if (projectId && window.electron && window.electron.loadProject) {
+        // Carregar projeto específico via Electron
+        parsedData = await window.electron.loadProject(projectId);
+        this.projectId = projectId; // Define o ID do projeto carregado
+      }
+      
+      // Restaurar dados do projeto
+      this.projectName = parsedData.name;
+      this.createdAt = parsedData.createdAt;
+      this.layers = parsedData.layers.map(() => ({
+        head: null,
+        end: null,
+      }));
+
+      parsedData.layers.forEach((layer, layerIndex) => {
+        layer.files.forEach(({ type, data }) => {
+          // Se o arquivo tem blobBase64, converter de volta para blob
+          if (data.blobBase64) {
+            try {
+              // Decodificar base64 para blob
+              const binaryString = atob(data.blobBase64);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              
+              // Determinar o tipo MIME baseado na extensão do arquivo
+              let mimeType = 'application/octet-stream';
+              if (data.name) {
+                const extension = data.name.split('.').pop().toLowerCase();
+                switch (extension) {
+                  case 'mp4':
+                    mimeType = 'video/mp4';
+                    break;
+                  case 'webm':
+                    mimeType = 'video/webm';
+                    break;
+                  case 'mov':
+                    mimeType = 'video/quicktime';
+                    break;
+                  case 'avi':
+                    mimeType = 'video/x-msvideo';
+                    break;
+                  case 'mp3':
+                    mimeType = 'audio/mpeg';
+                    break;
+                  case 'wav':
+                    mimeType = 'audio/wav';
+                    break;
+                  case 'png':
+                    mimeType = 'image/png';
+                    break;
+                  case 'jpg':
+                  case 'jpeg':
+                    mimeType = 'image/jpeg';
+                    break;
+                }
+              }
+              
+              // Criar novo blob
+              data.blob = new Blob([bytes], { type: mimeType });
+              data.url = URL.createObjectURL(data.blob);
+              
+              // Remover o blobBase64 para economizar memória
+              delete data.blobBase64;
+              
+              console.log(`Blob restaurado para ${data.name}: ${data.url}`);
+            } catch (error) {
+              console.error(`Erro ao restaurar blob para ${data.name}:`, error);
+            }
+          }
+          
+          this.addFileToLayer({ file: data, type, layerIndex });
+        });
       });
-    });
 
-    this.currentSecond = parsedData.currentSecond;
-    console.log("Projeto carregado!");
-  }
+      this.currentSecond = parsedData.currentSecond;
+      console.log(`Projeto carregado! ID: ${this.projectId}`);
 
-  downloadProject() {
-    const blob = new Blob([localStorage.getItem("savedProject")], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "projeto.json"; // Nome do arquivo baixado
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-
-  loadFromFile(file) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      localStorage.setItem("savedProject", event.target.result); // Salva o conteúdo no localStorage
-      this.loadProject(); // Restaura o estado do projeto
-    };
-    reader.readAsText(file); // Lê o arquivo como texto
+    } catch (error) {
+      console.error("Erro ao carregar o projeto:", error);
+      throw error;
+    }
   }
 
 

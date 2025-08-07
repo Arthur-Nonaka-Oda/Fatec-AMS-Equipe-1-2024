@@ -84,51 +84,200 @@ export default {
     timeline: {
       deep: true,
       handler() {
+        console.log('Timeline changed, reloading video and audio...');
+        console.log('Videos in layer 0:', this.timeline.listFilesInLayer(0));
+        console.log('Audios in layer 1:', this.timeline.listFilesInLayer(1));
         this.loadVideo();
         this.loadAudio();
       }
     }
   },
   methods: {
-    loadVideo() {
+    async loadVideo() {
       const videos = this.timeline.listFilesInLayer(0);
       if (videos.length > 0) {
         const currentItem = videos[this.currentIndex];
-        this.currentVideo = URL.createObjectURL(currentItem.blob);
+        console.log('Carregando vídeo:', currentItem);
+        
+        // Verificar se currentItem é válido
+        if (!currentItem) {
+          console.error('Item de vídeo inválido');
+          this.currentVideo = null;
+          return;
+        }
+        
+        // Se o blob não existir, tentar carregar do filePath
+        if (!currentItem.blob && currentItem.filePath) {
+          console.log('Blob não encontrado, carregando do filePath:', currentItem.filePath);
+          try {
+            // Usar fetch para carregar o arquivo do filePath
+            const response = await fetch(`file://${currentItem.filePath}`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const blob = await response.blob();
+            if (blob && blob.size > 0) {
+              currentItem.blob = blob;
+              console.log('Blob carregado via fetch:', blob);
+            } else {
+              throw new Error('Blob vazio ou inválido');
+            }
+          } catch (error) {
+            console.error('Erro ao carregar vídeo do filePath:', error);
+            // Se falhar, tentar via Electron
+            try {
+              if (window.electron && window.electron.ipcRenderer) {
+                console.log('Tentando carregar via Electron...');
+                const base64Data = await window.electron.ipcRenderer.invoke('load-video-file', { filePath: currentItem.filePath });
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'video/mp4' });
+                if (blob && blob.size > 0) {
+                  currentItem.blob = blob;
+                  console.log('Blob carregado via Electron:', blob);
+                } else {
+                  throw new Error('Blob criado via Electron é inválido');
+                }
+              } else {
+                throw new Error('Electron não disponível');
+              }
+            } catch (electronError) {
+              console.error('Erro ao carregar vídeo via Electron:', electronError);
+              this.currentVideo = null;
+              return;
+            }
+          }
+        }
+        
+        // Verificar se o blob é válido antes de criar o ObjectURL
+        if (currentItem.blob && currentItem.blob instanceof Blob && currentItem.blob.size > 0) {
+          try {
+            this.currentVideo = URL.createObjectURL(currentItem.blob);
+            console.log('ObjectURL criado com sucesso:', this.currentVideo);
 
-        const video = this.$refs.videoPlayer;
-        this.$nextTick(() => {
-          video.currentTime = currentItem.startTime;
-          video.volume = (currentItem.volume ?? 1) * this.volume;
-          this.updatePlayPauseIcon();
-        });
-        video.load();
+            const video = this.$refs.videoPlayer;
+            if (video) {
+              this.$nextTick(() => {
+                video.currentTime = currentItem.startTime || 0;
+                video.volume = (currentItem.volume ?? 1) * this.volume;
+                this.updatePlayPauseIcon();
+              });
+              video.load();
+            }
+          } catch (urlError) {
+            console.error('Erro ao criar ObjectURL:', urlError);
+            this.currentVideo = null;
+          }
+        } else {
+          console.warn('Blob inválido ou não encontrado:', currentItem.blob);
+          this.currentVideo = null;
+        }
       } else {
+        console.log('Nenhum vídeo encontrado na camada 0');
         this.currentVideo = null;
         const video = this.$refs.videoPlayer;
-        video.load();
-
-        this.updatePlayPauseIcon();
+        if (video) {
+          video.load();
+          this.updatePlayPauseIcon();
+        }
       }
     },
-    loadAudio() {
+    async loadAudio() {
       const audios = this.timeline.listFilesInLayer(1);
       if (audios.length > 0) {
         const currentAudioItem = audios[this.currentAudioIndex];
-        this.currentAudio = URL.createObjectURL(currentAudioItem.blob);
+        console.log('Carregando áudio:', currentAudioItem);
+        
+        // Verificar se currentAudioItem é válido
+        if (!currentAudioItem) {
+          console.error('Item de áudio inválido');
+          this.currentAudio = null;
+          return;
+        }
+        
+        // Se o blob não existir, tentar carregar do filePath
+        if (!currentAudioItem.blob && currentAudioItem.filePath) {
+          console.log('Blob de áudio não encontrado, carregando do filePath:', currentAudioItem.filePath);
+          try {
+            // Usar fetch para carregar o arquivo do filePath
+            const response = await fetch(`file://${currentAudioItem.filePath}`);
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const blob = await response.blob();
+            if (blob && blob.size > 0) {
+              currentAudioItem.blob = blob;
+              console.log('Blob de áudio carregado via fetch:', blob);
+            } else {
+              throw new Error('Blob de áudio vazio ou inválido');
+            }
+          } catch (error) {
+            console.error('Erro ao carregar áudio do filePath:', error);
+            // Se falhar, tentar via Electron
+            try {
+              if (window.electron && window.electron.ipcRenderer) {
+                console.log('Tentando carregar áudio via Electron...');
+                const base64Data = await window.electron.ipcRenderer.invoke('load-video-file', { filePath: currentAudioItem.filePath });
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const audioType = currentAudioItem.filePath.toLowerCase().includes('.mp3') ? 'audio/mp3' : 'audio/wav';
+                const blob = new Blob([byteArray], { type: audioType });
+                if (blob && blob.size > 0) {
+                  currentAudioItem.blob = blob;
+                  console.log('Blob de áudio carregado via Electron:', blob);
+                } else {
+                  throw new Error('Blob de áudio criado via Electron é inválido');
+                }
+              } else {
+                throw new Error('Electron não disponível');
+              }
+            } catch (electronError) {
+              console.error('Erro ao carregar áudio via Electron:', electronError);
+              this.currentAudio = null;
+              return;
+            }
+          }
+        }
+        
+        // Verificar se o blob é válido antes de criar o ObjectURL
+        if (currentAudioItem.blob && currentAudioItem.blob instanceof Blob && currentAudioItem.blob.size > 0) {
+          try {
+            this.currentAudio = URL.createObjectURL(currentAudioItem.blob);
+            console.log('ObjectURL de áudio criado com sucesso:', this.currentAudio);
 
-        const audio = this.$refs.audioPlayer;
-        this.$nextTick(() => {
-          audio.currentTime = currentAudioItem.startTime;
-          // Aplica o volume combinado para o áudio
-          audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
-          this.updatePlayPauseIcon();
-        });
-        audio.load();
+            const audio = this.$refs.audioPlayer;
+            if (audio) {
+              this.$nextTick(() => {
+                audio.currentTime = currentAudioItem.startTime || 0;
+                // Aplica o volume combinado para o áudio
+                audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
+                this.updatePlayPauseIcon();
+              });
+              audio.load();
+            }
+          } catch (urlError) {
+            console.error('Erro ao criar ObjectURL de áudio:', urlError);
+            this.currentAudio = null;
+          }
+        } else {
+          console.warn('Blob de áudio inválido ou não encontrado:', currentAudioItem.blob);
+          this.currentAudio = null;
+        }
       } else {
+        console.log('Nenhum áudio encontrado na camada 1');
         this.currentAudio = null;
         const audio = this.$refs.audioPlayer;
-        audio.load();
+        if (audio) {
+          audio.load();
+        }
         this.updatePlayPauseIcon();
       }
     },
@@ -189,8 +338,15 @@ export default {
       const video = this.$refs.videoPlayer;
       const audio = this.$refs.audioPlayer;
 
+      if (!video) {
+        console.warn('Elemento de vídeo não encontrado');
+        return;
+      }
+
       if (video.paused) {
-        video.play();
+        video.play().catch(error => {
+          console.error('Erro ao reproduzir vídeo:', error);
+        });
         if (audio && this.currentAudio) {
           audio.play().then(() => {
             console.log('Audio started playing successfully');
@@ -215,26 +371,35 @@ export default {
     },
     updatePlayPauseIcon() {
       const video = this.$refs.videoPlayer;
-      this.playPauseIcon = video.paused ? "/playIcon2.png" : "/pausaicon2.png";
+      if (video) {
+        this.playPauseIcon = video.paused ? "/playIcon2.png" : "/pausaicon2.png";
+      } else {
+        this.playPauseIcon = "/playIcon2.png";
+      }
     },
     updateVolume() {
       const video = this.$refs.videoPlayer;
-      const videos = this.timeline.listFilesInLayer(0);
-      if (videos.length > 0) {
-        const currentItem = videos[this.currentIndex];
-        video.volume = (currentItem.volume ?? 1) * this.volume;
-      } else {
-        video.volume = this.volume;
+      const audio = this.$refs.audioPlayer;
+      
+      if (video) {
+        const videos = this.timeline.listFilesInLayer(0);
+        if (videos.length > 0) {
+          const currentItem = videos[this.currentIndex];
+          video.volume = (currentItem.volume ?? 1) * this.volume;
+        } else {
+          video.volume = this.volume;
+        }
       }
 
       // Atualiza o volume do áudio também
-      const audio = this.$refs.audioPlayer;
-      const audios = this.timeline.listFilesInLayer(1);
-      if (audio && audios.length > 0) {
-        const currentAudioItem = audios[this.currentAudioIndex];
-        audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
-      } else if (audio) {
-        audio.volume = this.volume;
+      if (audio) {
+        const audios = this.timeline.listFilesInLayer(1);
+        if (audios.length > 0) {
+          const currentAudioItem = audios[this.currentAudioIndex];
+          audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
+        } else {
+          audio.volume = this.volume;
+        }
       }
 
       this.volumeIcon = this.volume <= 0.0 ? "/mudo.png" : "/volume.png";
@@ -408,13 +573,16 @@ export default {
   mounted() {
     const video = this.$refs.videoPlayer;
 
-    this.initializeAudioSync();
+    if (video) {
+      this.initializeAudioSync();
 
-    video.addEventListener("timeupdate", this.updateTime);
-    video.addEventListener("loadedmetadata", this.updateDuration);
-    video.addEventListener("play", this.updatePlayPauseIcon);
-    video.addEventListener("pause", this.updatePlayPauseIcon);
-    video.addEventListener("ended", this.handleVideoEnded);
+      video.addEventListener("timeupdate", this.updateTime);
+      video.addEventListener("loadedmetadata", this.updateDuration);
+      video.addEventListener("play", this.updatePlayPauseIcon);
+      video.addEventListener("pause", this.updatePlayPauseIcon);
+      video.addEventListener("ended", this.handleVideoEnded);
+    }
+    
     this.loadVideo();
     // this.loadAudio();
   },
