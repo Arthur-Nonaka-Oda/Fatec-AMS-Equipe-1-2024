@@ -303,6 +303,7 @@ export default {
   }
 },
     handleDeleteVideo(video) {
+      
       this.timeline.removeFileFromLayer({
         file: video,
         layerIndex: 0
