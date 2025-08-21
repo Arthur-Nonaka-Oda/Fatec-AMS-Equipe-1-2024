@@ -121,6 +121,7 @@ export default {
     document.removeEventListener('keydown', this.handleKeyEvents);
   },
   methods: {
+    
     updateItemVolume(newVolume) {
       if (this.selectedItem && this.selectedItem.item) {
         this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
@@ -283,18 +284,20 @@ export default {
       });
       this.updateLayers();
     },
-    handleUndo() {
-      if (this.timeline && this.timeline.history) {
-        this.timeline.undo();
-        this.updateLayers();
-      }
+    async handleUndo() {
+        if (this.timeline && this.timeline.history) {
+            await this.timeline.undo();
+            this.updateLayers();
+            this.$emit('timeline-changed');
+        }
     },
 
-    handleRedo() {
-      if (this.timeline && this.timeline.history) {
-        this.timeline.redo();
-        this.updateLayers();
-      }
+    async handleRedo() {
+        if (this.timeline && this.timeline.history) {
+            await this.timeline.redo();
+            this.updateLayers();
+            this.$emit('timeline-changed');
+        }
     },
     formatTime(seconds) {
       const roundedSeconds = Math.floor(seconds);
@@ -325,23 +328,24 @@ export default {
       };
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
     },
-    undo() {
-      this.timeline.history.undo();
+    async undo() {
+        await this.handleUndo();
     },
-    redo() {
-      this.timeline.history.redo();
+    async redo() {
+        await this.handleRedo();
     },
     handleKeyEvents(event) {
-      // Ctrl+Z para desfazer
-      if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
-        event.preventDefault();
-        this.handleUndo();
-      }
-      // Ctrl+Y para refazer
-      else if (event.ctrlKey && (event.key === 'y' || event.key === 'Y')) {
-        event.preventDefault();
-        this.handleRedo();
-      }
+        // Ctrl+Z para desfazer
+        if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
+            event.preventDefault();
+            this.handleUndo();
+        }
+        // Ctrl+Shift+Z ou Ctrl+Y para refazer
+        else if ((event.ctrlKey && event.shiftKey && (event.key === 'z' || event.key === 'Z')) || 
+                 (event.ctrlKey && (event.key === 'y' || event.key === 'Y'))) {
+            event.preventDefault();
+            this.handleRedo();
+        }
     },
   },
 };

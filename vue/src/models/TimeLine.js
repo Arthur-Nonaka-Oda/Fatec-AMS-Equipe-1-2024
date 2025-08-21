@@ -16,8 +16,17 @@ export default class TimeLine {
   }
 
   executeCommand(command) {
-    command.execute();
-    this.history.addAction(command.execute, command.undo);
+    if (!command || !command.execute || !command.undo) {
+        console.error('Comando inválido:', command);
+        return;
+    }
+    
+    try {
+        command.execute();
+        this.history.addAction(command.execute, command.undo);
+    } catch (error) {
+        console.error('Erro ao executar comando:', error);
+    }
   }
 
   // Modificado para usar o sistema de histórico
@@ -74,31 +83,58 @@ export default class TimeLine {
     this.executeCommand({ execute, undo });
   }
 
-  // Métodos auxiliares para snapshots
-  getSnapshot() {
-    return JSON.parse(JSON.stringify({
-      layers: this.layers.map(layer => this.listFilesInLayer(this.layers.indexOf(layer))),
-      currentSecond: this.currentSecond
-    }));
-  }
-
-  restoreSnapshot(snapshot) {
-    this.layers = snapshot.layers.map(layerFiles => {
-      const layer = { head: null, end: null };
-      layerFiles.forEach(file => {
-        const node = new Node(file);
-        if (!layer.head) {
-          layer.head = node;
-          layer.end = node;
-        } else {
-          layer.end.next = node;
-          layer.end = node;
+        // Correção sugerida
+        getSnapshot() {
+            return {
+                layers: this.layers.map(layer => ({
+                    head: layer.head ? this.deepCloneNode(layer.head) : null,
+                    end: layer.end ? this.deepCloneNode(layer.end) : null
+                })),
+                currentSecond: this.currentSecond
+            };
         }
-      });
-      return layer;
+
+        deepCloneNode(node) {
+            if (!node) return null;
+            const clonedItem = Object.assign(
+                Object.create(Object.getPrototypeOf(node.item)),
+                node.item
+            );
+            const clonedNode = new Node(clonedItem);
+            clonedNode.next = node.next ? this.deepCloneNode(node.next) : null;
+            return clonedNode;
+        }
+
+// Correção para o método restoreSnapshot
+restoreSnapshot(snapshot) {
+    this.layers = snapshot.layers.map(layer => ({
+        head: layer.head,
+        end: layer.end
+    }));
+    
+    // Restaurar métodos e propriedades importantes
+    this.layers.forEach(layer => {
+        let current = layer.head;
+        while (current) {
+            this.restoreItemMethods(current.item);
+            current = current.next;
+        }
     });
+    
     this.currentSecond = snapshot.currentSecond;
-  }
+    this.updateVueLayers();
+}
+
+restoreItemMethods(item) {
+    // Restaurar métodos baseado no tipo do item
+    if (item.type === 'video') {
+        Object.setPrototypeOf(item, Video.prototype);
+    } else if (item.type === 'audio') {
+        Object.setPrototypeOf(item, Audio.prototype);
+    } else if (item.type === 'image') {
+        Object.setPrototypeOf(item, Image.prototype);
+    }
+}
 
   // Atualizar outros métodos para usar executeCommand...
   moveItem(sourceLayerIndex, sourceIndex, targetLayerIndex, targetIndex) {
@@ -521,30 +557,48 @@ export default class TimeLine {
   }
 
   // Adicione estes métodos
-  undo() {
+  async undo() {
     if (this.history) {
-      this.history.undo();
+      await this.history.undo();
       this.updateVueLayers();
     }
   }
 
-  redo() {
+  async redo() {
     if (this.history) {
-      this.history.redo();
+      await this.history.redo();
       this.updateVueLayers();
     }
   }
 
 }
 
-// Comando para split de vídeo com suporte a undo/redo
-class SplitCommand {
+
+class TimelineCommand {
+    constructor(timeline) {
+        this.timeline = timeline;
+        this.previousState = null;
+    }
+
+    saveState() {
+        this.previousState = this.timeline.getSnapshot();
+    }
+
+    restoreState() {
+        if (this.previousState) {
+            this.timeline.restoreSnapshot(this.previousState);
+        }
+    }
+}
+
+// Modifique sua classe SplitCommand para herdar de TimelineCommand
+class SplitCommand extends TimelineCommand {
   constructor(timeline, item, splitTime, layerIndex) {
-    this.timeline = timeline;
+    super(timeline); // Chama o construtor da classe pai
     this.item = item;
     this.splitTime = splitTime;
     this.layerIndex = layerIndex;
-    this.originalState = timeline.getSnapshot();
+    this.saveState(); // Salva o estado inicial usando o método herdado
   }
 
   execute() {
@@ -590,13 +644,11 @@ class SplitCommand {
   }
 
   undo() {
-    // Corrigido: Removida a referência a this.history
-    this.timeline.restoreSnapshot(this.originalState);
+    this.restoreState(); // Use o método herdado
     this.timeline.updateVueLayers();
   }
 
   redo() {
-    // Corrigido: Adicionada implementação correta do redo
     this.execute();
   }
 }
