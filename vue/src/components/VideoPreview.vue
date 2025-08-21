@@ -303,7 +303,13 @@ export default {
       if (this.currentIndex < videos.length - 1) {
         this.currentIndex++;
         this.loadVideo();
-        this.$refs.videoPlayer.play();
+        const playPromise = this.$refs.videoPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error('Erro ao reproduzir próximo vídeo:', error);
+            this.$refs.videoPlayer.pause();
+          });
+        }
       } else {
         this.currentIndex = 0;
         const video = this.$refs.videoPlayer;
@@ -316,7 +322,7 @@ export default {
             this.$refs.audioPlayer.pause();
           }
           this.updatePlayPauseIcon();
-        })
+        });
 
       }
     },
@@ -325,7 +331,13 @@ export default {
       if (this.currentAudioIndex < audios.length - 1) {
         this.currentAudioIndex++;
         this.loadAudio();
-        this.$refs.audioPlayer.play();
+        const playPromise = this.$refs.audioPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.error('Erro ao reproduzir próximo áudio:', error);
+            this.$refs.audioPlayer.pause();
+          });
+        }
       } else {
         this.currentAudioIndex = 0;
         const audio = this.$refs.audioPlayer;
@@ -344,21 +356,23 @@ export default {
       }
 
       if (video.paused) {
-        video.play().catch(error => {
-          console.error('Erro ao reproduzir vídeo:', error);
-        });
-        if (audio && this.currentAudio) {
-          audio.play().then(() => {
-            console.log('Audio started playing successfully');
-          }).catch(error => {
-            console.error('Audio play error:', error);
-            // Log additional audio details
-            console.log('Audio details:', {
-              src: audio.src,
-              currentTime: audio.currentTime,
-              duration: audio.duration
+        const videoPromise = video.play();
+        if (videoPromise !== undefined) {
+          videoPromise
+            .then(() => {
+              if (audio && this.currentAudio) {
+                return audio.play();
+              }
+            })
+            .then(() => {
+              console.log('Video e áudio reproduzindo com sucesso');
+            })
+            .catch(error => {
+              console.error('Erro na reprodução:', error);
+              // Em caso de erro, garante que tanto vídeo quanto áudio estejam pausados
+              video.pause();
+              if (audio) audio.pause();
             });
-          });
         }
         this.playPauseIcon = "/pausaicon2.png";
       } else {
@@ -418,8 +432,17 @@ export default {
     playSegment(startTime, endTime) {
       const video = this.$refs.videoPlayer;
       video.currentTime = startTime;
-      video.play();
-      this.updatePlayPauseIcon();
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            this.updatePlayPauseIcon();
+          })
+          .catch(error => {
+            console.error('Erro ao reproduzir segmento:', error);
+            video.pause();
+          });
+      }
 
       const pauseAtEndTime = () => {
         if (video.currentTime >= endTime) {
@@ -683,6 +706,7 @@ export default {
 
 .volume-control input[type=range] {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 1vh;
   background: #ce2323;
@@ -773,6 +797,7 @@ input[type=range] {
   height: 4px;
   z-index: 1;
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
   width: 100%;
   background: linear-gradient(to right, #ce2323 0%, #ce2323 calc((100% * var(--value)) / var(--max)),
@@ -788,7 +813,7 @@ input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
   height: 1vh;
   cursor: pointer;
-  animate: 0.2s;
+  transition: all 0.2s ease;
   box-shadow: 0px 0px 0px #000000;
   background: transparent;
   /*linha principal do video */
@@ -820,7 +845,7 @@ input[type=range]::-moz-range-track {
   width: 100%;
   height: 1vh;
   cursor: pointer;
-  animate: 0.2s;
+  transition: all 0.2s ease;
   box-shadow: 0px 0px 0px #000000;
   background: transparent;
   border-radius: 1px;
@@ -843,7 +868,7 @@ input[type=range]::-ms-track {
   /* Ajuste conforme necessário */
 
   cursor: pointer;
-  animate: 0.2s;
+  transition: all 0.2s ease;
   background: transparent;
   border-color: transparent;
   color: transparent;
