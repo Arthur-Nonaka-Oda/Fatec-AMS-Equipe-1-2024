@@ -1,5 +1,6 @@
 <template>
   <div>
+    
     <header>
       <div v-if="isLoading" class="loading-modal-overlay">
         <div class="loading-modal-content">
@@ -31,6 +32,13 @@
             <img src="/export.png" alt="Salvar" />
             <span class="legenda">Exportar</span>
           </button>
+          
+          <!-- Card do nome do projeto -->
+          <div class="project-name-card">
+            <span class="project-name">
+              {{ currentProjectName }}
+            </span>
+          </div>
 
           <div v-if="isTextEditorOpen" class="modal">
             <div class="modal-content">
@@ -107,6 +115,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal para Nome do Novo Projeto -->
+    <div v-if="showNameModal" class="modal-overlay">
+      <div class="name-modal-content">
+        <h2>Salvar Novo Projeto</h2>
+        <p>Digite um nome para o seu projeto:</p>
+        <input 
+          v-model="newProjectName" 
+          type="text" 
+          placeholder="Nome do projeto..." 
+          class="project-name-input"
+          @keyup.enter="saveNewProject"
+          maxlength="50"
+          ref="projectNameInput"
+        />
+        <div class="name-modal-buttons">
+          <button @click="saveNewProject" class="save-btn" :disabled="!newProjectName.trim()">Salvar</button>
+          <button @click="cancelNewProject" class="cancel-btn">Cancelar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -155,6 +184,9 @@ export default {
       showConfirmationModal: false,
       selectedProjectId: null,
       hasUnsavedChanges: false,
+      showNameModal: false,
+      newProjectName: '',
+      currentProjectName: 'Novo Projeto',
     };
   },
   computed: {
@@ -194,19 +226,54 @@ export default {
     async saveProject() {
       try {
         const isNewProject = !this.timeline.projectId;
-        const projectId = await this.timeline.saveProject();
-
+        
         if (isNewProject) {
-          console.log("Novo projeto criado com ID:", projectId);
-        } else {
-          console.log("Projeto atualizado:", projectId);
+          // Se é um novo projeto, abre modal para nome
+          this.showNameModal = true;
+          // Aguarda um pouco para o modal renderizar e então foca no input
+          this.$nextTick(() => {
+            if (this.$refs.projectNameInput) {
+              this.$refs.projectNameInput.focus();
+            }
+          });
+          return;
         }
+        
+        // Se já tem ID, salva diretamente
+        const projectId = await this.timeline.saveProject();
+        console.log("Projeto atualizado:", projectId);
         
         // Marca que não há alterações não salvas após salvar
         this.hasUnsavedChanges = false;
       } catch (error) {
         console.error("Erro ao salvar o projeto:", error);
       }
+    },
+    async saveNewProject() {
+      if (!this.newProjectName.trim()) {
+        alert('Por favor, insira um nome para o projeto.');
+        return;
+      }
+      
+      try {
+        const projectId = await this.timeline.saveProject(this.newProjectName.trim());
+        console.log("Novo projeto criado com ID:", projectId);
+        
+        // Salva o nome antes de limpar a variável
+        const savedProjectName = this.newProjectName.trim();
+        
+        // Marca que não há alterações não salvas após salvar
+        this.hasUnsavedChanges = false;
+        this.showNameModal = false;
+        this.newProjectName = '';
+        this.currentProjectName = savedProjectName;
+      } catch (error) {
+        console.error("Erro ao salvar o projeto:", error);
+      }
+    },
+    cancelNewProject() {
+      this.showNameModal = false;
+      this.newProjectName = '';
     },
     async loadProject() {
       try {
@@ -239,6 +306,8 @@ export default {
         this.selectedProjectId = null;
         // Marca que não há alterações não salvas após carregar um projeto
         this.hasUnsavedChanges = false;
+        // Atualiza o nome do projeto atual
+        this.currentProjectName = this.timeline.projectName || `Projeto ${projectId}`;
       } catch (error) {
         console.error("Erro ao carregar o projeto:", error);
         this.showModal = false;
@@ -369,6 +438,13 @@ export default {
       this.updateLayers();
       // Marca que há alterações não salvas quando remove arquivo
       this.hasUnsavedChanges = true;
+      
+      // Se todas as camadas ficaram vazias, reseta o nome do projeto
+      const hasAnyItems = this.layers.some(layer => layer.items.length > 0);
+      if (!hasAnyItems && !this.timeline.projectId) {
+        this.currentProjectName = 'Novo Projeto';
+        this.hasUnsavedChanges = false;
+      }
 
       
   // Garante que o cursor volte para o início após atualizar as camadas
@@ -793,5 +869,154 @@ export default {
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
+}
+
+/* Estilos para o modal de nome do projeto */
+.name-modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  min-width: 400px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.name-modal-content h2 {
+  color: #323c7d;
+  margin-bottom: 15px;
+  font-size: 1.4em;
+}
+
+.name-modal-content p {
+  margin-bottom: 20px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.project-name-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1em;
+  margin-bottom: 25px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.project-name-input:focus {
+  outline: none;
+  border-color: #323c7d;
+}
+
+.name-modal-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.save-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.save-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Estilos para o card do nome do projeto */
+.project-name-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 20px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #323c7d 0%, #4a5aa1 100%);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  min-width: 120px;
+  max-width: 200px;
+}
+
+.project-label {
+  font-size: 0.65em;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.project-name {
+  font-size: 0.8em;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@keyframes pulse-project-card {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes glow-project-text {
+  from {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  to {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 8px rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* Estilos para o cabeçalho do projeto */
+.project-header {
+  background: linear-gradient(135deg, #323c7d 0%, #4a5aa1 100%);
+  padding: 15px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-bottom: 3px solid #1e2a5e;
+}
+
+.project-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.8em;
+  font-weight: 600;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+.project-title.unsaved {
+  color: #ffeb3b;
+  animation: glow-title 2s infinite alternate;
+}
+
+@keyframes glow-title {
+  from {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 235, 59, 0.5);
+  }
+  to {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 235, 59, 0.8), 0 0 30px rgba(255, 235, 59, 0.5);
+  }
 }
 </style>

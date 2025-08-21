@@ -246,7 +246,7 @@ export default class TimeLine {
     return JSON.stringify(data, null, 2);
   }
 
-  async saveProject() {
+  async saveProject(projectName = null) {
     try {
       const projectData = JSON.parse(this.exportToJSON());
 
@@ -257,6 +257,10 @@ export default class TimeLine {
         console.log(`Atualizando projeto existente com ID: ${this.projectId}`);
       } else {
         // Se não existe projectId, criar um novo projeto
+        if (projectName) {
+          projectData.name = projectName;
+          this.projectName = projectName;
+        }
         console.log("Criando novo projeto...");
       }
 

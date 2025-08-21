@@ -8,13 +8,6 @@
     <div class="timecursor" :style="{ left: cursorPosition + 'px' }" @mousedown="grabTime">
       {{ currentTime }}
     </div>
-    <!-- <div class="time" @mousemove="grabMove" @mouseup="grabDone">
-            <div class="time-markers">
-                <div v-for="second in filteredSeconds" :key="second" class="time-marker">
-                    {{ formatTime(second) }}
-                </div>
-            </div>
-        </div> -->
     <div class="layers">
       <div v-for="(layer, layerIndex) in layers" :key="layerIndex" class="layer">
         <div class="items">
@@ -39,13 +32,6 @@
         <option value="3">300%</option>
         <option value="5">500%</option>
       </select>
-
-      <!-- <div class="project-controls">
-        <button @click="$emit('save-project')">Salvar Projeto</button>
-        <button @click="$emit('load-project')">Carregar Projeto</button>
-        <button @click="downloadProject">Baixar Projeto</button>
-        <input type="file" @change="loadFromFile" />
-      </div> -->
 
       <div class="volume-controls">
         <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1"
