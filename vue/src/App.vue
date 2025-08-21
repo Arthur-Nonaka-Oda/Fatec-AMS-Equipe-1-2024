@@ -45,9 +45,9 @@
             <img src="/voltarIcone.png" alt="Desfazer" />
             <span class="legenda">Desfazer</span>
           </button>
-          <button @click="saveProject" class="btn-acao" data-acao="salvar" aria-label="Salvar">
+          <button @click="saveProject" class="btn-acao" data-acao="salvar" aria-label="Salvar" :class="{ 'unsaved-changes': hasUnsavedChanges }">
             <img src="/salvarIcone.png" alt="Salvar" />
-            <span class="legenda">Salvar</span>
+            <span class="legenda">{{ hasUnsavedChanges ? 'Salvar*' : 'Salvar' }}</span>
           </button>
           <button @click="loadProject" class="btn-acao" data-acao="carregar" aria-label="Carregar">
             <img src="/carregar.png" alt="Carregar" />
@@ -80,7 +80,8 @@
       </div>
       <TimeLine ref="timeline" @item-clicked="handleItemClicked" :projects="projects" :selected-item="selectedItem" :timeline="timeline"
         :layers="layers" :update-layers="updateLayers" :current-time="currentGlobalTime"
-        @cursor-moved="handleCursorMoved" @update-item-volume="handleUpdateItemVolume" />
+        @cursor-moved="handleCursorMoved" @update-item-volume="handleUpdateItemVolume" 
+        @timeline-changed="markAsUnsaved" />
     </section>
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
@@ -91,6 +92,19 @@
           </button>
         </div>
         <button @click="showModal = false" class="close-btn">Fechar</button>
+      </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div v-if="showConfirmationModal" class="modal-overlay">
+      <div class="confirmation-modal-content">
+        <h2>Confirmar Mudança de Projeto</h2>
+        <p>Você tem alterações não salvas no projeto atual. Tem certeza de que deseja carregar outro projeto?</p>
+        <p><strong>Todas as alterações não salvas serão perdidas.</strong></p>
+        <div class="confirmation-buttons">
+          <button @click="confirmLoadProject" class="confirm-btn">Sim, carregar projeto</button>
+          <button @click="cancelLoadProject" class="cancel-btn">Cancelar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -138,6 +152,9 @@ export default {
       loadingMessage: 'Carregando...',
       showModal:false,
       projects: [],
+      showConfirmationModal: false,
+      selectedProjectId: null,
+      hasUnsavedChanges: false,
     };
   },
   computed: {
@@ -170,6 +187,8 @@ export default {
         payload.item.volume = payload.volume;
         this.updateLayers();
         this.$refs.videoPreview.updateVolume();
+        // Marca que há alterações não salvas quando altera volume
+        this.hasUnsavedChanges = true;
       }
     },
     async saveProject() {
@@ -182,6 +201,9 @@ export default {
         } else {
           console.log("Projeto atualizado:", projectId);
         }
+        
+        // Marca que não há alterações não salvas após salvar
+        this.hasUnsavedChanges = false;
       } catch (error) {
         console.error("Erro ao salvar o projeto:", error);
       }
@@ -197,15 +219,43 @@ export default {
       }
     },
     async selectProject(projectId) {
+      // Verifica se há alterações não salvas
+      const hasCurrentProject = this.layers.some(layer => layer.items.length > 0);
+      
+      if (hasCurrentProject && this.hasUnsavedChanges) {
+        this.selectedProjectId = projectId;
+        this.showConfirmationModal = true;
+      } else {
+        this.loadSelectedProject(projectId);
+      }
+    },
+    async loadSelectedProject(projectId) {
       try {
         await this.timeline.loadProject(projectId);
         this.updateLayers();
         console.log("Projeto carregado:", projectId);
         this.showModal = false;
+        this.showConfirmationModal = false;
+        this.selectedProjectId = null;
+        // Marca que não há alterações não salvas após carregar um projeto
+        this.hasUnsavedChanges = false;
       } catch (error) {
         console.error("Erro ao carregar o projeto:", error);
         this.showModal = false;
+        this.showConfirmationModal = false;
+        this.selectedProjectId = null;
       }
+    },
+    confirmLoadProject() {
+      this.loadSelectedProject(this.selectedProjectId);
+    },
+    cancelLoadProject() {
+      this.showConfirmationModal = false;
+      this.selectedProjectId = null;
+    },
+    markAsUnsaved() {
+      // Método para marcar que há alterações não salvas
+      this.hasUnsavedChanges = true;
     },
     updateLayers(newLayers) {
       this.layers = newLayers || this.timeline.getLayersForVue();
@@ -295,6 +345,8 @@ export default {
     handleFileAdded(fileData) {
       this.timeline.addFileToLayer(fileData);
       this.updateLayers();
+      // Marca que há alterações não salvas quando adiciona arquivo
+      this.hasUnsavedChanges = true;
     },
     handleItemClicked(item) {
       this.selectedItem = this.selectedItem === item ? null : item;
@@ -315,6 +367,8 @@ export default {
       console.log(this.timeline.listFilesInLayer(1));
       console.log(this.timeline.listFilesInLayer(2));
       this.updateLayers();
+      // Marca que há alterações não salvas quando remove arquivo
+      this.hasUnsavedChanges = true;
 
       
   // Garante que o cursor volte para o início após atualizar as camadas
@@ -358,6 +412,8 @@ export default {
       }
 
       this.updateLayers();
+      // Marca que há alterações não salvas quando divide arquivo
+      this.hasUnsavedChanges = true;
     },
     handleCursorPosition(currentTimeInSeconds) {
       this.startTime = currentTimeInSeconds;
@@ -647,5 +703,95 @@ export default {
 
 .close-btn {
   margin-top: 16px;
+}
+
+/* Estilos para o modal de confirmação */
+.confirmation-modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  min-width: 400px;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.confirmation-modal-content h2 {
+  color: #d32f2f;
+  margin-bottom: 20px;
+  font-size: 1.4em;
+}
+
+.confirmation-modal-content p {
+  margin-bottom: 15px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.confirmation-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.confirm-btn {
+  background-color: #d32f2f;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.confirm-btn:hover {
+  background-color: #b71c1c;
+}
+
+.cancel-btn {
+  background-color: #757575;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.cancel-btn:hover {
+  background-color: #616161;
+}
+
+/* Indicador visual para alterações não salvas */
+.btn-acao.unsaved-changes {
+  position: relative;
+  animation: pulse-save 2s infinite;
+}
+
+.btn-acao.unsaved-changes::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  background-color: #ff4444;
+  border-radius: 50%;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes pulse-save {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 </style>
