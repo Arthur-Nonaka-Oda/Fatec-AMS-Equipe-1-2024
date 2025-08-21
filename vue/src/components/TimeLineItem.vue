@@ -1,8 +1,15 @@
+<script>
+
+
+</script>
 <template>
+  
   <div class="timeline-item" @click="handleClick" :style="{ width: itemWidth + 'px' }"
     :class="{ selected: selectedItem.item === item }" draggable="true" @dragstart="handleDragStart"
     @dragend="handleDragEnd" @contextmenu.prevent="handleRightClick">
-        <div class="volume-handle" @mousedown.stop="startResizing"> ⬍</div>
+        <div class="volume-handle" @mousedown.stop="startResizing"> 
+        <unicon name="angle-up" fill="#fff"/>
+      </div>
     <template v-if="item.type === 'audio'">
       <div class="audio-icon">Audio</div>
     </template>
