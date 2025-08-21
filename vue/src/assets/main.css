@@ -23,6 +23,7 @@ header {
 .barra-superior .esquerda,
 .barra-superior .centro,
 .barra-superior .direita {
+  gap: 10px;
   display: flex;
   align-items: center;
 }

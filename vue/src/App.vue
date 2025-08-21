@@ -23,9 +23,13 @@
       <div class="barra-superior">
         <div class="esquerda" id="importButtons">
           <FileUpload />
-          <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto" @click="openTextEditor">
+          <!-- <button class="btn-acao" data-acao="texto" aria-label="Adicionar Texto" @click="openTextEditor">
             <img src="/textoIcone.png" alt="Texto" />
             <span class="legenda">Texto</span>
+          </button> -->
+          <button @click="renderizeVideo" class="btn-acao" data-acao="salvar" aria-label="Salvar">
+            <img src="/export.png" alt="Salvar" />
+            <span class="legenda">Exportar</span>
           </button>
 
           <div v-if="isTextEditorOpen" class="modal">
@@ -41,9 +45,13 @@
             <img src="/voltarIcone.png" alt="Desfazer" />
             <span class="legenda">Desfazer</span>
           </button>
-          <button @click="renderizeVideo" class="btn-acao" data-acao="salvar" aria-label="Salvar">
+          <button @click="saveProject" class="btn-acao" data-acao="salvar" aria-label="Salvar">
             <img src="/salvarIcone.png" alt="Salvar" />
             <span class="legenda">Salvar</span>
+          </button>
+          <button @click="loadProject" class="btn-acao" data-acao="carregar" aria-label="Carregar">
+            <img src="/carregar.png" alt="Carregar" />
+            <span class="legenda">Carregar</span>
           </button>
         </div>
         <div class="direita" id="recordButtons">
@@ -65,16 +73,26 @@
     <section class="secao-principal">
       <div class="area-visualizacao">
         <div class="esquerda">
-          <!-- Aqui o componente MediaTabs é adicionado -->
           <MediaTabs @add-file="handleFileAdded" />
         </div>
         <VideoPreview ref="videoPreview" :timeline="timeline" @delete-video="handleDeleteVideo"
           @trim-video="handleTrimVideo" @update-time="handleUpdateTime" />
       </div>
-      <TimeLine ref="timeline" @item-clicked="handleItemClicked" :selected-item="selectedItem" :timeline="timeline"
+      <TimeLine ref="timeline" @item-clicked="handleItemClicked" :projects="projects" :selected-item="selectedItem" :timeline="timeline"
         :layers="layers" :update-layers="updateLayers" :current-time="currentGlobalTime"
         @cursor-moved="handleCursorMoved" @update-item-volume="handleUpdateItemVolume" />
     </section>
+    <div v-if="showModal" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Projetos</h2>
+        <div class="projects-content">
+          <button v-for="project in projects" :key="project" @click="selectProject(project.id)" class="project-btn">
+            {{ project.name }}
+          </button>
+        </div>
+        <button @click="showModal = false" class="close-btn">Fechar</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -118,6 +136,8 @@ export default {
       currentGlobalTime: 0,
       progressPercentage: 0,
       loadingMessage: 'Carregando...',
+      showModal:false,
+      projects: [],
     };
   },
   computed: {
@@ -150,6 +170,41 @@ export default {
         payload.item.volume = payload.volume;
         this.updateLayers();
         this.$refs.videoPreview.updateVolume();
+      }
+    },
+    async saveProject() {
+      try {
+        const isNewProject = !this.timeline.projectId;
+        const projectId = await this.timeline.saveProject();
+
+        if (isNewProject) {
+          console.log("Novo projeto criado com ID:", projectId);
+        } else {
+          console.log("Projeto atualizado:", projectId);
+        }
+      } catch (error) {
+        console.error("Erro ao salvar o projeto:", error);
+      }
+    },
+    async loadProject() {
+      try {
+        const result = await window.electron.ipcRenderer.invoke('get-projects');
+        this.projects = result;
+        this.showModal = true;
+
+      } catch (error) {
+        console.error("Erro ao carregar o projeto:", error);
+      }
+    },
+    async selectProject(projectId) {
+      try {
+        await this.timeline.loadProject(projectId);
+        this.updateLayers();
+        console.log("Projeto carregado:", projectId);
+        this.showModal = false;
+      } catch (error) {
+        console.error("Erro ao carregar o projeto:", error);
+        this.showModal = false;
       }
     },
     updateLayers(newLayers) {
@@ -498,5 +553,90 @@ export default {
 
 .cancel-button:hover {
   background-color: #d32f2f;
+}
+
+.project-controls button {
+  padding: 10px 15px;
+  background-color: #323c7d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.project-controls button:hover {
+  background-color: #4a5aa1;
+}
+
+.project-controls input[type="file"] {
+  display: none;
+}
+
+.project-controls {
+  position: fixed;
+  bottom: 50px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  min-width: 400px;
+  max-width: 500px;
+  max-height: 400px;
+}
+
+.projects-content {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.project-btn {
+  display: block;
+  width: max-content;
+  margin: 8px 0;
+  color: #fff;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+
+.project-btn:hover,
+.project-btn:focus {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+.close-btn {
+  margin-top: 16px;
 }
 </style>

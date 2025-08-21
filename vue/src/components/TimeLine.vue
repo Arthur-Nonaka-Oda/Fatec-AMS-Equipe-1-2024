@@ -40,27 +40,17 @@
         <option value="5">500%</option>
       </select>
 
-      <div class="project-controls">
-        <button @click="saveProject">Salvar Projeto</button>
-        <button @click="loadProject">Carregar Projeto</button>
-        <!-- <button @click="downloadProject">Baixar Projeto</button> -->
-        <!-- <input type="file" @change="loadFromFile" /> -->
-      </div>
+      <!-- <div class="project-controls">
+        <button @click="$emit('save-project')">Salvar Projeto</button>
+        <button @click="$emit('load-project')">Carregar Projeto</button>
+        <button @click="downloadProject">Baixar Projeto</button>
+        <input type="file" @change="loadFromFile" />
+      </div> -->
+
       <div class="volume-controls">
         <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1"
           @update-volume="updateItemVolume" />
 
-      </div>
-      <div v-if="showModal" class="modal-overlay">
-        <div class="modal-content">
-          <h2>Projetos</h2>
-          <div class="projects-content">
-            <button v-for="project in projects" :key="project" @click="selectProject(project.id)" class="project-btn">
-              {{ project.name }}
-            </button>
-          </div>
-          <button @click="showModal = false" class="close-btn">Fechar</button>
-        </div>
       </div>
     </div>
   </div>
@@ -89,6 +79,10 @@ export default {
     selectedItem: {
       type: Object,
       required: true
+    },
+    projects: {
+      type: Array,
+      required: true
     }
   },
   components: {
@@ -105,7 +99,6 @@ export default {
         minimumScale: 10,
         minimumScaleTime: 1,
       },
-      projects: [],
       showModal: false,
       selectedZoom: 1,
     };
@@ -142,17 +135,6 @@ export default {
     document.removeEventListener('keydown', this.handleKeyEvents);
   },
   methods: {
-    async selectProject(projectId) {
-      try {
-        await this.timeline.loadProject(projectId);
-        this.updateLayers();
-        console.log("Projeto carregado:", projectId);
-        this.showModal = false;
-      } catch (error) {
-        console.error("Erro ao carregar o projeto:", error);
-        this.showModal = false;
-      }
-    },
     updateItemVolume(newVolume) {
       if (this.selectedItem && this.selectedItem.item) {
         this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
@@ -170,42 +152,14 @@ export default {
         this.$emit('paste-item', { item, layerIndex });
       }
     },
-    async saveProject() {
-      try {
-        const isNewProject = !this.timeline.projectId;
-        const projectId = await this.timeline.saveProject();
-        
-        if (isNewProject) {
-          console.log("Novo projeto criado com ID:", projectId);
-        } else {
-          console.log("Projeto atualizado:", projectId);
-        }
-      } catch (error) {
-        console.error("Erro ao salvar o projeto:", error);
-      }
-    },
-    async loadProject() {
-      try {
-        const result = await window.electron.ipcRenderer.invoke('get-projects');
-        this.projects = result;
-        this.showModal = true;
-
-        // console.log("Projetos disponíveis:", projects);
-        // this.timeline.loadProject();
-        // this.updateLayers();
-        // console.log("Projeto carregado do localStorage.");
-      } catch (error) {
-        console.error("Erro ao carregar o projeto:", error);
-      }
-    },
-    downloadProject() {
-      try {
-        this.timeline.downloadProject();
-        console.log("Projeto baixado como arquivo JSON.");
-      } catch (error) {
-        console.error("Erro ao baixar o projeto:", error);
-      }
-    },
+    // downloadProject() {
+    //   try {
+    //     this.timeline.downloadProject();
+    //     console.log("Projeto baixado como arquivo JSON.");
+    //   } catch (error) {
+    //     console.error("Erro ao baixar o projeto:", error);
+    //   }
+    // },
     loadFromFile(event) {
       const file = event.target.files[0];
       if (file) {
@@ -407,24 +361,6 @@ export default {
   flex-direction: column;
   gap: 10px;
   /* background-color: #323C7D; */
-}
-
-.project-controls button {
-  padding: 10px 15px;
-  background-color: #323c7d;
-  color: white;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: background-color 0.2s ease;
-}
-
-.project-controls button:hover {
-  background-color: #4a5aa1;
-}
-
-.project-controls input[type="file"] {
-  display: none;
 }
 
 .selected {
