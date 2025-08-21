@@ -2,6 +2,7 @@
   <div class="timeline-item" @click="handleClick" :style="{ width: itemWidth + 'px' }"
     :class="{ selected: selectedItem.item === item }" draggable="true" @dragstart="handleDragStart"
     @dragend="handleDragEnd" @contextmenu.prevent="handleRightClick">
+        <div class="volume-handle" @mousedown.stop="startResizing"> ⬍</div>
     <template v-if="item.type === 'audio'">
       <div class="audio-icon">Audio</div>
     </template>
@@ -172,7 +173,7 @@ img {
 .timeline-item.selected {
   background-color: #d0f0c0;
   /* Cor de destaque para item selecionado */
-  border: 2px solid #4caf50;
+  border: 2px solid #af4c4c;
   /* Adiciona uma borda verde ao item selecionado */
   transform: scale(1.05);
   /* Aumenta o item selecionado */
