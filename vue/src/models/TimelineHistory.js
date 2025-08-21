@@ -1,48 +1,63 @@
+// TimelineHistory.js
 export class TimelineHistory {
-  constructor(maxStackSize = 100) {
-    this.undoStack = [];
-    this.redoStack = [];
-    this.maxStackSize = maxStackSize;
-  }
-
-  addAction(execute, undo) {
-    // Limpa o redo stack quando uma nova ação é adicionada
-    this.redoStack = [];
-    
-    // Mantém o tamanho máximo do undo stack
-    if (this.undoStack.length >= this.maxStackSize) {
-      this.undoStack.shift();
+    constructor(maxStackSize = 100) {
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxStackSize = maxStackSize;
+        this.isExecutingAction = false;
     }
-    
-    this.undoStack.push({ execute, undo });
-  }
 
-  undo() {
-    if (this.undoStack.length > 0) {
-      const action = this.undoStack.pop();
-      action.undo();
-      this.redoStack.push(action);
+    // Adicione estas propriedades computadas
+    get canUndo() {
+        return this.undoStack.length > 0;
     }
-  }
 
-  redo() {
-    if (this.redoStack.length > 0) {
-      const action = this.redoStack.pop();
-      action.execute();
-      this.undoStack.push(action);
+    get canRedo() {
+        return this.redoStack.length > 0;
     }
-  }
 
-  clear() {
-    this.undoStack = [];
-    this.redoStack = [];
-  }
+    addAction(execute, undo) {
+        if (this.isExecutingAction) return;
 
-  get canUndo() {
-    return this.undoStack.length > 0;
-  }
+        this.redoStack = []; // Limpa o stack de redo
+        if (this.undoStack.length >= this.maxStackSize) {
+            this.undoStack.shift();
+        }
+        
+        this.undoStack.push({ execute, undo });
+    }
 
-  get canRedo() {
-    return this.redoStack.length > 0;
-  }
+    async undo() {
+        if (this.isExecutingAction || !this.canUndo) return;
+        
+        try {
+            this.isExecutingAction = true;
+            const action = this.undoStack.pop();
+            if (action && action.undo) {
+                await action.undo();
+                this.redoStack.push(action);
+            }
+        } catch (error) {
+            console.error('Erro ao desfazer ação:', error);
+        } finally {
+            this.isExecutingAction = false;
+        }
+    }
+
+    async redo() {
+        if (this.isExecutingAction || !this.canRedo) return;
+        
+        try {
+            this.isExecutingAction = true;
+            const action = this.redoStack.pop();
+            if (action && action.execute) {
+                await action.execute();
+                this.undoStack.push(action);
+            }
+        } catch (error) {
+            console.error('Erro ao refazer ação:', error);
+        } finally {
+            this.isExecutingAction = false;
+        }
+    }
 }
