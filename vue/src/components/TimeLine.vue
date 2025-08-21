@@ -1,5 +1,5 @@
 <template>
-  <div class="timeline" @dragover="handleDragOver" @drop="handleDrop">
+  <div class="timeline" @dragover="handleDragOver" @drop="handleDrop" @click="onTimelineClick($event)">
     <VideoEditingTimeline :config="{
       canvasWidth: dynamicCanvasWidth,
       minimumScale: 10,
@@ -315,8 +315,26 @@ export default {
         this.updateLayers();
       }
     },
-    handleItemClicked(item) {
+    onTimelineClick(event) {
+      // Calcula o clique relativo à timeline
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      
+      // Converte posição em pixels para segundos
+      const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
+      const timeInSeconds = clickX * secondsPerPixel;
+      
+      // Atualiza o cursor para a posição do clique
+      this.updateCurrentTime(timeInSeconds);
+      
+      // Se quiser, emite evento pro pai com o tempo clicado
+      this.$emit('cursor-moved', timeInSeconds);
+    },
+     handleItemClicked(item) {
       this.$emit('item-clicked', item);
+      if(item.startTime) {  // Supondo que seu item tenha tempo inicial
+        this.updateCurrentTime(item.startTime);
+      }
     },
     handleDeleteVideo(video) {
       this.timeline.removeFileFromLayer({
