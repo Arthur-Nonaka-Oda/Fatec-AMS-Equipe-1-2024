@@ -305,7 +305,7 @@ export default {
     closeTextEditor() {
       this.isTextEditorOpen = false;
     },
-    handleDeleteVideo() {
+     handleDeleteVideo() {
       this.timeline.removeFileFromLayer({
         file: this.selectedItem.item,
         layerIndex: this.selectedItem.layerIndex,
@@ -315,7 +315,16 @@ export default {
       console.log(this.timeline.listFilesInLayer(1));
       console.log(this.timeline.listFilesInLayer(2));
       this.updateLayers();
-    },
+
+      
+  // Garante que o cursor volte para o início após atualizar as camadas
+  this.$nextTick(() => {
+    this.currentGlobalTime = 0;
+    // Atualiza o cursor visual na timeline e no preview
+    this.$refs.timeline.updateCurrentTime(0);
+    this.$refs.videoPreview.updateCurrentTime(0);
+  });
+},
     handleKeyDown(event) {
       if (event.key === "Delete") {
         this.handleDeleteVideo();
