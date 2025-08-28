@@ -372,16 +372,24 @@ export default {
       this.startLoading('Renderizando vídeo...'); // Inicia o modal de carregamento
       const videos = this.layers[0].items.map(video => ({
         filePath: video.filePath,
+        blobPath: video.blobPath, // Caminho do blob salvo no projeto
+        projectId: this.timeline?.projectId, // ID do projeto atual
+        name: video.name,
         startTime: video.startTime,
         endTime: video.endTime,
         volume: video.volume || 1,
       }));
       const audios = this.layers[1].items.map(audio => ({
         filePath: audio.filePath,
+        blobPath: audio.blobPath, // Caminho do blob salvo no projeto
+        projectId: this.timeline?.projectId, // ID do projeto atual
+        name: audio.name,
         startTime: audio.startTime,
         endTime: audio.endTime,
         volume: audio.volume || 1,
       }));
+
+      console.log('Enviando para renderização:', { videos, audios });
 
       try {
         await window.electron.ipcRenderer.invoke("renderize", {
