@@ -88,19 +88,31 @@ async function saveBlobToFile(fileData, blobsDir, fileIndex, layerIndex) {
     const fileName = `layer${layerIndex}_file${fileIndex}_${timestamp}${extension}`;
     const blobPath = path.join(blobsDir, fileName);
     
+    console.log(`💾 Salvando blob para: ${fileData.name}`);
+    console.log(`📂 Caminho de destino: ${blobPath}`);
+    console.log(`🏷️ Tipo do blob:`, typeof fileData.blob);
+    
     // Se o blob for uma string base64, decodificar
     if (typeof fileData.blob === 'string') {
+        console.log(`📝 Blob é uma string, processando como base64...`);
         const base64Data = fileData.blob.replace(/^data:[^;]+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
         fs.writeFileSync(blobPath, buffer);
-    } else {
+        console.log(`✅ Blob string salvo: ${buffer.length} bytes`);
+    } else if (fileData.blob && typeof fileData.blob === 'object') {
+        console.log(`🔗 Blob é um objeto, tentando usar filePath: ${fileData.filePath}`);
         // Se for um objeto blob do navegador, não podemos salvá-lo diretamente no Electron
         // Neste caso, tentamos usar o filePath original se disponível
         if (fileData.filePath && fs.existsSync(fileData.filePath)) {
             fs.copyFileSync(fileData.filePath, blobPath);
+            console.log(`✅ Arquivo copiado do filePath original`);
         } else {
+            console.error(`❌ FilePath não disponível ou não existe: ${fileData.filePath}`);
             throw new Error('Blob do navegador não pode ser salvo diretamente e filePath não disponível');
         }
+    } else {
+        console.error(`❌ Tipo de blob não suportado:`, typeof fileData.blob);
+        throw new Error(`Tipo de blob não suportado: ${typeof fileData.blob}`);
     }
     
     return blobPath;
@@ -195,12 +207,17 @@ async function restoreBlobsInProjectData(projectData, projectDir) {
                                 const mimeType = getMimeType(fileItem.data.blobPath);
                                 const dataUrl = `data:${mimeType};base64,${base64Data}`;
                                 
+                                console.log(`📁 Arquivo encontrado: ${fullBlobPath}`);
+                                console.log(`📊 Tamanho do buffer: ${blobBuffer.length} bytes`);
+                                console.log(`🎭 MIME type: ${mimeType}`);
+                                console.log(`📋 Base64 length: ${base64Data.length} caracteres`);
+                                
                                 // Restaurar como blob base64 para compatibilidade com o frontend
                                 fileItem.data.blobBase64 = dataUrl;
                                 
-                                console.log(`Blob restaurado para: ${fileItem.data.name}`);
+                                console.log(`✅ Blob restaurado para: ${fileItem.data.name}`);
                             } else {
-                                console.warn(`Arquivo blob não encontrado: ${fullBlobPath}`);
+                                console.warn(`⚠️ Arquivo blob não encontrado: ${fullBlobPath}`);
                             }
                         } catch (error) {
                             console.error(`Erro ao restaurar blob do arquivo ${fileItem.data.name}:`, error);
