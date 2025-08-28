@@ -411,12 +411,48 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
       return new Promise((resolve, reject) => {
         const segmentPath = path.join(tempDir, `visual_segment_${index}.mp4`);
 
-        if (isImageFile(item.filePath)) {
+        // Primeiro, tentar encontrar o arquivo blob salvo no projeto
+        let actualFilePath = item.filePath;
+        if (item.blobPath) {
+          // Se tem blobPath, usar ele (arquivo salvo no projeto)
+          actualFilePath = path.resolve(item.blobPath);
+          console.log(`Usando blob salvo: ${actualFilePath}`);
+        } else if (item.projectId) {
+          // Tentar encontrar o arquivo no diretório de blobs do projeto
+          const projectDir = path.join(__dirname, "projects", item.projectId);
+          const blobsDir = path.join(projectDir, "blobs");
+          
+          if (fs.existsSync(blobsDir)) {
+            // Procurar por arquivos que possam corresponder a este item
+            const blobFiles = fs.readdirSync(blobsDir);
+            const matchingFile = blobFiles.find(file => 
+              file.includes(item.name?.replace(/[^a-zA-Z0-9]/g, '_')) || 
+              file.includes(`_${index}_`) ||
+              file.includes(`layer0_file${index}_`)
+            );
+            
+            if (matchingFile) {
+              actualFilePath = path.join(blobsDir, matchingFile);
+              console.log(`Encontrado blob no projeto: ${actualFilePath}`);
+            }
+          }
+        }
+
+        // Verificar se o arquivo realmente existe
+        if (!fs.existsSync(actualFilePath)) {
+          console.error(`Arquivo não encontrado: ${actualFilePath}`);
+          reject(new Error(`Arquivo não encontrado: ${actualFilePath}`));
+          return;
+        }
+
+        console.log(`Processando arquivo: ${actualFilePath}`);
+
+        if (isImageFile(actualFilePath)) {
           // Handle image conversion to video segment
           const duration = item.endTime - item.startTime || 5;
 
           const proc = ffmpeg()
-            .input(item.filePath)
+            .input(actualFilePath)
             .inputOptions(['-loop 1'])
             .outputOptions([
               `-t ${duration}`,
@@ -428,7 +464,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
             ])
             .output(segmentPath)
             .on('start', () => {
-              console.log(`Converting image to video segment: ${item.filePath}`);
+              console.log(`Converting image to video segment: ${actualFilePath}`);
             })
             .on('end', () => {
               console.log(`Created video from image: ${segmentPath}`);
@@ -451,7 +487,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
           proc.run();
         } else {
           // Handle video trimming
-          const proc = ffmpeg(item.filePath)
+          const proc = ffmpeg(actualFilePath)
             .audioFilters(`volume=${(item.volume ?? 1)}`)
             .setStartTime(item.startTime)
             .setDuration(item.endTime - item.startTime)
@@ -464,7 +500,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
             ])
             .output(segmentPath)
             .on('start', () => {
-              console.log(`Trimming video segment: ${item.filePath}`);
+              console.log(`Trimming video segment: ${actualFilePath}`);
             })
             .on('end', () => {
               console.log(`Trimmed video segment: ${segmentPath}`);
@@ -495,10 +531,44 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
       return new Promise((resolve, reject) => {
         const segmentPath = path.join(tempDir, `audio_segment_${index}.wav`); // Use WAV for better compatibility
 
-        console.log(`Processing audio segment from ${item.filePath}, start: ${item.startTime}, end: ${item.endTime}`);
+        // Primeiro, tentar encontrar o arquivo blob salvo no projeto
+        let actualFilePath = item.filePath;
+        if (item.blobPath) {
+          // Se tem blobPath, usar ele (arquivo salvo no projeto)
+          actualFilePath = path.resolve(item.blobPath);
+          console.log(`Usando blob de áudio salvo: ${actualFilePath}`);
+        } else if (item.projectId) {
+          // Tentar encontrar o arquivo no diretório de blobs do projeto
+          const projectDir = path.join(__dirname, "projects", item.projectId);
+          const blobsDir = path.join(projectDir, "blobs");
+          
+          if (fs.existsSync(blobsDir)) {
+            // Procurar por arquivos que possam corresponder a este item
+            const blobFiles = fs.readdirSync(blobsDir);
+            const matchingFile = blobFiles.find(file => 
+              file.includes(item.name?.replace(/[^a-zA-Z0-9]/g, '_')) || 
+              file.includes(`_${index}_`) ||
+              file.includes(`layer1_file${index}_`)
+            );
+            
+            if (matchingFile) {
+              actualFilePath = path.join(blobsDir, matchingFile);
+              console.log(`Encontrado blob de áudio no projeto: ${actualFilePath}`);
+            }
+          }
+        }
+
+        // Verificar se o arquivo realmente existe
+        if (!fs.existsSync(actualFilePath)) {
+          console.error(`Arquivo de áudio não encontrado: ${actualFilePath}`);
+          reject(new Error(`Arquivo de áudio não encontrado: ${actualFilePath}`));
+          return;
+        }
+
+        console.log(`Processing audio segment from ${actualFilePath}, start: ${item.startTime}, end: ${item.endTime}`);
 
         // Add more detailed error reporting
-        const proc = ffmpeg(item.filePath)
+        const proc = ffmpeg(actualFilePath)
           .audioFilters(`volume=${(item.volume ?? 1)}`) // Apply volume filter if needed
           .setStartTime(item.startTime)
           .setDuration(item.endTime - item.startTime)
@@ -510,7 +580,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
           ])
           .output(segmentPath)
           .on('start', (commandLine) => {
-            console.log(`Processing audio segment: ${item.filePath}`);
+            console.log(`Processing audio segment: ${actualFilePath}`);
             console.log(`Command: ${commandLine}`);
           })
           .on('end', () => {
