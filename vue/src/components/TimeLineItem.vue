@@ -1,89 +1,113 @@
-<script>
-
-
-</script>
 <template>
-  
-  <div class="timeline-item" @click="handleClick" :style="{ width: itemWidth + 'px' }"
-    :class="{ selected: selectedItem.item === item }" draggable="true" @dragstart="handleDragStart"
-    @dragend="handleDragEnd" @contextmenu.prevent="handleRightClick">
-        <div class="volume-handle" @mousedown.stop="startResizing"> 
-        <font-awesome-icon icon="angle-up" />
-      </div>
+  <div class="timeline-item"
+       @click="handleClick"
+       :style="{ width: itemWidth + 'px' }"
+       :class="{ selected: isSelected }"
+       draggable="true"
+       @dragstart="handleDragStart"
+       @dragend="handleDragEnd"
+       @contextmenu.prevent="handleRightClick">
+
+    <div v-if="isSelected && item.type !== 'image'" class="volume-line-horizontal" :style="{ top: volumeLinePosition + 'px' }"></div>
+
+    <div v-if="isSelected && item.type !== 'image'"
+         class="volume-control"
+         @mousedown.stop.prevent="startResizing"
+         :style="{ top: volumeLinePosition + 'px' }">
+      <font-awesome-icon icon="angle-up" class="volume-icon" />
+      <div class="volume-percentage">{{ Math.round(volume * 100) }}%</div>
+    </div>
+
     <template v-if="item.type === 'audio'">
-      <div class="audio-icon">Audio</div>
+      <div class="audio-icon">
+        <font-awesome-icon :icon="['fas', 'music']" /> Áudio
+      </div>
+    </template>
+    <template v-else-if="item.type === 'video'">
+      <img class="item-content" :src="item.thumbnailUrl || item.url" alt="Conteúdo" />
     </template>
     <template v-else>
       <img class="item-content" :src="item.url" alt="Conteúdo" />
     </template>
-    <ContextTools v-if="showContextMenu" :x="contextMenuPosition.x" :y="contextMenuPosition.y" @action="onMenuAction"
-      @mousedown.stop />
+
+    <ContextTools v-if="showContextMenu"
+                  :x="contextMenuPosition.x"
+                  :y="contextMenuPosition.y"
+                  @action="onMenuAction"
+                  @mousedown.stop />
   </div>
 </template>
 
 <script>
 import ContextTools from './ContextTools.vue';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 export default {
+  name: 'TimelineItem',
+  components: {
+    ContextTools,
+    FontAwesomeIcon
+  },
+  
   props: {
-    title: {
-      type: String,
-      required: true
-    },
-    index: {
-      type: Number,
-      required: true
-    },
+    volume: {
+            type: Number,
+            required: true
+        },
     item: {
       type: Object,
-      required: true,
-    },
-    selectedItem: {
-      type: Object,
       required: true
     },
-    minimumScaleTime: {
-      type: Number,
-      required: true
-    },
-    layerIndex: {
-      type: Number,
-      required: true
-    },
-    selectVideo: {
-      type: Object,
-    }
-  },
-  components: {
-    ContextTools
-  },
-  created() {
-    console.log(this.selectedItem);
-    console.log(this.item);
+    index: Number,
+    selectedItem: Object,
+    minimumScaleTime: Number,
+    layerIndex: Number,
   },
   data() {
     return {
       isDragging: false,
-      isSelected: false, // Estado de seleção
+      isSelected: false,
       showContextMenu: false,
-      contextMenuPosition: { x: 0, y: 0 } // Posição do menu de contexto
+      contextMenuPosition: { x: 0, y: 0 },
+      isResizing: false,
+      startY: 0,
+      startVolume: 0.5,
+      itemHeight: 60,
     };
+  },
+  computed: {
+    itemWidth() {
+      const secondsPerPixel = this.minimumScaleTime / 10;
+      return this.item.duration / secondsPerPixel;
+    },
+    volume: {
+      get() {
+        return this.item.volume !== undefined ? this.item.volume : 1;
+      },
+      set(newVal) {
+        this.$emit('volume-change', { item: this.item, volume: newVal, layerIndex: this.layerIndex });
+      }
+    },
+    volumeLinePosition() {
+      return this.itemHeight - this.volume * this.itemHeight;
+    }
+  },
+  watch: {
+    selectedItem(newVal) {
+      this.isSelected = newVal && newVal.item === this.item;
+    }
+  },
+  mounted() {
+    this.isSelected = this.selectedItem && this.selectedItem.item === this.item;
   },
   methods: {
     handleRightClick(event) {
-      event.preventDefault();
       this.showContextMenu = true;
       this.contextMenuPosition = { x: event.clientX, y: event.clientY };
-      setTimeout(() => {
-        document.addEventListener('mousedown', this.closeContextMenu);
-      }, 0);
+      document.addEventListener('mousedown', this.closeContextMenu);
     },
     closeContextMenu(event) {
-      console.log('fechou');
-      if (
-        !event ||
-        !event.target.closest('.tools')
-      ) {
+      if (!event || !event.target.closest('.tools')) {
         this.showContextMenu = false;
         document.removeEventListener('mousedown', this.closeContextMenu);
       }
@@ -105,84 +129,121 @@ export default {
       this.isDragging = false;
     },
     handleClick() {
-      this.isSelected = !this.isSelected; // Alterna o estado de seleção ao clicar
-      this.$emit('item-clicked', { item: this.item, layerIndex: this.layerIndex }); // Emite o evento com o item
-    }
-  },
-  computed: {
-    itemWidth() {
-      const secondsPerPixel = this.minimumScaleTime / 10; // Ajuste conforme necessário
-      return this.item.duration / secondsPerPixel;
+      this.$emit('item-clicked', { item: this.item, layerIndex: this.layerIndex });
+    },
+    startResizing(event) {
+      this.isResizing = true;
+      this.startY = event.clientY;
+      this.startVolume = this.volume;
+      document.addEventListener('mousemove', this.resizeVolume);
+      document.addEventListener('mouseup', this.stopResizing);
+    },
+    resizeVolume(event) {
+      if (!this.isResizing) return;
+      const deltaY = this.startY - event.clientY;
+      let newVolume = this.startVolume + deltaY / this.itemHeight;
+      this.volume = Math.min(1, Math.max(0, newVolume));
+    },
+    stopResizing() {
+      this.isResizing = false;
+      document.removeEventListener('mousemove', this.resizeVolume);
+      document.removeEventListener('mouseup', this.stopResizing);
     }
   }
 };
 </script>
 
 <style scoped>
+/* Estilos existentes */
+.timeline-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  height: 60px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-item.selected {
+  background-color: #e0f7fa; /* Um azul mais claro para destaque */
+  border: 2px solid #00796b; /* Borda de destaque verde-azulado */
+  transform: scale(1.05);
+}
+
+.timeline-item:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.02);
+}
+
+img.item-content {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 8px;
+}
+
 .audio-icon {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
   height: 100%;
-  background-color: #ddd;
-  color: #333;
+  background-color: #80cbc4; /* Fundo mais suave */
+  color: #004d40; /* Cor do texto escura */
   font-weight: bold;
+  gap: 8px; /* Espaço entre o ícone e o texto */
 }
 
-
-
-.timeline-item.dragging {
-  opacity: 0.7;
-  transform: scale(0.95);
-  transition: all 0.3s ease;
+/* Linha horizontal que percorre toda a largura do item */
+.volume-line-horizontal {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #ff5722; /* Linha laranja vibrante */
+  z-index: 1;
 }
 
-.timeline-item {
+/* Controle de volume (ícone + %) */
+.volume-control {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+  user-select: none;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  /* Centraliza os itens dentro do contêiner */
-  background-color: #fff;
-  border-radius: 8px;
-  /* Arredondar mais os cantos */
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-  /* Suaviza a transição de fundo e de transformação */
-  height: 60px;
-  /* Altura específica */
-  overflow: hidden;
-  /* Esconde a parte da imagem que ultrapassa o contêiner */
-  position: relative;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  /* Adiciona sombra suave */
+  color: #fff;
+  z-index: 2;
+  transition: top 0.1s ease;
+  font-weight: 600;
+  text-shadow: 0 0 3px rgba(0,0,0,0.7);
 }
 
-img {
-  width: 100%;
-  height: 100%;
-  /* Ajuste a altura para preencher o contêiner */
-  object-fit: cover;
-  /* Ajusta a imagem para cobrir o contêiner */
-  object-position: center;
-  /* Centraliza a imagem */
-  border-radius: 8px;
-  /* Arredondar a imagem */
+.volume-icon {
+  font-size: 16px; /* Tamanho ajustado */
+  background-color: #ff5722; /* Fundo laranja para o ícone */
+  border-radius: 50%;
+  padding: 4px;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
 }
 
-.timeline-item:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.02);
-  /* Aumenta um pouco o item ao passar o mouse */
-}
-
-/* Estilo para o item selecionado */
-.timeline-item.selected {
-  background-color: #d0f0c0;
-  /* Cor de destaque para item selecionado */
-  border: 2px solid #af4c4c;
-  /* Adiciona uma borda verde ao item selecionado */
-  transform: scale(1.05);
-  /* Aumenta o item selecionado */
+/* Porcentagem ao lado do ícone */
+.volume-percentage {
+  margin-left: 6px;
+  font-size: 10px; /* Tamanho ajustado */
+  user-select: none;
+  background-color: rgba(0,0,0,0.5); /* Fundo semi-transparente para o texto */
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+  text-shadow: none;
 }
 </style>
