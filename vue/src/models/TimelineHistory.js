@@ -28,34 +28,54 @@ export class TimelineHistory {
     }
 
     async undo() {
-        if (this.isExecutingAction || !this.canUndo) return;
+        if (this.isExecutingAction || !this.canUndo) {
+            console.log('Não é possível desfazer: isExecutingAction=', this.isExecutingAction, 'canUndo=', this.canUndo);
+            return;
+        }
         
         try {
             this.isExecutingAction = true;
             const action = this.undoStack.pop();
+            
             if (action && action.undo) {
+                console.log('Executando undo...');
                 await action.undo();
                 this.redoStack.push(action);
+                console.log('Undo executado com sucesso');
+            } else {
+                console.warn('Ação de undo inválida:', action);
             }
         } catch (error) {
             console.error('Erro ao desfazer ação:', error);
+            // Tentar restaurar o estado anterior
+            this.undoStack.push(action);
         } finally {
             this.isExecutingAction = false;
         }
     }
 
     async redo() {
-        if (this.isExecutingAction || !this.canRedo) return;
+        if (this.isExecutingAction || !this.canRedo) {
+            console.log('Não é possível refazer: isExecutingAction=', this.isExecutingAction, 'canRedo=', this.canRedo);
+            return;
+        }
         
         try {
             this.isExecutingAction = true;
             const action = this.redoStack.pop();
+            
             if (action && action.execute) {
+                console.log('Executando redo...');
                 await action.execute();
                 this.undoStack.push(action);
+                console.log('Redo executado com sucesso');
+            } else {
+                console.warn('Ação de redo inválida:', action);
             }
         } catch (error) {
             console.error('Erro ao refazer ação:', error);
+            // Tentar restaurar o estado anterior
+            this.redoStack.push(action);
         } finally {
             this.isExecutingAction = false;
         }

@@ -289,6 +289,7 @@ export default {
             await this.timeline.undo();
             this.updateLayers();
             this.$emit('timeline-changed');
+            this.$emit('cursor-moved', 0);
         }
     },
 

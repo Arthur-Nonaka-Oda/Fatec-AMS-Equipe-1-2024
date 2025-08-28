@@ -16,16 +16,31 @@ export default class TimeLine {
   }
 
   executeCommand(command) {
-    if (!command || !command.execute || !command.undo) {
+    if (!command || typeof command !== 'object') {
         console.error('Comando inválido:', command);
+        return;
+    }
+
+    if (typeof command.execute !== 'function' || typeof command.undo !== 'function') {
+        console.error('Comando deve ter métodos execute e undo:', command);
         return;
     }
     
     try {
+        console.log('Executando comando:', command);
         command.execute();
         this.history.addAction(command.execute, command.undo);
+        console.log('Comando executado com sucesso');
     } catch (error) {
         console.error('Erro ao executar comando:', error);
+        // Tentar reverter para o estado anterior se possível
+        if (command.undo) {
+            try {
+                command.undo();
+            } catch (undoError) {
+                console.error('Erro ao desfazer comando com erro:', undoError);
+            }
+        }
     }
   }
 
@@ -96,43 +111,75 @@ export default class TimeLine {
 
         deepCloneNode(node) {
             if (!node) return null;
-            const clonedItem = Object.assign(
-                Object.create(Object.getPrototypeOf(node.item)),
-                node.item
-            );
+            
+            // Clone profundo do item
+            const clonedItem = JSON.parse(JSON.stringify(node.item));
+            
+            // Restaurar os métodos do item clonado
+            this.restoreItemMethods(clonedItem);
+            
+            // Criar novo nó com o item restaurado
             const clonedNode = new Node(clonedItem);
+            
+            // Clone recursivo do próximo nó
             clonedNode.next = node.next ? this.deepCloneNode(node.next) : null;
+            
             return clonedNode;
         }
 
 // Correção para o método restoreSnapshot
 restoreSnapshot(snapshot) {
+    // Cria cópias profundas das camadas
     this.layers = snapshot.layers.map(layer => ({
-        head: layer.head,
-        end: layer.end
+        head: layer.head ? this.deepCloneNode(layer.head) : null,
+        end: layer.end ? this.deepCloneNode(layer.end) : null
     }));
     
-    // Restaurar métodos e propriedades importantes
+    // Restaurar outros estados importantes
+    this.currentSecond = snapshot.currentSecond;
+    
+    // Garantir que todos os itens nas camadas tenham seus métodos restaurados
     this.layers.forEach(layer => {
         let current = layer.head;
         while (current) {
-            this.restoreItemMethods(current.item);
+            if (current.item) {
+                this.restoreItemMethods(current.item);
+            }
             current = current.next;
         }
     });
     
-    this.currentSecond = snapshot.currentSecond;
+    // Atualizar a visualização
     this.updateVueLayers();
 }
 
 restoreItemMethods(item) {
-    // Restaurar métodos baseado no tipo do item
-    if (item.type === 'video') {
-        Object.setPrototypeOf(item, Video.prototype);
-    } else if (item.type === 'audio') {
-        Object.setPrototypeOf(item, Audio.prototype);
-    } else if (item.type === 'image') {
-        Object.setPrototypeOf(item, Image.prototype);
+    if (!item) return;
+    
+    // Determinar o tipo do item e restaurar sua classe apropriada
+    let ItemClass;
+    if (item.type === 'video' || item instanceof Video) {
+        ItemClass = Video;
+    } else if (item.type === 'audio' || item instanceof Audio) {
+        ItemClass = Audio;
+    } else if (item.type === 'image' || item instanceof Image) {
+        ItemClass = Image;
+    }
+
+    if (ItemClass) {
+        // Preservar dados importantes
+        const data = { ...item };
+        
+        // Recriar o objeto com a classe correta
+        Object.setPrototypeOf(item, ItemClass.prototype);
+        
+        // Restaurar todos os dados
+        Object.assign(item, new ItemClass(data));
+    }
+
+    // Garantir que o volume seja restaurado
+    if (typeof item.volume === 'undefined') {
+        item.volume = 1.0;
     }
 }
 
