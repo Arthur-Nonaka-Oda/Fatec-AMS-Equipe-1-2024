@@ -334,13 +334,22 @@ restoreItemMethods(item) {
         end: null,
       }));
 
-      parsedData.layers.forEach((layer, layerIndex) => {
-        layer.files.forEach(({ type, data }) => {
+      for (const layer of parsedData.layers) {
+        const layerIndex = parsedData.layers.indexOf(layer);
+        for (const { type, data } of layer.files) {
           // Se o arquivo tem blobBase64, converter de volta para blob
           if (data.blobBase64) {
             try {
+              console.log(`Processando blobBase64 para ${data.name}`);
+              
+              // Extrair apenas a parte base64 da string data URL
+              let base64Data = data.blobBase64;
+              if (base64Data.includes('base64,')) {
+                base64Data = base64Data.split('base64,')[1];
+              }
+              
               // Decodificar base64 para blob
-              const binaryString = atob(data.blobBase64);
+              const binaryString = atob(base64Data);
               const bytes = new Uint8Array(binaryString.length);
               for (let i = 0; i < binaryString.length; i++) {
                 bytes[i] = binaryString.charCodeAt(i);
@@ -381,23 +390,31 @@ restoreItemMethods(item) {
               
               // Criar novo blob
               data.blob = new Blob([bytes], { type: mimeType });
-              data.url = URL.createObjectURL(data.blob);
+              
+              // Se for um vídeo, gerar thumbnail para o url
+              if (type === 'video') {
+                data.url = await this.generateVideoThumbnail(data.blob, data.duration);
+              } else {
+                data.url = URL.createObjectURL(data.blob);
+              }
               
               // Remover o blobBase64 para economizar memória
               delete data.blobBase64;
               
-              console.log(`Blob restaurado para ${data.name}: ${data.url}`);
+              console.log(`✓ Blob restaurado para ${data.name}: blob criado com sucesso`);
+              console.log(`✓ URL gerada: ${data.url ? 'Sim' : 'Não'}`);
             } catch (error) {
-              console.error(`Erro ao restaurar blob para ${data.name}:`, error);
+              console.error(`✗ Erro ao restaurar blob para ${data.name}:`, error);
             }
           }
           
           this.addFileToLayer({ file: data, type, layerIndex });
-        });
-      });
+        }
+      }
 
-      this.currentSecond = parsedData.currentSecond;
-      console.log(`Projeto carregado! ID: ${this.projectId}`);
+      // Sempre resetar o tempo para 0 quando carregar um projeto
+      this.currentSecond = 0;
+      console.log(`Projeto carregado! ID: ${this.projectId} - Tempo resetado para 0`);
 
     } catch (error) {
       console.error("Erro ao carregar o projeto:", error);
