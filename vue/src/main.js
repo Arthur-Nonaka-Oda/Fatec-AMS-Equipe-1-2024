@@ -2,21 +2,24 @@ import Vue from 'vue'
 import App from './App.vue'
 import Files from './models/Files'
 
+// Font Awesome core
+import { library } from '@fortawesome/fontawesome-svg-core'
+// Ícones que você quer usar
+import { faUser, faLock, faAngleUp } from '@fortawesome/free-solid-svg-icons'
+// Componente do Vue
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+
+// Adiciona os ícones à biblioteca
+library.add(faUser, faLock, faAngleUp)
+
+// Registra o componente globalmente
+Vue.component('font-awesome-icon', FontAwesomeIcon)
+
 // Adiciona Files globalmente
 Vue.prototype.$files = new Files()
 
 Vue.config.productionTip = false
 
-// Unicons
-
-import Unicon from 'vue-unicons/dist/vue-unicons-vue2.umd'
-import { uniAngleUp } from 'vue-unicons/dist/icons'
-
-Unicon.add([uniAngleUp])
-Vue.use(Unicon)
-
 new Vue({
   render: h => h(App)
 }).$mount('#app')
-
-

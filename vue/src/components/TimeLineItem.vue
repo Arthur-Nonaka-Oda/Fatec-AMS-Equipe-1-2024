@@ -8,7 +8,7 @@
     :class="{ selected: selectedItem.item === item }" draggable="true" @dragstart="handleDragStart"
     @dragend="handleDragEnd" @contextmenu.prevent="handleRightClick">
         <div class="volume-handle" @mousedown.stop="startResizing"> 
-        <unicon name="angle-up" fill="#fff"/>
+        <font-awesome-icon icon="angle-up" />
       </div>
     <template v-if="item.type === 'audio'">
       <div class="audio-icon">Audio</div>
