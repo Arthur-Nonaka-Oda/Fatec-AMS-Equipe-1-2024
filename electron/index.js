@@ -26,24 +26,60 @@ function createWindow() {
       contextIsolation: true,
       sandbox: false,
       nodeIntegration: true,
+      enableRemoteModule: false,
+      webSecurity: false, // Necessário para captura de tela
+      allowRunningInsecureContent: true, // Permite conteúdo inseguro
+      experimentalFeatures: true, // Habilita recursos experimentais
     },
   });
   mainWindow.loadURL('http://localhost:8080');
   // mainWindow.loadFile(path.join(__dirname, "../index.html"));
 
+  // Configuração de permissões melhorada para captura de desktop
   session
     .fromPartition("default")
     .setPermissionRequestHandler((webContents, permission, callback) => {
-      let allowedPermissions = ["audioCapture", "desktopCapture"];
+      let allowedPermissions = [
+        "audioCapture", 
+        "desktopCapture", 
+        "microphone", 
+        "camera",
+        "displayCapture",
+        "media"
+      ];
+
+      console.log(`Permissão solicitada: ${permission}`);
 
       if (allowedPermissions.includes(permission)) {
+        console.log(`Permissão ${permission} concedida`);
         callback(true);
       } else {
-        console.error(`Blocked '${permission}'.`);
-
+        console.error(`Permissão ${permission} bloqueada`);
         callback(false);
       }
     });
+
+  // Configuração adicional para captura de tela
+  session.fromPartition("default").setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+    let allowedPermissions = [
+      "audioCapture", 
+      "desktopCapture", 
+      "microphone", 
+      "camera",
+      "displayCapture",
+      "media"
+    ];
+    
+    console.log(`Verificação de permissão: ${permission} para ${requestingOrigin}`);
+    return allowedPermissions.includes(permission);
+  });
+
+  // Configurar handlers de media para desktop capture
+  session.fromPartition("default").setDisplayMediaRequestHandler((request, callback) => {
+    console.log("Display media request recebido:", request);
+    // Aceitar automaticamente pedidos de captura de tela
+    callback({ video: request.video, audio: request.audio });
+  });
 }
 
 const projectsDir = path.join(__dirname, 'projects');
@@ -969,14 +1005,57 @@ ipcMain.handle("write-file", async (event, { arrayBuffers, filePath }) => {
   });
 });
 
-ipcMain.handle("select-screen", async () => {
+ipcMain.handle("get-desktop-sources", async () => {
   try {
+    console.log("Buscando fontes de desktop disponíveis...");
     const sources = await desktopCapturer.getSources({
       types: ["window", "screen"],
+      thumbnailSize: { width: 150, height: 150 },
+      fetchWindowIcons: true
     });
+    
+    if (sources.length === 0) {
+      throw new Error("Nenhuma fonte de desktop encontrada");
+    }
+    
+    console.log(`Encontradas ${sources.length} fontes de desktop`);
+    
+    // Mapear as fontes para um formato mais amigável
+    const mappedSources = sources.map(source => ({
+      id: source.id,
+      name: source.name,
+      type: source.id.startsWith('screen:') ? 'screen' : 'window',
+      thumbnail: source.thumbnail.toDataURL(),
+      display_id: source.display_id,
+      appIcon: source.appIcon ? source.appIcon.toDataURL() : null
+    }));
+    
+    return mappedSources;
+  } catch (err) {
+    console.error("Erro ao obter fontes de desktop:", err);
+    throw err;
+  }
+});
+
+ipcMain.handle("select-screen", async () => {
+  try {
+    console.log("Buscando fontes de captura disponíveis...");
+    const sources = await desktopCapturer.getSources({
+      types: ["window", "screen"],
+      thumbnailSize: { width: 150, height: 150 }
+    });
+    
+    if (sources.length === 0) {
+      throw new Error("Nenhuma fonte de captura encontrada");
+    }
+    
+    console.log(`Encontradas ${sources.length} fontes de captura`);
+    console.log("Selecionando primeira tela:", sources[0].name);
+    
     return sources[0];
   } catch (err) {
-    console.log(err);
+    console.error("Erro ao obter fontes de captura:", err);
+    throw err;
   }
 });
 

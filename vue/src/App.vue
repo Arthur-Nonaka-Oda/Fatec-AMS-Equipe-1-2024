@@ -136,6 +136,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Seleção de Fonte de Gravação -->
+    <RecordingSourceSelector 
+      :showModal="showRecordingSourceModal"
+      @close="showRecordingSourceModal = false"
+      @recording-started="onRecordingStarted"
+      @error="onRecordingError"
+    />
   </div>
 </template>
 
@@ -146,6 +154,7 @@ import TimeLineComponent from "./components/TimeLine.vue";
 import TimeLine from "./models/TimeLine.js";
 import VideoPreview from "./components/VideoPreview.vue";
 import TextEditor from "./components/TextEditor.vue";
+import RecordingSourceSelector from "./components/RecordingSourceSelector.vue";
 import Video from "./models/Video"; // Certifique-se de que o caminho está correto
 import Audio from "./models/Audio"; // Certifique-se de que o caminho está correto
 import Image from "./models/Image";
@@ -157,6 +166,7 @@ export default {
     FileUpload,
     MediaTabs,
     TextEditor,
+    RecordingSourceSelector,
     TimeLine: TimeLineComponent,
     VideoPreview,
   },
@@ -187,6 +197,7 @@ export default {
       showNameModal: false,
       newProjectName: '',
       currentProjectName: 'Novo Projeto',
+      showRecordingSourceModal: false,
     };
   },
   computed: {
@@ -402,16 +413,42 @@ export default {
     },
 
     async toggleRecording() {
-      this.isRecording = !this.isRecording;
-      if (this.isRecording) {
-        window.electron.recorder().startRecording();
-      } else {
-        window.electron.recorder().stopRecording();
-        // window.electron.importer().importRecordedFiles();
+      try {
+        if (!this.isRecording) {
+          // Mostra o modal de seleção de fonte de gravação
+          console.log("Abrindo modal de seleção de fonte...");
+          this.showRecordingSourceModal = true;
+        } else {
+          // Parando gravação
+          console.log("Parando gravação...");
+          await window.electron.recorder().stopRecording();
+          this.isRecording = false;
+          this.recordImageSrc = "/gravarIcone.png";
+          console.log("Gravação parada com sucesso");
+        }
+      } catch (error) {
+        console.error("Erro durante gravação:", error);
+        
+        // Restaura o estado em caso de erro
+        this.isRecording = false;
+        this.recordImageSrc = "/gravarIcone.png";
+        
+        // Mostra uma mensagem de erro para o usuário
+        alert(`Erro ao ${this.isRecording ? 'parar' : 'iniciar'} gravação: ${error.message || 'Erro desconhecido'}`);
       }
-      this.recordImageSrc = this.isRecording
-        ? "/pararIcone.png"
-        : "/gravarIcone.png";
+    },
+
+    // Callback quando a gravação é iniciada através do modal
+    onRecordingStarted(sourceConfig) {
+      console.log("Gravação iniciada com configuração:", sourceConfig);
+      this.isRecording = true;
+      this.recordImageSrc = "/pararIcone.png";
+    },
+
+    // Callback para erros do modal de gravação
+    onRecordingError(errorMessage) {
+      console.error("Erro no modal de gravação:", errorMessage);
+      alert(errorMessage);
     },
     pauseRecording() {
       this.isPaused = !this.isPaused;

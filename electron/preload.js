@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld("electron", {
   selectScreen: async () => {
     return await ipcRenderer.invoke("select-screen")
   },
+  getDesktopSources: async () => {
+    return await ipcRenderer.invoke("get-desktop-sources")
+  },
   importDialog: async () => {
     return await ipcRenderer.invoke("import-dialog")
   },
