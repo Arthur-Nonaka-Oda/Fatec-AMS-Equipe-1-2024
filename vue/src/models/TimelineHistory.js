@@ -1,4 +1,4 @@
-// TimelineHistory.js
+
 export class TimelineHistory {
     constructor(maxStackSize = 100) {
         this.undoStack = [];
@@ -7,7 +7,6 @@ export class TimelineHistory {
         this.isExecutingAction = false;
     }
 
-    // Adicione estas propriedades computadas
     get canUndo() {
         return this.undoStack.length > 0;
     }
@@ -33,9 +32,10 @@ export class TimelineHistory {
             return;
         }
         
+            const action = this.undoStack.pop();
+        
         try {
             this.isExecutingAction = true;
-            const action = this.undoStack.pop();
             
             if (action && action.undo) {
                 console.log('Executando undo...');
@@ -60,9 +60,10 @@ export class TimelineHistory {
             return;
         }
         
+            const action = this.undoStack.pop();
+        
         try {
             this.isExecutingAction = true;
-            const action = this.redoStack.pop();
             
             if (action && action.execute) {
                 console.log('Executando redo...');

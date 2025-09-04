@@ -100,3 +100,21 @@ const historicoEv = [
 26. (Futuro) adicionar possibilidade ods itens ficarem separados na timeline/ flexiveis
 
 27. (Futuro) adicionar possibilidade de configurar o volume unitariamente para cada audio. / Volume no rodape 
+
+
+28. ctrl+z maximo 3
+
+
+
+ondas de audio das midias que são mp3 (spectro grama) caso não consiga pode utilizar png de audio
+
+        plugin.npm(ultimo caso)
+
+link que o Daniel mandou para ajudar na questão do audio:
+     https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Visualizations_with_Web_Audio_API
+     https://www.npmjs.com/package/waveform-data
+
+
+
+verificar se é possivel escolher com microfone/camera/tela quando começar a gravar
+
