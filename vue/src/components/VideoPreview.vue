@@ -520,7 +520,6 @@ export default {
       slider.style.setProperty('--max', this.totalDuration);
     },
     seekVideo() {
-      // Get all videos and the global slider time
       const videos = this.timeline.listFilesInLayer(0);
       let globalTime = this.currentGlobalTime;
       let accumulated = 0;
@@ -538,43 +537,52 @@ export default {
         globalTime = videos[targetIndex].duration;
       }
 
-      // If we need to change the video segment
+      // Se precisamos mudar o segmento de vídeo
       if (targetIndex !== this.currentIndex) {
         this.currentIndex = targetIndex;
 
-        // Revoke the previous blob URL if needed
+        // Revoga a URL anterior se existir
         if (this.currentVideo) {
           URL.revokeObjectURL(this.currentVideo);
         }
 
-        const videoBlob = videos[targetIndex].blob;
-        const videoDuration = videos[targetIndex].duration;
+        const currentVideo = videos[targetIndex];
+        if (!currentVideo) {
+          console.error('Vídeo não encontrado no índice:', targetIndex);
+          return;
+        }
 
-        // Start and end time from the video's metadata
-        const startTime = videos[targetIndex].startTime; // Assume these times are provided in the video metadata
-        const endTime = videos[targetIndex].endTime;     // These are the start and end times of the video segment
+        // Verifica se o blob existe e é válido
+        if (!currentVideo.blob || !(currentVideo.blob instanceof Blob)) {
+          console.error('Blob inválido ou não encontrado:', currentVideo);
+          return;
+        }
 
+        try {
+          // Cria uma nova URL para o blob inteiro
+          this.currentVideo = URL.createObjectURL(currentVideo.blob);
 
-        // Calculate the byte range for the slice
-        const startByte = (startTime / videoDuration) * videoBlob.size;
-        const endByte = (endTime / videoDuration) * videoBlob.size;
-
-        // Slice the video blob from startByte to endByte
-        const slicedBlob = videoBlob.slice(startByte, endByte, "video/mp4");
-        this.currentVideo = URL.createObjectURL(slicedBlob);
-
-        this.$nextTick(() => {
-          const video = this.$refs.videoPlayer;
-          video.currentTime = relativeTime;
-          video.load();
-          this.updatePlayPauseIcon();
-        });
-
+          this.$nextTick(() => {
+            const video = this.$refs.videoPlayer;
+            if (video) {
+              const relativeTime = globalTime - accumulated;
+              video.currentTime = relativeTime;
+              video.load();
+              this.updatePlayPauseIcon();
+            }
+          });
+        } catch (error) {
+          console.error('Erro ao criar URL para o vídeo:', error);
+          this.currentVideo = null;
+        }
       }
 
+      // Atualiza o tempo do vídeo atual
       const relativeTime = globalTime - accumulated;
       const video = this.$refs.videoPlayer;
-      video.currentTime = relativeTime;
+      if (video) {
+        video.currentTime = relativeTime;
+      }
     },
     formatTime(seconds) {
       const hours = Math.floor(seconds / 3600);
