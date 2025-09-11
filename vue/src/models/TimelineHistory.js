@@ -14,6 +14,44 @@ export class TimelineHistory {
         return this.redoStack.length > 0;
     }
 
+    // Método auxiliar para recarregar blobs de vídeo
+    async reloadVideoBlob(video) {
+        if (!video.filePath) return;
+        
+        try {
+            // Tenta carregar via fetch primeiro
+            const response = await fetch(`file://${video.filePath}`);
+            if (response.ok) {
+                const blob = await response.blob();
+                if (blob.size > 0) {
+                    video.blob = blob;
+                    video.url = URL.createObjectURL(blob);
+                    return;
+                }
+            }
+
+            // Se fetch falhar, tenta via electron
+            if (window.electron && window.electron.ipcRenderer) {
+                const base64Data = await window.electron.ipcRenderer.invoke('load-video-file', { filePath: video.filePath });
+                if (base64Data) {
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'video/mp4' });
+                    if (blob.size > 0) {
+                        video.blob = blob;
+                        video.url = URL.createObjectURL(blob);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao recarregar blob:', error);
+        }
+    }
+
     addAction(execute, undo) {
         if (this.isExecutingAction) return;
 
@@ -64,44 +102,35 @@ export class TimelineHistory {
                 return;
             }
 
-            console.log('Iniciando undo...');
-            
-            // Preserva os blobs antes de limpar o estado
-            const preservedBlobs = new Map();
-            
-            if (action.previousState) {
-                const traverse = (obj) => {
-                    if (!obj) return;
-                    if (obj.blob instanceof Blob) {
-                        preservedBlobs.set(obj.url, obj.blob);
-                    }
-                    if (typeof obj === 'object') {
-                        Object.values(obj).forEach(traverse);
-                    }
-                };
+            // Prepara a função de undo com tratamento especial para blobs
+            const wrappedUndo = async () => {
+                // Primeiro tentamos executar a função undo normalmente
+                await action.undo();
                 
-                // Preserva os blobs
-                traverse(action.previousState);
-                
-                // Limpa o estado de propriedades reativas
-                const cleanState = JSON.parse(JSON.stringify(action.previousState));
-                
-                // Restaura os blobs
-                const restoreBlobs = (obj) => {
-                    if (!obj) return;
-                    if (obj.url && preservedBlobs.has(obj.url)) {
-                        obj.blob = preservedBlobs.get(obj.url);
-                    }
-                    if (typeof obj === 'object') {
-                        Object.values(obj).forEach(restoreBlobs);
-                    }
-                };
-                
-                restoreBlobs(cleanState);
-                action.previousState = cleanState;
-            }
-            
-            await action.undo();
+                // Depois verificamos se há vídeos que precisam ter seus blobs restaurados
+                const timeline = window.timeline;
+                if (timeline) {
+                    const layers = timeline.layers;
+                    layers.forEach(layer => {
+                        let current = layer.head;
+                        while (current) {
+                            if (current.item && current.item.type === 'video') {
+                                const video = current.item;
+                                
+                                // Se o vídeo tem um filePath mas não tem blob, tenta recarregar
+                                if (video.filePath && (!video.blob || !(video.blob instanceof Blob))) {
+                                    console.log('Recarregando blob para:', video.name);
+                                    this.reloadVideoBlob(video);
+                                }
+                            }
+                            current = current.next;
+                        }
+                    });
+                }
+            };
+
+            // Executa o undo com o tratamento especial
+            await wrappedUndo();
             this.redoStack.push(action);
             console.log('Undo executado com sucesso');
             
@@ -112,7 +141,8 @@ export class TimelineHistory {
             this.isExecutingAction = false;
         }
     }
-    
+
+
     // Método auxiliar para encontrar vídeos em um estado
     findVideosInState(state) {
         const videos = [];
@@ -148,42 +178,27 @@ export class TimelineHistory {
 
             console.log('Iniciando redo...');
             
-            // Preserva os blobs antes de limpar o estado
-            const preservedBlobs = new Map();
-            
-            if (action.previousState) {
-                const traverse = (obj) => {
-                    if (!obj) return;
-                    if (obj.blob instanceof Blob) {
-                        preservedBlobs.set(obj.url, obj.blob.slice(0));
-                    }
-                    if (typeof obj === 'object') {
-                        Object.values(obj).forEach(traverse);
-                    }
-                };
-                
-                // Preserva os blobs
-                traverse(action.previousState);
-                
-                // Limpa o estado de propriedades reativas
-                const cleanState = JSON.parse(JSON.stringify(action.previousState));
-                
-                // Restaura os blobs
-                const restoreBlobs = (obj) => {
-                    if (!obj) return;
-                    if (obj.url && preservedBlobs.has(obj.url)) {
-                        obj.blob = preservedBlobs.get(obj.url);
-                    }
-                    if (typeof obj === 'object') {
-                        Object.values(obj).forEach(restoreBlobs);
-                    }
-                };
-                
-                restoreBlobs(cleanState);
-                action.previousState = cleanState;
-            }
-            
             await action.execute();
+            
+            // Verifica e restaura os blobs dos vídeos
+            const timeline = window.timeline;
+            if (timeline) {
+                const layers = timeline.layers;
+                for (const layer of layers) {
+                    let current = layer.head;
+                    while (current) {
+                        if (current.item && current.item.type === 'video') {
+                            const video = current.item;
+                            if (!video.blob || !(video.blob instanceof Blob)) {
+                                console.log('Restaurando blob para:', video.name);
+                                await this.reloadVideoBlob(video);
+                            }
+                        }
+                        current = current.next;
+                    }
+                }
+            }
+
             this.undoStack.push(action);
             console.log('Redo executado com sucesso');
             
