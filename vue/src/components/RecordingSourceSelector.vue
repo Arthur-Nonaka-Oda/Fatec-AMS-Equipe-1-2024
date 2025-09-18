@@ -1,73 +1,125 @@
+/* eslint-disable */
 <template>
   <div v-if="showModal" class="recording-source-modal">
     <div class="modal-overlay" @click="closeModal"></div>
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Selecionar Fonte de Gravação</h3>
+        <h3>🎬 Gravação com Picture-in-Picture</h3>
         <button class="close-btn" @click="closeModal">&times;</button>
       </div>
       
       <div class="modal-body">
-        <div class="source-tabs">
-          <button 
-            :class="['tab-btn', { active: activeTab === 'display' }]"
-            @click="activeTab = 'display'"
-          >
-            🖥️ Capturar Tela
-          </button>
-          <button 
-            :class="['tab-btn', { active: activeTab === 'cameras' }]"
-            @click="activeTab = 'cameras'"
-          >
-            📹 Câmeras
-          </button>
+        <div class="pip-info">
+          <p>Configure sua gravação combinando tela/janela com câmera sobreposta em Picture-in-Picture</p>
         </div>
 
         <div class="source-content">
-          <!-- Capturar Tela -->
-          <div v-if="activeTab === 'display'" class="display-option">
-            <div class="display-info">
-              <div class="display-icon">🖥️</div>
-              <div>
-                <h4>Capturar Tela ou Janela</h4>
-                <p>O sistema mostrará uma janela para você escolher qual tela, janela ou guia do navegador gravar.</p>
-                <ul style="text-align: left; margin-top: 10px;">
-                  <li>🖥️ <strong>Tela inteira</strong> - Grava todo o monitor</li>
-                  <li>🪟 <strong>Janela específica</strong> - Grava apenas uma aplicação</li>
-                  <li>🌐 <strong>Guia do navegador</strong> - Grava uma aba específica</li>
-                </ul>
+          <!-- Seleção de Tela/Display -->
+          <div class="section">
+            <h4>📺 Fonte Principal (Tela/Janela)</h4>
+            <div class="display-sources">
+              <div 
+                v-for="source in displaySources" 
+                :key="source.id"
+                :class="['source-preview-item', { selected: selectedDisplay?.id === source.id }]"
+                @click="selectDisplay(source)"
+              >
+                <div class="source-thumbnail-container">
+                  <img 
+                    :src="source.thumbnail" 
+                    :alt="source.name"
+                    class="source-thumbnail"
+                  />
+                  <div class="source-type-badge">
+                    {{ source.type === 'screen' ? '🖥️ Tela' : '🪟 Janela' }}
+                  </div>
+                </div>
+                <div class="source-info">
+                  <div class="source-name">{{ source.name }}</div>
+                  <div class="source-description">{{ getSourceDescription(source) }}</div>
+                </div>
+              </div>
+              
+              <div v-if="displaySources.length === 0 && !loading" class="no-sources">
+                <p>🖥️ Nenhuma tela/janela encontrada</p>
+                <p><small>Aguarde enquanto carregamos as fontes disponíveis...</small></p>
+              </div>
+              
+              <div v-if="loading" class="loading-sources">
+                <p>🔄 Carregando fontes de tela...</p>
               </div>
             </div>
           </div>
 
-          <!-- Câmeras -->
-          <div v-if="activeTab === 'cameras'" class="sources-list">
-            <div 
-              v-for="camera in sources.cameras" 
-              :key="camera.deviceId"
-              :class="['source-item-list', { selected: selectedSource?.deviceId === camera.deviceId }]"
-              @click="selectSource(camera, 'camera')"
-            >
-              <div class="camera-icon">📹</div>
-              <div class="source-info">
-                <div class="source-name">{{ camera.label || 'Câmera ' + (sources.cameras.indexOf(camera) + 1) }}</div>
-                <div class="source-type">Câmera</div>
+          <!-- Seleção de Câmera para PIP -->
+          <div class="section">
+            <h4>📹 Câmera para Picture-in-Picture (Opcional)</h4>
+            <p class="section-description">Selecione uma câmera para sobrepor na gravação, ou deixe em branco para gravar apenas a tela.</p>
+            <div class="sources-list">
+              <div 
+                v-for="camera in sources.cameras" 
+                :key="camera.deviceId"
+                :class="['source-item-list', { selected: selectedCamera?.deviceId === camera.deviceId }]"
+                @click="selectCamera(camera)"
+              >
+                <div class="camera-icon">📹</div>
+                <div class="source-info">
+                  <div class="source-name">{{ camera.label || 'Câmera ' + (sources.cameras.indexOf(camera) + 1) }}</div>
+                  <div class="source-type">Câmera para PIP</div>
+                </div>
+              </div>
+              
+              <!-- Opção para não usar câmera -->
+              <div 
+                :class="['source-item-list', 'no-camera-option', { selected: selectedCamera === null }]"
+                @click="selectCamera(null)"
+              >
+                <div class="camera-icon">🚫</div>
+                <div class="source-info">
+                  <div class="source-name">Sem câmera</div>
+                  <div class="source-type">Gravar apenas a tela</div>
+                </div>
+              </div>
+              
+              <div v-if="sources.cameras.length === 0" class="no-sources">
+                <p>📹 Nenhuma câmera encontrada</p>
+                <p><small>Você ainda pode gravar apenas a tela selecionando "Sem câmera" acima.</small></p>
               </div>
             </div>
-            
-            <div class="microphone-selection" v-if="selectedSource && activeTab === 'cameras'">
-              <h4>Selecionar Microfone (Opcional)</h4>
+
+            <!-- Controles de PIP -->
+            <div v-if="selectedCamera" class="pip-controls">
+              <h4>⚙️ Configurações do PIP</h4>
+              <div class="pip-settings">
+                <div class="setting-group">
+                  <label>Posição:</label>
+                  <select v-model="pipPosition">
+                    <option value="top-right">Superior Direito</option>
+                    <option value="top-left">Superior Esquerdo</option>
+                    <option value="bottom-right">Inferior Direito</option>
+                    <option value="bottom-left">Inferior Esquerdo</option>
+                  </select>
+                </div>
+                <div class="setting-group">
+                  <label>Tamanho:</label>
+                  <select v-model="pipSize">
+                    <option value="small">Pequeno (15%)</option>
+                    <option value="medium">Médio (20%)</option>
+                    <option value="large">Grande (25%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seleção de Microfone -->
+            <div v-if="selectedCamera" class="microphone-selection">
+              <h4>🎤 Microfone (Opcional)</h4>
               <select v-model="selectedMicrophone" class="microphone-select">
-                <option value="">Sem áudio</option>
+                <option value="">Sem áudio de microfone</option>
                 <option v-for="mic in sources.microphones" :key="mic.deviceId" :value="mic.deviceId">
                   {{ mic.label || 'Microfone ' + (sources.microphones.indexOf(mic) + 1) }}
                 </option>
               </select>
-            </div>
-            
-            <div v-if="sources.cameras.length === 0" class="no-sources">
-              <p>� Nenhuma câmera encontrada</p>
-              <p><small>Verifique se há câmeras conectadas e se as permissões estão habilitadas.</small></p>
             </div>
           </div>
         </div>
@@ -105,7 +157,6 @@ export default {
   },
   data() {
     return {
-      activeTab: 'display', // Começar sempre com captura de tela
       sources: {
         screens: [],
         windows: [],
@@ -113,15 +164,26 @@ export default {
         microphones: [],
         speakers: []
       },
-      selectedSource: null,
+      selectedCamera: null,
+      selectedDisplay: null,
       selectedMicrophone: '',
+      pipPosition: 'bottom-right',
+      pipSize: 'medium',
       includeAudio: true,
-      loading: false
+      loading: false,
+      // Variáveis para controle de gravação
+      mediaRecorder: null,
+      recordingStream: null,
+      chunks: []
     }
   },
   computed: {
     canStartRecording() {
-      return this.activeTab === 'display' || this.selectedSource !== null;
+      // Pode gravar se tiver display selecionado (câmera é opcional)
+      return this.selectedDisplay !== null;
+    },
+    displaySources() {
+      return [...this.sources.screens, ...this.sources.windows];
     }
   },
   watch: {
@@ -129,30 +191,49 @@ export default {
       if (newValue) {
         this.loadSources();
       }
-    },
-    activeTab() {
-      this.selectedSource = null;
-      this.selectedMicrophone = '';
     }
   },
   methods: {
     async loadSources() {
       try {
         this.loading = true;
-        console.log("Carregando fontes de gravação...");
+        console.log("🔍 Carregando fontes de gravação...");
+        console.log("🔍 window.electron disponível:", !!window.electron);
         
-        const recorder = window.electron.recorder();
-        
-        // Verificar APIs antes de tentar obter fontes
-        try {
-          recorder.checkAPIAvailability();
-        } catch (apiError) {
-          throw new Error("APIs de mídia não disponíveis: " + apiError.message);
+        // Verificar se as APIs do Electron estão disponíveis
+        if (!window.electron) {
+          throw new Error("APIs do Electron não estão disponíveis. Certifique-se de que o preload.js foi carregado.");
         }
         
-        this.sources = await recorder.getAvailableSources();
+        // Usar APIs diretas do electron ao invés do Recorder
+        console.log("📺 Obtendo desktop sources diretamente...");
+        let desktopSources = [];
+        try {
+          desktopSources = await window.electron.getDesktopSources();
+          console.log("✅ Desktop sources obtidas:", desktopSources.length);
+        } catch (desktopError) {
+          console.warn("⚠️ Erro ao obter desktop sources:", desktopError);
+        }
+
+        console.log("🎥 Obtendo media devices...");
+        let mediaDevices = [];
+        try {
+          mediaDevices = await navigator.mediaDevices.enumerateDevices();
+          console.log("✅ Media devices obtidos:", mediaDevices.length);
+        } catch (mediaError) {
+          console.warn("⚠️ Erro ao obter media devices:", mediaError);
+        }
+
+        // Organizar fontes
+        this.sources = {
+          screens: desktopSources.filter(source => source.type === 'screen'),
+          windows: desktopSources.filter(source => source.type === 'window'),
+          cameras: mediaDevices.filter(device => device.kind === 'videoinput'),
+          microphones: mediaDevices.filter(device => device.kind === 'audioinput'),
+          speakers: mediaDevices.filter(device => device.kind === 'audiooutput')
+        };
         
-        console.log("Fontes carregadas:", this.sources);
+        console.log("📋 Fontes organizadas:", this.sources);
         
         // Verificar se há fontes disponíveis
         const totalSources = this.sources.screens.length + 
@@ -167,12 +248,15 @@ export default {
         console.error("Erro ao carregar fontes:", error);
         let errorMessage = 'Erro ao carregar fontes de gravação: ';
         
-        if (error.message.includes('APIs de mídia não disponíveis')) {
+        // Verificar se error.message existe e é string
+        const errorMsg = error.message || error.toString() || 'Erro desconhecido';
+        
+        if (errorMsg.includes('APIs de mídia não disponíveis')) {
           errorMessage += 'APIs de mídia não estão disponíveis neste navegador/contexto.';
-        } else if (error.message.includes('Nenhuma fonte')) {
+        } else if (errorMsg.includes('Nenhuma fonte')) {
           errorMessage += 'Nenhuma fonte de gravação foi encontrada.';
         } else {
-          errorMessage += error.message;
+          errorMessage += errorMsg;
         }
         
         this.$emit('error', errorMessage);
@@ -181,39 +265,59 @@ export default {
       }
     },
     
-    selectSource(source, type) {
-      this.selectedSource = { ...source, type };
-      console.log("Fonte selecionada:", this.selectedSource);
+    selectCamera(camera) {
+      this.selectedCamera = camera;
+      console.log("Câmera selecionada:", this.selectedCamera);
+    },
+    
+    selectDisplay(display) {
+      this.selectedDisplay = display;
+      console.log("Display selecionado:", this.selectedDisplay);
+    },
+    
+    getSourceDescription(source) {
+      if (source.type === 'screen') {
+        return `Tela ${source.display_id || ''} - ${source.width || 0}x${source.height || 0}`;
+      } else {
+        return source.appName || 'Aplicação';
+      }
     },
     
     async startRecording() {
       try {
-        console.log("Iniciando gravação com configuração:", {
-          source: this.selectedSource,
-          type: this.activeTab,
-          includeAudio: this.includeAudio,
-          microphoneId: this.selectedMicrophone
-        });
+        const haCamera = this.selectedCamera !== null;
+        
+        console.log("=== DEBUG GRAVAÇÃO ===");
+        console.log("selectedCamera:", this.selectedCamera);
+        console.log("selectedDisplay:", this.selectedDisplay);
+        console.log("haCamera:", haCamera);
+        console.log("Tipo de gravação:", haCamera ? 'PIP' : 'SCREEN-ONLY');
+        
+        // Verificar se há display selecionado
+        if (!this.selectedDisplay) {
+          throw new Error("Nenhuma tela selecionada para gravação");
+        }
 
-        const recorder = window.electron.recorder();
-        
-        // Mapear activeTab para tipo correto
-        let sourceType = this.activeTab;
-        if (sourceType === 'screens') sourceType = 'screen';
-        if (sourceType === 'windows') sourceType = 'window';
-        if (sourceType === 'cameras') sourceType = 'camera';
-        // display permanece como display
-        
         const sourceConfig = {
-          type: sourceType,
-          source: this.selectedSource,
+          type: haCamera ? 'pip' : 'screen-only',
+          display: this.selectedDisplay,
+          camera: this.selectedCamera,
+          pipPosition: this.pipPosition,
+          pipSize: this.pipSize,
           includeAudio: this.includeAudio,
           microphoneId: this.selectedMicrophone
         };
 
         console.log("Configuração mapeada:", sourceConfig);
 
-        await recorder.startRecordingWithSource(sourceConfig);
+        // Usar uma abordagem mais simples por enquanto
+        if (haCamera) {
+          console.log("🎬 Iniciando gravação PIP...");
+          await this.startPIPRecordingSimple();
+        } else {
+          console.log("🖥️ Iniciando gravação apenas da tela...");
+          await this.startScreenOnlyRecordingSimple(sourceConfig);
+        }
         
         this.$emit('recording-started', sourceConfig);
         this.closeModal();
@@ -221,27 +325,428 @@ export default {
         console.error("Erro ao iniciar gravação:", error);
         let errorMessage = 'Erro ao iniciar gravação: ';
         
-        if (error.message.includes('Stream não foi criado')) {
+        // Verificar se error.message existe e é string
+        const errorMsg = error.message || error.toString() || 'Erro desconhecido';
+        
+        if (errorMsg.includes('Stream não foi criado')) {
           errorMessage += 'Não foi possível acessar a fonte selecionada. Verifique as permissões.';
-        } else if (error.message.includes('Usuário cancelou')) {
+        } else if (errorMsg.includes('Usuário cancelou') || errorMsg.includes('User cancelled')) {
           errorMessage += 'Seleção de tela cancelada pelo usuário.';
-        } else if (error.message.includes('API de mídia não está disponível')) {
+        } else if (errorMsg.includes('API de mídia não está disponível') || errorMsg.includes('getDisplayMedia')) {
           errorMessage += 'Funcionalidade de gravação não está disponível neste navegador.';
-        } else if (error.message.includes('Nenhuma track de vídeo')) {
+        } else if (errorMsg.includes('Nenhuma track de vídeo')) {
           errorMessage += 'Não foi possível obter vídeo da fonte selecionada.';
+        } else if (errorMsg.includes('não é suportada') || errorMsg.includes('Not supported')) {
+          errorMessage += 'Captura de tela não é suportada neste navegador/contexto.';
         } else {
-          errorMessage += error.message;
+          errorMessage += errorMsg;
         }
         
         this.$emit('error', errorMessage);
       }
     },
+
+    async startScreenOnlyRecordingSimple(sourceConfig) {
+      console.log("🖥️ Iniciando gravação completa da tela...");
+      
+      try {
+        // 1. Obter stream da tela
+        const constraints = {
+          audio: sourceConfig.includeAudio ? {
+            mandatory: {
+              chromeMediaSource: 'desktop'
+            }
+          } : false,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: sourceConfig.display.id,
+              maxWidth: 1920,
+              maxHeight: 1080,
+              maxFrameRate: 30
+            }
+          }
+        };
+
+        console.log("📋 Constraints:", constraints);
+        this.recordingStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("✅ Stream da tela obtido:", this.recordingStream);
+
+        // 2. Adicionar áudio do microfone se selecionado
+        if (sourceConfig.microphoneId) {
+          console.log("🎤 Adicionando áudio do microfone...");
+          try {
+            const micStream = await navigator.mediaDevices.getUserMedia({
+              audio: { deviceId: { exact: sourceConfig.microphoneId } }
+            });
+            
+            // Misturar áudios
+            const audioTracks = [];
+            this.recordingStream.getAudioTracks().forEach(track => audioTracks.push(track));
+            micStream.getAudioTracks().forEach(track => audioTracks.push(track));
+            
+            // Criar novo stream com vídeo + áudios
+            const mixedStream = new MediaStream();
+            this.recordingStream.getVideoTracks().forEach(track => mixedStream.addTrack(track));
+            audioTracks.forEach(track => mixedStream.addTrack(track));
+            
+            this.recordingStream = mixedStream;
+            console.log("✅ Áudio do microfone adicionado");
+          } catch (micError) {
+            console.warn("⚠️ Erro ao adicionar microfone:", micError);
+          }
+        }
+
+        // 3. Configurar MediaRecorder
+        this.chunks = [];
+        this.mediaRecorder = new MediaRecorder(this.recordingStream, {
+          mimeType: 'video/webm;codecs=vp9,opus'
+        });
+
+        this.mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            this.chunks.push(event.data);
+            console.log("📦 Chunk gravado:", event.data.size, "bytes");
+          }
+        };
+
+        this.mediaRecorder.onstop = async () => {
+          console.log("🛑 Gravação parada, salvando arquivo...");
+          await this.saveRecording();
+        };
+
+        this.mediaRecorder.onerror = (event) => {
+          console.error("❌ Erro na gravação:", event.error);
+        };
+
+        // 4. Iniciar gravação
+        this.mediaRecorder.start(1000); // Salvar chunks a cada segundo
+        console.log("🎬 Gravação iniciada!");
+
+        // Expor métodos para parar a gravação
+        window.currentRecording = {
+          stop: () => this.stopRecording(),
+          mediaRecorder: this.mediaRecorder,
+          stream: this.recordingStream
+        };
+
+      } catch (error) {
+        console.error("❌ Erro ao iniciar gravação:", error);
+        throw error;
+      }
+    },
+
+    async stopRecording() {
+      console.log("🛑 Parando gravação...");
+      
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        this.mediaRecorder.stop();
+      }
+      
+      // Limpar stream principal
+      if (this.recordingStream) {
+        this.recordingStream.getTracks().forEach(track => track.stop());
+        this.recordingStream = null;
+      }
+      
+      // Limpar streams do PIP se existirem
+      if (window.currentRecording) {
+        if (window.currentRecording.screenStream) {
+          window.currentRecording.screenStream.getTracks().forEach(track => track.stop());
+        }
+        if (window.currentRecording.cameraStream) {
+          window.currentRecording.cameraStream.getTracks().forEach(track => track.stop());
+        }
+        if (window.currentRecording.microphoneStream) {
+          window.currentRecording.microphoneStream.getTracks().forEach(track => track.stop());
+        }
+      }
+    },
+
+    async saveRecording() {
+      console.log("💾 Salvando gravação...");
+      
+      if (this.chunks.length === 0) {
+        console.warn("⚠️ Nenhum chunk para salvar");
+        return;
+      }
+
+      try {
+        // Criar blob do vídeo
+        const blob = new Blob(this.chunks, { type: 'video/webm' });
+        console.log("📹 Blob criado:", blob.size, "bytes");
+
+        // Converter para ArrayBuffer
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        // Gerar nome do arquivo
+        const timestamp = Date.now();
+        const filename = `${timestamp}.mp4`;
+        
+        console.log("💾 Salvando via IPC:", filename);
+        
+        // Usar handler corrigido
+        const result = await window.electron.ipcRenderer.invoke('write-file-fixed', {
+          arrayBuffers: [uint8Array],
+          filePath: filename
+        });
+        
+        console.log("✅ Arquivo salvo:", result);
+        // alert(`Gravação salva como: ${filename}`);
+        
+      } catch (error) {
+        console.error("❌ Erro ao salvar:", error);
+        
+        // Tentar método alternativo de salvamento
+        try {
+          console.log("🔄 Tentando método alternativo...");
+          const blob = new Blob(this.chunks, { type: 'video/webm' });
+          
+          const timestamp = Date.now();
+          const filename = `recording-${timestamp}.webm`;
+          
+          // Criar um link de download como fallback
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          alert(`Gravação baixada como: ${filename}`);
+          
+        } catch (fallbackError) {
+          console.error("❌ Erro no fallback:", fallbackError);
+          alert("Erro ao salvar gravação: " + error.message);
+        }
+      } finally {
+        this.chunks = [];
+      }
+    },
+
+    async startPIPRecordingSimple() {
+      console.log("🎬 Iniciando gravação PIP completa...");
+      
+      try {
+        // 1. Obter stream da tela
+        console.log("📺 Obtendo stream da tela...");
+        const screenConstraints = {
+          audio: this.includeAudio ? {
+            mandatory: {
+              chromeMediaSource: 'desktop'
+            }
+          } : false,
+          video: {
+            mandatory: {
+              chromeMediaSource: 'desktop',
+              chromeMediaSourceId: this.selectedDisplay.id,
+              maxWidth: 1920,
+              maxHeight: 1080,
+              maxFrameRate: 30
+            }
+          }
+        };
+
+        const screenStream = await navigator.mediaDevices.getUserMedia(screenConstraints);
+        console.log("✅ Stream da tela obtido:", screenStream);
+
+        // 2. Obter stream da câmera
+        console.log("📹 Obtendo stream da câmera...");
+        const cameraConstraints = {
+          video: {
+            deviceId: { exact: this.selectedCamera.deviceId },
+            width: { ideal: 320, max: 640 },
+            height: { ideal: 240, max: 480 },
+            frameRate: { ideal: 30, max: 30 }
+          },
+          audio: false // Áudio da câmera será separado se necessário
+        };
+
+        const cameraStream = await navigator.mediaDevices.getUserMedia(cameraConstraints);
+        console.log("✅ Stream da câmera obtido:", cameraStream);
+
+        // 3. Obter áudio do microfone se selecionado
+        let microphoneStream = null;
+        if (this.selectedMicrophone) {
+          console.log("🎤 Obtendo stream do microfone...");
+          try {
+            microphoneStream = await navigator.mediaDevices.getUserMedia({
+              audio: { deviceId: { exact: this.selectedMicrophone } },
+              video: false
+            });
+            console.log("✅ Stream do microfone obtido:", microphoneStream);
+          } catch (micError) {
+            console.warn("⚠️ Erro ao obter microfone:", micError);
+          }
+        }
+
+        // 4. Criar canvas para mixing
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 1920;
+        canvas.height = 1080;
+
+        // Criar elementos de vídeo
+        const screenVideo = document.createElement('video');
+        const cameraVideo = document.createElement('video');
+        
+        screenVideo.srcObject = screenStream;
+        cameraVideo.srcObject = cameraStream;
+        
+        screenVideo.muted = true;
+        cameraVideo.muted = true;
+        
+        await Promise.all([
+          new Promise(resolve => { screenVideo.onloadedmetadata = resolve; screenVideo.play(); }),
+          new Promise(resolve => { cameraVideo.onloadedmetadata = resolve; cameraVideo.play(); })
+        ]);
+
+        console.log("🎥 Vídeos carregados e reproduzindo");
+
+        // 5. Calcular posição e tamanho do PIP
+        const pipSizes = {
+          small: { width: 160, height: 120 },
+          medium: { width: 320, height: 240 },
+          large: { width: 480, height: 360 }
+        };
+
+        const pipSize = pipSizes[this.pipSize] || pipSizes.medium;
+        
+        const pipPositions = {
+          'top-left': { x: 20, y: 20 },
+          'top-right': { x: canvas.width - pipSize.width - 20, y: 20 },
+          'bottom-left': { x: 20, y: canvas.height - pipSize.height - 20 },
+          'bottom-right': { x: canvas.width - pipSize.width - 20, y: canvas.height - pipSize.height - 20 }
+        };
+
+        const pipPosition = pipPositions[this.pipPosition] || pipPositions['bottom-right'];
+
+        console.log("📐 Configuração PIP:", { position: pipPosition, size: pipSize });
+
+        // 6. Função de renderização
+        const renderFrame = () => {
+          // Desenhar tela de fundo
+          ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+          
+          // Desenhar câmera PIP
+          ctx.drawImage(
+            cameraVideo, 
+            pipPosition.x, 
+            pipPosition.y, 
+            pipSize.width, 
+            pipSize.height
+          );
+          
+          // Adicionar borda ao PIP
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(pipPosition.x, pipPosition.y, pipSize.width, pipSize.height);
+        };
+
+        // 7. Capturar stream do canvas
+        const canvasStream = canvas.captureStream(30);
+        console.log("🎨 Stream do canvas criado:", canvasStream);
+
+        // 8. Mixar áudios
+        const audioTracks = [];
+        
+        // Áudio da tela
+        if (screenStream.getAudioTracks().length > 0) {
+          screenStream.getAudioTracks().forEach(track => audioTracks.push(track));
+          console.log("🔊 Áudio da tela adicionado");
+        }
+        
+        // Áudio do microfone
+        if (microphoneStream && microphoneStream.getAudioTracks().length > 0) {
+          microphoneStream.getAudioTracks().forEach(track => audioTracks.push(track));
+          console.log("🎙️ Áudio do microfone adicionado");
+        }
+
+        // 9. Criar stream final
+        const finalStream = new MediaStream();
+        
+        // Adicionar vídeo do canvas
+        canvasStream.getVideoTracks().forEach(track => finalStream.addTrack(track));
+        
+        // Adicionar áudios
+        audioTracks.forEach(track => finalStream.addTrack(track));
+
+        console.log("🎬 Stream final criado:", finalStream);
+
+        // 10. Configurar MediaRecorder
+        this.chunks = [];
+        this.mediaRecorder = new MediaRecorder(finalStream, {
+          mimeType: 'video/webm;codecs=vp9,opus'
+        });
+
+        this.mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            this.chunks.push(event.data);
+            console.log("📦 Chunk PIP gravado:", event.data.size, "bytes");
+          }
+        };
+
+        this.mediaRecorder.onstop = async () => {
+          console.log("🛑 Gravação PIP parada, salvando arquivo...");
+          
+          // Parar renderização
+          clearTimeout(renderLoop);
+          
+          // Limpar recursos
+          screenVideo.srcObject = null;
+          cameraVideo.srcObject = null;
+          screenStream.getTracks().forEach(track => track.stop());
+          cameraStream.getTracks().forEach(track => track.stop());
+          if (microphoneStream) {
+            microphoneStream.getTracks().forEach(track => track.stop());
+          }
+          
+          await this.saveRecording();
+        };
+
+        this.mediaRecorder.onerror = (event) => {
+          console.error("❌ Erro na gravação PIP:", event.error);
+        };
+
+        // 11. Iniciar loop de renderização (usando setTimeout para funcionar em background)
+        let renderLoop;
+        const animate = () => {
+          renderFrame();
+          renderLoop = setTimeout(animate, 16); // ~60fps (1000ms/60 ≈ 16ms)
+        };
+        animate();
+
+        // 12. Iniciar gravação
+        this.mediaRecorder.start(1000);
+        console.log("🎬 Gravação PIP iniciada!");
+
+        // Salvar referências para parar
+        this.recordingStream = finalStream;
+        window.currentRecording = {
+          stop: () => this.stopRecording(),
+          mediaRecorder: this.mediaRecorder,
+          stream: finalStream,
+          screenStream: screenStream,
+          cameraStream: cameraStream,
+          microphoneStream: microphoneStream
+        };
+
+      } catch (error) {
+        console.error("❌ Erro ao iniciar gravação PIP:", error);
+        throw error;
+      }
+    },
     
     closeModal() {
       this.$emit('close');
-      this.selectedSource = null;
+      this.selectedCamera = null;
+      this.selectedDisplay = null;
       this.selectedMicrophone = '';
-      this.activeTab = 'screens';
+      this.pipPosition = 'bottom-right';
+      this.pipSize = 'medium';
     }
   }
 }
@@ -311,29 +816,118 @@ export default {
   overflow-y: auto;
 }
 
-.source-tabs {
-  display: flex;
-  gap: 10px;
+/* Novos estilos para PIP */
+.pip-info {
+  text-align: center;
+  padding: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
 }
 
-.tab-btn {
-  padding: 10px 15px;
-  background: none;
-  border: none;
+.pip-info p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.section {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.section h4 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Estilos para previews das telas */
+.display-sources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.source-preview-item {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.tab-btn.active {
-  border-bottom-color: #007bff;
-  color: #007bff;
+.source-preview-item:hover {
+  border-color: #007bff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.tab-btn:hover {
+.source-preview-item.selected {
+  border-color: #007bff;
+  background: #f0f8ff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.source-thumbnail-container {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.source-thumbnail {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
   background: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+.source-type-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.source-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #212529;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-description {
+  color: #6c757d;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.loading-sources {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.loading-sources p {
+  margin: 0;
+  font-size: 16px;
 }
 
 .sources-grid {
@@ -498,6 +1092,73 @@ export default {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+}
+
+.pip-controls {
+  margin-top: 20px;
+  padding: 15px;
+  background: #e8f4fd;
+  border-radius: 8px;
+  border: 1px solid #bee5eb;
+}
+
+.pip-controls h4 {
+  margin: 0 0 15px 0;
+  color: #0c5460;
+  font-size: 16px;
+}
+
+.pip-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.setting-group label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.setting-group select {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+}
+
+.setting-group select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.section-description {
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+
+.no-camera-option {
+  background: #f8f9fa;
+  border-style: dashed !important;
+}
+
+.no-camera-option:hover {
+  background: #e9ecef;
+}
+
+.no-camera-option.selected {
+  background: #fff3cd;
+  border-color: #ffc107 !important;
 }
 
 .modal-footer {

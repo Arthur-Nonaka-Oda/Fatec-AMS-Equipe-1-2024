@@ -1,20 +1,28 @@
 const { contextBridge, ipcRenderer } = require("electron");
-const Importer = require('../APIs/Importer');
-const importer = new Importer();
-const Recorder = require('../APIs/Recorder');
-const recorder = new Recorder();
+
+console.log("🔧 PRELOAD.JS - Iniciando carregamento...");
+
+// Não carregar Importer/Recorder no preload para evitar problemas
+// Eles serão instanciados no renderer process
+
+console.log("🌉 PRELOAD.JS - Expondo APIs via contextBridge...");
 
 contextBridge.exposeInMainWorld("electron", {
-  // startRecording,
-  // stopRecording,
-  // pauseRecording,
-  // resumeRecording,
+  // Função para criar recorder no renderer process
   recorder: () => {
-    return recorder;
+    console.log("🎬 Criando instância do Recorder...");
+    // Importar dinamicamente no renderer process
+    const Recorder = require('../APIs/Recorder');
+    return new Recorder();
   },
+  
+  // Função para criar importer no renderer process  
   importer: () => {
-    return importer;
+    console.log("📁 Criando instância do Importer...");
+    const Importer = require('../APIs/Importer');
+    return new Importer();
   },
+
   ipcRenderer: {
     on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
     send: (channel, ...args) => ipcRenderer.send(channel, ...args),
@@ -50,3 +58,6 @@ contextBridge.exposeInMainWorld("electron", {
     return await ipcRenderer.invoke("save-imports", { filePath })
   }
 });
+
+console.log("🎉 PRELOAD.JS - APIs expostas com sucesso!");
+console.log("🔍 PRELOAD.JS - window.electron deve estar disponível agora");

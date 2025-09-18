@@ -30,10 +30,20 @@ function createWindow() {
       webSecurity: false, // Necessário para captura de tela
       allowRunningInsecureContent: true, // Permite conteúdo inseguro
       experimentalFeatures: true, // Habilita recursos experimentais
+      backgroundThrottling: false, // Evita throttling quando em background
     },
   });
   mainWindow.loadURL('http://localhost:8080');
   // mainWindow.loadFile(path.join(__dirname, "../index.html"));
+
+  // Evitar que a janela seja pausada quando em background (importante para gravação)
+  mainWindow.on('blur', () => {
+    console.log("🔄 Janela perdeu foco - mantendo processos ativos");
+  });
+  
+  mainWindow.on('focus', () => {
+    console.log("👁️ Janela ganhou foco");
+  });
 
   // Configuração de permissões melhorada para captura de desktop
   session
@@ -129,16 +139,18 @@ if (!fs.existsSync(videosDir)) {
 }
 
 fs.watch(videosDir, async (eventType, filename) => {
-  console.log(`Event Type: ${eventType}, Filename: ${filename}`); // Adiciona log para depuração
+  console.log(`Event Type: ${eventType}, Filename: ${filename}`);
   if (eventType === 'rename' && filename && path.extname(filename) === '.mp4') {
     const filePath = path.join(videosDir, filename);
-    console.log(`File Path: ${filePath}`); // Adiciona log para depuração
+    console.log(`File Path: ${filePath}`);
     if (fs.existsSync(filePath)) {
       try {
-        // Espera um curto período para garantir que o arquivo esteja completamente escrito
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Aguardar arquivo estar completamente pronto
+        await waitForFileReady(filePath);
+        console.log(`Arquivo ${filename} está pronto para importação`);
+        
         const base64Data = await fileToBase64(filePath);
-        console.log(`Base64 Data Length: ${base64Data.length}`); // Adiciona log para depuração
+        console.log(`Base64 Data Length: ${base64Data.length}`);
         mainWindow.webContents.send('video-saved', { filePath, data: base64Data });
       } catch (error) {
         console.error('Error converting file to base64:', error);
@@ -146,6 +158,47 @@ fs.watch(videosDir, async (eventType, filename) => {
     }
   }
 });
+
+// Função para aguardar arquivo estar completamente pronto
+async function waitForFileReady(filePath) {
+  let lastSize = -1;
+  let stableCount = 0;
+  const maxWait = 30000; // 30 segundos máximo
+  const checkInterval = 1000; // Verificar a cada 1 segundo
+  const stableChecks = 3; // Precisar ser estável por 3 verificações
+  
+  console.log(`Aguardando arquivo estar pronto: ${filePath}`);
+  
+  for (let waited = 0; waited < maxWait; waited += checkInterval) {
+    try {
+      const stats = fs.statSync(filePath);
+      const currentSize = stats.size;
+      
+      console.log(`Tamanho atual: ${currentSize} bytes, último: ${lastSize} bytes`);
+      
+      if (currentSize === lastSize && currentSize > 0) {
+        stableCount++;
+        console.log(`Arquivo estável (${stableCount}/${stableChecks})`);
+        
+        if (stableCount >= stableChecks) {
+          console.log(`Arquivo ${filePath} está completamente pronto`);
+          return;
+        }
+      } else {
+        stableCount = 0; // Reset se tamanho mudou
+      }
+      
+      lastSize = currentSize;
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+      
+    } catch (error) {
+      console.log(`Arquivo ainda não existe ou está sendo escrito: ${error.message}`);
+      await new Promise(resolve => setTimeout(resolve, checkInterval));
+    }
+  }
+  
+  console.warn(`Timeout aguardando arquivo ${filePath} - prosseguindo mesmo assim`);
+}
 
 function fileToBase64(filePath) {
   return new Promise((resolve, reject) => {
@@ -974,36 +1027,7 @@ ipcMain.handle("permission-dialog", async () => {
   return { filePath };
 });
 
-ipcMain.handle("write-file", async (event, { arrayBuffers, filePath }) => {
-
-  const outputFilePath = `${filePath}.mp4`;
-  const buffer = Buffer.concat(arrayBuffers.map((chunk) => Buffer.from(chunk)));
-  const tempFilePath = `${filePath}.temp.webm`;
-
-  fs.writeFile(tempFilePath, buffer, (err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      ffmpeg(tempFilePath)
-        .outputOptions("-c:v", "libx264", "-preset", "ultrafast")
-        .save(outputFilePath)
-        .on("end", () => {
-          fs.unlink(tempFilePath, (err) => {
-            if (err) {
-              console.error("Error writing file", err);
-            } else {
-              dialog.showMessageBox({
-                type: "info",
-                title: "Sucesso",
-                message: "Video salvo com sucesso!",
-              });
-            }
-          });
-        })
-        .on("error", console.error);
-    }
-  });
-});
+// Handler removido - duplicado com o handler abaixo
 
 ipcMain.handle("get-desktop-sources", async () => {
   try {
@@ -1061,4 +1085,96 @@ ipcMain.handle("select-screen", async () => {
 
 ipcMain.on('cancel-renderization', (event) => {
   cancelAllProcesses();
+});
+
+// Handler para salvar arquivos de gravação
+ipcMain.handle('write-file', async (event, { arrayBuffers, filePath }) => {
+  try {
+    console.log("💾 Salvando arquivo:", filePath);
+    
+    // Usar a mesma pasta que o sistema original de gravação
+    const videosDir = path.join(__dirname, "../videos");
+    
+    // Criar pasta se não existir
+    if (!fs.existsSync(videosDir)) {
+      fs.mkdirSync(videosDir, { recursive: true });
+    }
+    
+    // Salvar diretamente como WebM (sem conversão para evitar corrupção)
+    const outputFilePath = path.join(videosDir, `${filePath}.webm`);
+    const buffer = Buffer.concat(arrayBuffers.map((chunk) => Buffer.from(chunk)));
+    
+    console.log("📁 Salvando arquivo:", outputFilePath);
+    console.log("� Tamanho do buffer:", buffer.length, "bytes");
+    
+    // Salvar arquivo WebM diretamente
+    await new Promise((resolve, reject) => {
+      fs.writeFile(outputFilePath, buffer, (err) => {
+        if (err) {
+          console.error("❌ Erro ao salvar arquivo:", err);
+          reject(err);
+        } else {
+          console.log("✅ Arquivo WebM salvo com sucesso");
+          resolve();
+        }
+      });
+    });
+    
+    console.log("✅ Arquivo WebM salvo com sucesso:", outputFilePath);
+    
+    // Mostrar notificação de sucesso (fs.watch fará a importação automática)
+    dialog.showMessageBox({
+      type: "info",
+      title: "Sucesso",
+      message: "Vídeo gravado com sucesso! Será importado automaticamente.",
+    });
+    
+    return { success: true, path: outputFilePath, size: buffer.length };
+    
+  } catch (error) {
+    console.error("❌ Erro ao salvar arquivo:", error);
+    dialog.showMessageBox({
+      type: "error", 
+      title: "Erro",
+      message: `Erro ao salvar vídeo: ${error.message}`,
+    });
+    throw error;
+  }
+});
+
+// Handler corrigido para usar método original
+ipcMain.handle('write-file-fixed', async (event, { arrayBuffers, filePath }) => {
+  const videosDir = path.join(__dirname, "../videos");
+  
+  if (!fs.existsSync(videosDir)) {
+    fs.mkdirSync(videosDir, { recursive: true });
+  }
+
+  const outputFilePath = path.join(videosDir, `${filePath}.mp4`);
+  const buffer = Buffer.concat(arrayBuffers.map((chunk) => Buffer.from(chunk)));
+  const tempFilePath = path.join(videosDir, `${filePath}.temp.webm`);
+
+  fs.writeFile(tempFilePath, buffer, (err) => {
+    if (err) {
+      console.log(err);
+    } else {
+      ffmpeg(tempFilePath)
+        .outputOptions("-c:v", "libx264", "-preset", "ultrafast")
+        .save(outputFilePath)
+        .on("end", () => {
+          fs.unlink(tempFilePath, (err) => {
+            if (err) {
+              console.error("Error writing file", err);
+            } else {
+              dialog.showMessageBox({
+                type: "info",
+                title: "Sucesso",
+                message: "Video salvo com sucesso!",
+              });
+            }
+          });
+        })
+        .on("error", console.error);
+    }
+  });
 });

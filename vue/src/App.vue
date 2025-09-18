@@ -1,3 +1,4 @@
+/* eslint-disable */
 <template>
   <div>
     
@@ -421,7 +422,16 @@ export default {
         } else {
           // Parando gravação
           console.log("Parando gravação...");
-          await window.electron.recorder().stopRecording();
+          
+          // Verificar se há gravação ativa no sistema novo
+          if (window.currentRecording) {
+            await window.currentRecording.stop();
+            window.currentRecording = null;
+          } else {
+            // Fallback para o sistema antigo
+            await window.electron.recorder().stopRecording();
+          }
+          
           this.isRecording = false;
           this.recordImageSrc = "/gravarIcone.png";
           console.log("Gravação parada com sucesso");
