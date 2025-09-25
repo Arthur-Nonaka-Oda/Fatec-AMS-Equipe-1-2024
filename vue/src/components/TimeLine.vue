@@ -87,6 +87,7 @@ export default {
       },
       showModal: false,
       selectedZoom: 1,
+      initialGrabOffset: 0,
     };
   },
   computed: {
@@ -166,24 +167,89 @@ export default {
     },
     grabMove(event) {
       if (this.isGrabbing) {
-        const timelineRect = this.$el
-          .querySelector(".time")
-          .getBoundingClientRect();
-        let newPosition = event.clientX - timelineRect.left;
-        newPosition = Math.max(0, Math.min(newPosition, timelineRect.width));
-        this.cursorPosition = newPosition;
-        const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
-        const currentTimeInSeconds = this.cursorPosition * secondsPerPixel;
-        this.currentTime = this.formatTime(currentTimeInSeconds);
-        this.$emit('cursor-moved', currentTimeInSeconds);
+        // Usar requestAnimationFrame para movimento mais suave
+        requestAnimationFrame(() => {
+          const timelineElement = this.$el;
+          const timelineRect = this.$el
+            .querySelector(".time")
+            .getBoundingClientRect();
+          
+          // Incluir o scroll horizontal da timeline no cálculo
+          const scrollLeft = timelineElement.scrollLeft;
+          const viewportWidth = timelineElement.getBoundingClientRect().width;
+          
+          // Calcular posição do mouse relativa à timeline, considerando o offset inicial
+          const mouseRelativeX = event.clientX - timelineRect.left;
+          
+          // Auto-scroll suave quando próximo das bordas
+          const scrollBuffer = 80; // pixels da borda para começar o scroll
+          const scrollSpeed = 15; // velocidade do scroll
+          
+          if (mouseRelativeX < scrollBuffer && scrollLeft > 0) {
+            // Mouse próximo da borda esquerda - scroll para esquerda
+            const newScrollLeft = Math.max(0, scrollLeft - scrollSpeed);
+            timelineElement.scrollLeft = newScrollLeft;
+          } else if (mouseRelativeX > viewportWidth - scrollBuffer) {
+            // Mouse próximo da borda direita - scroll para direita  
+            const maxScroll = Math.max(0, this.dynamicCanvasWidth - viewportWidth);
+            const newScrollLeft = Math.min(maxScroll, scrollLeft + scrollSpeed);
+            timelineElement.scrollLeft = newScrollLeft;
+          }
+          
+          // Recalcular posição após possível scroll
+          const currentScrollLeft = timelineElement.scrollLeft;
+          
+          // Calcular nova posição considerando o offset inicial do grab
+          let newPosition = (event.clientX - timelineRect.left - this.initialGrabOffset) + currentScrollLeft;
+          
+          // Limitar dentro dos bounds da timeline
+          const maxWidth = this.dynamicCanvasWidth;
+          newPosition = Math.max(0, Math.min(newPosition, maxWidth));
+          
+          // Aplicar movimento suave para evitar saltos
+          const currentPos = this.cursorPosition;
+          const targetMovement = newPosition - currentPos;
+          const maxMovementPerFrame = 100; // limite de movimento por frame
+          
+          let finalPosition;
+          if (Math.abs(targetMovement) > maxMovementPerFrame) {
+            // Se o movimento é muito grande, aplicar progressivamente
+            finalPosition = currentPos + Math.sign(targetMovement) * maxMovementPerFrame;
+          } else {
+            finalPosition = newPosition;
+          }
+          
+          // Atualizar posição do cursor
+          this.cursorPosition = finalPosition;
+          
+          // Calcular e atualizar o tempo
+          const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
+          const currentTimeInSeconds = this.cursorPosition * secondsPerPixel;
+          this.currentTime = this.formatTime(currentTimeInSeconds);
+          this.$emit('cursor-moved', currentTimeInSeconds);
+        });
       }
     },
 
     grabDone() {
       this.isGrabbing = false;
+      // Remover classe de dragging para feedback visual
+      this.$el.classList.remove('timeline-dragging');
+      document.body.style.cursor = '';
     },
-    grabTime() {
+    grabTime(event) {
       this.isGrabbing = true;
+      // Adicionar classe de dragging para feedback visual
+      this.$el.classList.add('timeline-dragging');
+      document.body.style.cursor = 'grabbing';
+      
+      // Armazenar posição inicial para evitar saltos
+      const timelineRect = this.$el.querySelector(".time").getBoundingClientRect();
+      const scrollLeft = this.$el.scrollLeft;
+      this.initialGrabOffset = event.clientX - timelineRect.left - (this.cursorPosition - scrollLeft);
+      
+      // Prevenir seleção de texto durante o drag
+      event.preventDefault();
     },
 
     handleDragOver(event) {
@@ -257,19 +323,24 @@ export default {
       }
     },
     onTimelineClick(event) {
-      // Calcula o clique relativo à timeline
+      // Calcula o clique relativo à timeline incluindo scroll
       const rect = event.currentTarget.getBoundingClientRect();
-      const clickX = event.clientX - rect.left;
+      const scrollLeft = event.currentTarget.scrollLeft;
+      const clickX = event.clientX - rect.left + scrollLeft;
       
       // Converte posição em pixels para segundos
       const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
       const timeInSeconds = clickX * secondsPerPixel;
       
-      // Atualiza o cursor para a posição do clique
-      this.updateCurrentTime(timeInSeconds);
+      // Limitar o tempo dentro dos limites da timeline
+      const maxTime = this.totalVideoDuration;
+      const clampedTime = Math.max(0, Math.min(timeInSeconds, maxTime));
       
-      // Se quiser, emite evento pro pai com o tempo clicado
-      this.$emit('cursor-moved', timeInSeconds);
+      // Atualiza o cursor para a posição do clique
+      this.updateCurrentTime(clampedTime);
+      
+      // Emite evento pro pai com o tempo clicado
+      this.$emit('cursor-moved', clampedTime);
     },
      handleItemClicked(item) {
       this.$emit('item-clicked', item);
@@ -311,8 +382,122 @@ export default {
     },
     updateCurrentTime(currentTimeInSeconds) {
       const secondsPerPixel = (this.config.minimumScaleTime * 10) / 100;
-      this.cursorPosition = currentTimeInSeconds / secondsPerPixel;
+      const newPosition = currentTimeInSeconds / secondsPerPixel;
+      
+      // Garantir que a posição não exceda os limites da timeline
+      const maxPosition = this.dynamicCanvasWidth;
+      const targetPosition = Math.max(0, Math.min(newPosition, maxPosition));
+      
+      // Se não estiver sendo arrastado, usar transição suave
+      if (!this.isGrabbing) {
+        this.animateCursorTo(targetPosition);
+      } else {
+        this.cursorPosition = targetPosition;
+      }
+      
       this.currentTime = this.formatTime(currentTimeInSeconds);
+      
+      // Auto-scroll para manter o cursor visível se necessário
+      if (!this.isGrabbing) {
+        this.ensureCursorVisible();
+      }
+    },
+    
+    animateCursorTo(targetPosition) {
+      const startPosition = this.cursorPosition;
+      const distance = targetPosition - startPosition;
+      const duration = 200; // 200ms de duração
+      let startTime = null;
+      
+      const animateCursor = (currentTime) => {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
+        const progress = Math.min(timeElapsed / duration, 1);
+        
+        // Easing function para movimento suave
+        const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+        
+        this.cursorPosition = startPosition + (distance * easeOutCubic);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateCursor);
+        }
+      };
+      
+      requestAnimationFrame(animateCursor);
+    },
+    
+    ensureCursorVisible() {
+      this.$nextTick(() => {
+        const timelineElement = this.$el;
+        if (!timelineElement) return;
+        
+        const timelineRect = timelineElement.getBoundingClientRect();
+        const scrollLeft = timelineElement.scrollLeft;
+        const viewportWidth = timelineRect.width;
+        
+        // Posição absoluta do cursor na timeline
+        const cursorAbsolutePosition = this.cursorPosition;
+        
+        // Posição relativa do cursor no viewport atual
+        const cursorRelativePosition = cursorAbsolutePosition - scrollLeft;
+        
+        // Se o cursor está fora da área visível, fazer scroll suave para centralizá-lo
+        if (cursorRelativePosition < 80) {
+          // Cursor está muito próximo da borda esquerda
+          const targetScroll = Math.max(0, cursorAbsolutePosition - viewportWidth / 3);
+          this.smoothScrollTo(timelineElement, targetScroll);
+        } else if (cursorRelativePosition > viewportWidth - 80) {
+          // Cursor está muito próximo da borda direita
+          const targetScroll = cursorAbsolutePosition - (2 * viewportWidth / 3);
+          this.smoothScrollTo(timelineElement, targetScroll);
+        }
+      });
+    },
+    
+    smoothScrollToCursor() {
+      const timelineElement = this.$el;
+      if (!timelineElement) return;
+      
+      const timelineRect = timelineElement.getBoundingClientRect();
+      const scrollLeft = timelineElement.scrollLeft;
+      const viewportWidth = timelineRect.width;
+      const cursorRelativePosition = this.cursorPosition - scrollLeft;
+      
+      // Auto-scroll mais agressivo durante o drag
+      if (cursorRelativePosition < 100) {
+        const targetScroll = Math.max(0, this.cursorPosition - viewportWidth / 4);
+        timelineElement.scrollLeft = targetScroll;
+      } else if (cursorRelativePosition > viewportWidth - 100) {
+        const targetScroll = this.cursorPosition - (3 * viewportWidth / 4);
+        timelineElement.scrollLeft = targetScroll;
+      }
+    },
+    
+    smoothScrollTo(element, targetScroll) {
+      const startScroll = element.scrollLeft;
+      const distance = targetScroll - startScroll;
+      const duration = 300; // 300ms de duração
+      let startTime = null;
+      
+      const animateScroll = (currentTime) => {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
+        const progress = Math.min(timeElapsed / duration, 1);
+        
+        // Easing function para movimento suave
+        const easeInOutCubic = progress < 0.5 
+          ? 4 * progress * progress * progress 
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        
+        element.scrollLeft = startScroll + (distance * easeInOutCubic);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateScroll);
+        }
+      };
+      
+      requestAnimationFrame(animateScroll);
     },
 
     updateZoom() {
@@ -398,6 +583,16 @@ export default {
   overflow-y: hidden;
   overflow-x: scroll;
   width: 100%;
+  scroll-behavior: smooth;
+}
+
+.timeline-dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+
+.timeline-dragging * {
+  cursor: grabbing !important;
 }
 
 .timeline::-webkit-scrollbar {
@@ -432,7 +627,7 @@ export default {
   line-height: 2.78vh;
   /* Altura da linha */
   position: absolute;
-  background-color: #ce2323;
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 50%, #9c2c2c 100%);
   border-radius: 30px;
   top: 0px;
   /* Mantido */
@@ -444,34 +639,52 @@ export default {
   text-align: center;
   margin-top: 0.5rem;
   /* Espaço superior */
-  transition-property: transform;
-  transition-duration: 0.2s;
-  transition-timing-function: cubic-bezier(0.05, 0.03, 0.35, 1);
+  transition-property: transform, box-shadow, background;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
   user-select: none;
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(206, 35, 35, 0.3);
 
   transform: translateX(-50%);
   /* Centralizar o cursor */
 }
 
 .timecursor:hover {
-  transform: scale(1.12) translateX(-50%);
-  cursor: pointer;
+  transform: scale(1.08) translateX(-50%);
+  cursor: grab;
+  box-shadow: 0 4px 12px rgba(206, 35, 35, 0.4);
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 50%, #c53030 100%);
+}
+
+.timecursor:active,
+.timeline-dragging .timecursor {
+  cursor: grabbing;
+  transform: scale(1.05) translateX(-50%);
+  box-shadow: 0 6px 16px rgba(206, 35, 35, 0.5);
+  background: linear-gradient(135deg, #c53030 0%, #9c2c2c 50%, #742a2a 100%);
 }
 
 .timecursor:after {
-  transition-property: transform, margin-top;
-  transition-duration: 0.25s;
-  transition-timing-function: cubic-bezier(0.05, 0.03, 0.35, 1);
+  transition-property: transform, margin-top, background-color, box-shadow;
+  transition-duration: 0.15s;
+  transition-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
   content: "";
   display: block;
   height: 100vh;
   width: 0.14vw;
   /* Largura */
-  background-color: #ce2323;
+  background: linear-gradient(180deg, #ce2323 0%, rgba(206, 35, 35, 0.8) 70%, rgba(206, 35, 35, 0.4) 100%);
   margin-left: 2.26vw;
   /* Margem à esquerda */
   position: absolute;
   z-index: 2 !important;
+  box-shadow: 0 0 4px rgba(206, 35, 35, 0.3);
+}
+
+.timeline-dragging .timecursor:after {
+  background: linear-gradient(180deg, #9c2c2c 0%, rgba(156, 44, 44, 0.8) 70%, rgba(156, 44, 44, 0.4) 100%);
+  box-shadow: 0 0 8px rgba(206, 35, 35, 0.5);
 }
 
 .layers {
