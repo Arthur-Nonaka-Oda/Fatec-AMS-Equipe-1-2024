@@ -2,8 +2,14 @@
   <div class="timeline-item" @click="handleClick" :style="{ width: itemWidth + 'px' }"
     :class="{ selected: selectedItem.item === item }" draggable="true" @dragstart="handleDragStart"
     @dragend="handleDragEnd" @contextmenu.prevent="handleRightClick">
-    <template v-if="item.type === 'audio'">
-      <div class="audio-icon">Audio</div>
+    <template v-if="isAudioItem">
+      <AudioWaveform 
+        :key="`audio_${layerIndex}_${index}_${item.name || 'unknown'}`"
+        :audioItem="item" 
+        :width="itemWidth" 
+        :height="45" 
+        class="item-content"
+      />
     </template>
     <template v-else>
       <img class="item-content" :src="item.url" alt="Conteúdo" />
@@ -15,6 +21,8 @@
 
 <script>
 import ContextTools from './ContextTools.vue';
+import AudioWaveform from './AudioWaveform.vue';
+import Audio from '../models/Audio.js';
 
 export default {
   props: {
@@ -47,7 +55,8 @@ export default {
     }
   },
   components: {
-    ContextTools
+    ContextTools,
+    AudioWaveform
   },
   created() {
     console.log(this.selectedItem);
@@ -105,21 +114,21 @@ export default {
     itemWidth() {
       const secondsPerPixel = this.minimumScaleTime / 10; // Ajuste conforme necessário
       return this.item.duration / secondsPerPixel;
+    },
+    isAudioItem() {
+      // Verifica se o item é uma instância da classe Audio
+      return this.item instanceof Audio;
     }
   }
 };
 </script>
 
 <style scoped>
-.audio-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.audio-waveform-container {
   width: 100%;
   height: 100%;
-  background-color: #ddd;
-  color: #333;
-  font-weight: bold;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 
@@ -164,7 +173,7 @@ img {
 
 .timeline-item:hover {
   background-color: #f0f0f0;
-  transform: scale(1.02);
+  transform: scale(1);
   /* Aumenta um pouco o item ao passar o mouse */
 }
 
@@ -174,7 +183,7 @@ img {
   /* Cor de destaque para item selecionado */
   border: 2px solid #4caf50;
   /* Adiciona uma borda verde ao item selecionado */
-  transform: scale(1.05);
+  transform: scale(1);
   /* Aumenta o item selecionado */
 }
 </style>
