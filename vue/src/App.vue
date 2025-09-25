@@ -153,6 +153,7 @@ import TimeLine from "./models/TimeLine.js";
 import VideoPreview from "./components/VideoPreview.vue";
 import TextEditor from "./components/TextEditor.vue";
 import RecordingSourceSelector from "./components/RecordingSourceSelector.vue";
+import { useTimelineStore } from './stores/timeline';
 import Video from "./models/Video"; // Certifique-se de que o caminho está correto
 import Audio from "./models/Audio"; // Certifique-se de que o caminho está correto
 import Image from "./models/Image";
@@ -199,6 +200,9 @@ export default {
     };
   },
   computed: {
+    timelineStore() {
+      return useTimelineStore();
+    },
     circumference() {
       // Raio do círculo agora é 52 (r="52" no SVG)
       return 2 * Math.PI * 52;
@@ -334,9 +338,14 @@ export default {
     markAsUnsaved() {
       // Método para marcar que há alterações não salvas
       this.hasUnsavedChanges = true;
+      // Sincroniza com o store
+      this.timelineStore.updateTimeline(this.layers);
     },
     updateLayers(newLayers) {
       this.layers = newLayers || this.timeline.getLayersForVue();
+      
+      // Sincroniza com o store
+      this.timelineStore.updateTimeline(this.layers);
 
       const hasItems = this.layers.some((layer) => layer.items.length > 0);
       if (hasItems) {

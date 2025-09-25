@@ -13,6 +13,7 @@
     "@fortawesome/vue-fontawesome": "^2.0.10",
     "core-js": "^3.8.3",
     "path": "^0.12.7",
+    "pinia": "^2.1.7",
     "quill": "^2.0.2",
     "video-editing-timeline-vue": "^1.0.0",
     "vue": "^2.6.14",

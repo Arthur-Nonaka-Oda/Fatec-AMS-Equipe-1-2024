@@ -12,6 +12,52 @@ export default class TimeLine {
     this.projectId = null;
     this.projectName = null;
     this.createdAt = null;
+    this.history = {
+      past: [],
+      future: []
+    };
+  }
+
+  // Método para atualizar as camadas da timeline com os dados do store
+  setLayers(layers) {
+    console.log('Atualizando camadas da timeline:', layers);
+    try {
+      // Converte o formato do store para o formato da timeline
+      this.layers = layers.map(layer => {
+        const items = layer.items || [];
+        const nodes = items.map(item => this.createNode({ 
+          file: item, 
+          type: item.constructor.name.toLowerCase() 
+        }));
+
+        // Cria a lista encadeada
+        let head = null;
+        let end = null;
+        nodes.forEach(node => {
+          if (!head) {
+            head = node;
+            end = node;
+          } else {
+            end.next = node;
+            end = node;
+          }
+        });
+
+        return { head, end };
+      });
+
+      // Atualiza a visualização
+      this.updateVueLayers();
+      console.log('Camadas atualizadas com sucesso');
+    } catch (error) {
+      console.error('Erro ao atualizar camadas:', error);
+    }
+  }
+
+  saveToHistory() {
+    const snapshot = this.getSnapshot();
+    this.history.past.push(snapshot);
+    this.history.future = []; // Limpa o histórico futuro ao fazer uma nova ação
   }
 
 
@@ -28,6 +74,9 @@ export default class TimeLine {
     }
     
     try {
+      // Salva o estado atual no histórico antes de executar o comando
+      this.saveToHistory();
+      
       console.log('Executando comando:', command);
       command.execute();
       console.log('Comando executado com sucesso');
