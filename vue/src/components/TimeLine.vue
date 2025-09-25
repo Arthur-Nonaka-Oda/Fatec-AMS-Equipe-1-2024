@@ -19,8 +19,6 @@
       </div>
     </div>
     <div class="zoom-controls">
-      <button @click="undo" :disabled="!timeline.history.canUndo">↩ Undo</button>
-      <button @click="redo" :disabled="!timeline.history.canRedo">↪ Redo</button>
       <select id="zoom" v-model="selectedZoom" @change="updateZoom">
         <option value="0.1">10%</option>
         <option value="0.25">25%</option>
@@ -355,22 +353,7 @@ export default {
       });
       this.updateLayers();
     },
-    async handleUndo() {
-        if (this.timeline && this.timeline.history) {
-            await this.timeline.undo();
-            this.updateLayers();
-            this.$emit('timeline-changed');
-            this.$emit('cursor-moved', 0);
-        }
-    },
 
-    async handleRedo() {
-        if (this.timeline && this.timeline.history) {
-            await this.timeline.redo();
-            this.updateLayers();
-            this.$emit('timeline-changed');
-        }
-    },
     formatTime(seconds) {
       const roundedSeconds = Math.floor(seconds);
       const hours = Math.floor(roundedSeconds / 3600);
@@ -514,24 +497,8 @@ export default {
       };
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
     },
-    async undo() {
-        await this.handleUndo();
-    },
-    async redo() {
-        await this.handleRedo();
-    },
-    handleKeyEvents(event) {
-        // Ctrl+Z para desfazer
-        if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
-            event.preventDefault();
-            this.handleUndo();
-        }
-        // Ctrl+Shift+Z ou Ctrl+Y para refazer
-        else if ((event.ctrlKey && event.shiftKey && (event.key === 'z' || event.key === 'Z')) || 
-                 (event.ctrlKey && (event.key === 'y' || event.key === 'Y'))) {
-            event.preventDefault();
-            this.handleRedo();
-        }
+    handleKeyEvents() {
+        // Eventos de teclado removidos
     },
   },
 };

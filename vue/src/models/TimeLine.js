@@ -2,100 +2,84 @@ import Video from "../models/Video";
 import Audio from "./Audio";
 import Image from "./Image";
 import Node from "../models/Node";
-import { TimelineHistory } from './TimelineHistory'; // NOVO
+// TimelineHistory removido
 
 export default class TimeLine {
   constructor() {
     this.layers = [{ head: null, end: null }, { head: null, end: null }, { head: null, end: null }];
     this.currentSecond = 0;
-    this.history = new TimelineHistory(); // NOVO
-    this.executeCommand = this.executeCommand.bind(this); // NOVO
+    this.executeCommand = this.executeCommand.bind(this);
     this.projectId = null;
     this.projectName = null;
     this.createdAt = null;
   }
 
+
+
   executeCommand(command) {
     if (!command || typeof command !== 'object') {
-        console.error('Comando inválido:', command);
-        return;
+      console.error('Comando inválido:', command);
+      return;
     }
 
-    if (typeof command.execute !== 'function' || typeof command.undo !== 'function') {
-        console.error('Comando deve ter métodos execute e undo:', command);
-        return;
+    if (typeof command.execute !== 'function') {
+      console.error('Comando deve ter método execute:', command);
+      return;
     }
     
     try {
-        console.log('Executando comando:', command);
-        command.execute();
-        this.history.addAction(command.execute, command.undo);
-        console.log('Comando executado com sucesso');
+      console.log('Executando comando:', command);
+      command.execute();
+      console.log('Comando executado com sucesso');
     } catch (error) {
-        console.error('Erro ao executar comando:', error);
-        // Tentar reverter para o estado anterior se possível
-        if (command.undo) {
-            try {
-                command.undo();
-            } catch (undoError) {
-                console.error('Erro ao desfazer comando com erro:', undoError);
-            }
-        }
+      console.error('Erro ao executar comando:', error);
     }
   }
 
-  // Modificado para usar o sistema de histórico
   addFileToLayer(fileData, position = 'end') {
-    const originalState = this.getSnapshot();
-    const layerIndex = fileData.layerIndex;
     const execute = () => {
-      // Implementação original:
+      const layerIndex = fileData.layerIndex;
       if (layerIndex >= 0 && layerIndex < this.layers.length) {
-        const newNode = this.createNode(fileData);
-        const layer = this.layers[layerIndex];
+      const newNode = this.createNode(fileData);
+      const layer = this.layers[layerIndex];
 
-        if (layer.head === null) {
-          layer.head = newNode;
-          layer.end = newNode;
-        } else if (typeof position === 'number') {
-          let current = layer.head;
-          let prev = null;
-          let index = 0;
+      if (layer.head === null) {
+        layer.head = newNode;
+        layer.end = newNode;
+      } else if (typeof position === 'number') {
+        let current = layer.head;
+        let prev = null;
+        let index = 0;
 
-          while (current && index < position) {
-            prev = current;
-            current = current.next;
-            index++;
-          }
+        while (current && index < position) {
+          prev = current;
+          current = current.next;
+          index++;
+        }
 
-          if (prev) {
-            prev.next = newNode;
-            newNode.next = current;
-          } else {
-            newNode.next = layer.head;
-            layer.head = newNode;
-          }
-
-          if (!newNode.next) {
-            layer.end = newNode;
-          }
-        } else if (position === 'start') {
+        if (prev) {
+          prev.next = newNode;
+          newNode.next = current;
+        } else {
           newNode.next = layer.head;
           layer.head = newNode;
-        } else if (position === 'end') {
-          layer.end.next = newNode;
+        }
+
+        if (!newNode.next) {
           layer.end = newNode;
         }
+      } else if (position === 'start') {
+        newNode.next = layer.head;
+        layer.head = newNode;
+      } else if (position === 'end') {
+        layer.end.next = newNode;
+        layer.end = newNode;
       }
       this.updateVueLayers();
+    }
     };
-
-    const undo = () => {
-      this.restoreSnapshot(originalState);
-      this.updateVueLayers();
-    };
-
-    this.executeCommand({ execute, undo });
+    
+    this.executeCommand({ execute });
   }
 
         // Correção sugerida
@@ -185,59 +169,52 @@ restoreItemMethods(item) {
 
   // Atualizar outros métodos para usar executeCommand...
   moveItem(sourceLayerIndex, sourceIndex, targetLayerIndex, targetIndex) {
-    const originalState = this.getSnapshot();
     const execute = () => {
-      // Implementação original do moveItem:
       const sourceLayer = this.layers[sourceLayerIndex];
-      let current = sourceLayer.head;
-      let prev = null;
-      let count = 0;
+    let current = sourceLayer.head;
+    let prev = null;
+    let count = 0;
 
-      while (current && count < sourceIndex) {
-        prev = current;
-        current = current.next;
-        count++;
-      }
+    while (current && count < sourceIndex) {
+      prev = current;
+      current = current.next;
+      count++;
+    }
 
-      if (!current) return;
+    if (!current) return;
 
-      if (prev) {
-        prev.next = current.next;
-      } else {
-        sourceLayer.head = current.next;
-      }
+    if (prev) {
+      prev.next = current.next;
+    } else {
+      sourceLayer.head = current.next;
+    }
 
-      const targetLayer = this.layers[targetLayerIndex];
-      let targetCurrent = targetLayer.head;
-      let targetPrev = null;
-      count = 0;
+    const targetLayer = this.layers[targetLayerIndex];
+    let targetCurrent = targetLayer.head;
+    let targetPrev = null;
+    count = 0;
 
-      while (targetCurrent && count < targetIndex) {
-        targetPrev = targetCurrent;
-        targetCurrent = targetCurrent.next;
-        count++;
-      }
+    while (targetCurrent && count < targetIndex) {
+      targetPrev = targetCurrent;
+      targetCurrent = targetCurrent.next;
+      count++;
+    }
 
-      if (targetPrev) {
-        targetPrev.next = current;
-        current.next = targetCurrent;
-      } else {
-        current.next = targetLayer.head;
-        targetLayer.head = current;
-      }
+    if (targetPrev) {
+      targetPrev.next = current;
+      current.next = targetCurrent;
+    } else {
+      current.next = targetLayer.head;
+      targetLayer.head = current;
+    }
 
-      if (!current.next) {
-        targetLayer.end = current;
-      }
-      this.updateVueLayers();
+    if (!current.next) {
+      targetLayer.end = current;
+    }
+    this.updateVueLayers();
     };
 
-    const undo = () => {
-      this.restoreSnapshot(originalState);
-      this.updateVueLayers();
-    };
-
-    this.executeCommand({ execute, undo });
+    this.executeCommand({ execute });
   }
 
   // Método para atualizar as camadas no Vue
@@ -263,52 +240,43 @@ restoreItemMethods(item) {
   }
 
   removeFileFromLayer(fileData) {
-    // Captura o estado original antes da remoção
-    const originalState = this.getSnapshot();
-
     const execute = () => {
       if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
-        const layer = this.layers[fileData.layerIndex];
-        if (layer.head !== null) {
-          let current = layer.head;
-          let before = null;
+      const layer = this.layers[fileData.layerIndex];
+      if (layer.head !== null) {
+        let current = layer.head;
+        let before = null;
 
-          // Se for o primeiro item da lista
+        // Se for o primeiro item da lista
+        if (current.item === fileData.file) {
+          layer.head = current.next;
+          if (layer.end === current) {
+            layer.end = null;
+          }
+          this.updateVueLayers();
+          return;
+        }
+
+        // Procura o item na lista
+        while (current !== null) {
           if (current.item === fileData.file) {
-            layer.head = current.next;
             if (layer.end === current) {
-              layer.end = null;
+              layer.end = before;
+            }
+            if (before !== null) {
+              before.next = current.next;
             }
             this.updateVueLayers();
             return;
           }
-
-          // Procura o item na lista
-          while (current !== null) {
-            if (current.item === fileData.file) {
-              if (layer.end === current) {
-                layer.end = before;
-              }
-              if (before !== null) {
-                before.next = current.next;
-              }
-              this.updateVueLayers();
-              return;
-            }
-            before = current;
-            current = current.next;
-          }
+          before = current;
+          current = current.next;
         }
       }
+    }
     };
 
-    const undo = () => {
-      this.restoreSnapshot(originalState);
-      this.updateVueLayers();
-    };
-
-    // Registra a ação no histórico e executa
-    this.executeCommand({ execute, undo });
+    this.executeCommand({ execute });
   }
 
   exportToJSON() {
@@ -499,20 +467,10 @@ restoreItemMethods(item) {
   }
 
   async splitVideoAtTime(video, splitTime) {
-    const layerIndex = this.layers.findIndex(layer =>
+    const command = new SplitCommand(this, video, splitTime, this.layers.findIndex(layer =>
       this.listFilesInLayer(this.layers.indexOf(layer)).includes(video)
-    );
-
-    if (layerIndex === -1) {
-      console.error("Vídeo original não encontrado na camada.");
-      return;
-    }
-
-    const command = new SplitCommand(this, video, splitTime, layerIndex);
-    this.executeCommand({
-      execute: () => command.execute(),
-      undo: () => command.undo()
-    });
+    ));
+    this.executeCommand({ execute: () => command.execute() });
   }
 
   async splitAudioAtTime(audio, splitTime) {
@@ -619,50 +577,14 @@ restoreItemMethods(item) {
       items: this.listFilesInLayer(this.layers.indexOf(layer))
     }));
   }
-
-  // Adicione estes métodos
-  async undo() {
-    if (this.history) {
-      await this.history.undo();
-      this.updateVueLayers();
-    }
-  }
-
-  async redo() {
-    if (this.history) {
-      await this.history.redo();
-      this.updateVueLayers();
-    }
-  }
-
 }
 
-
-class TimelineCommand {
-    constructor(timeline) {
-        this.timeline = timeline;
-        this.previousState = null;
-    }
-
-    saveState() {
-        this.previousState = this.timeline.getSnapshot();
-    }
-
-    restoreState() {
-        if (this.previousState) {
-            this.timeline.restoreSnapshot(this.previousState);
-        }
-    }
-}
-
-// Modifique sua classe SplitCommand para herdar de TimelineCommand
-class SplitCommand extends TimelineCommand {
+class SplitCommand {
   constructor(timeline, item, splitTime, layerIndex) {
-    super(timeline); // Chama o construtor da classe pai
+    this.timeline = timeline;
     this.item = item;
     this.splitTime = splitTime;
     this.layerIndex = layerIndex;
-    this.saveState(); // Salva o estado inicial usando o método herdado
   }
 
   execute() {
@@ -705,14 +627,5 @@ class SplitCommand extends TimelineCommand {
     this.timeline.removeFileFromLayer({ file: video, layerIndex: this.layerIndex });
     this.timeline.addFileToLayer({ file: videoPart1, type: "video", layerIndex: this.layerIndex }, originalIndex);
     this.timeline.addFileToLayer({ file: videoPart2, type: "video", layerIndex: this.layerIndex }, originalIndex + 1);
-  }
-
-  undo() {
-    this.restoreState(); // Use o método herdado
-    this.timeline.updateVueLayers();
-  }
-
-  redo() {
-    this.execute();
   }
 }
