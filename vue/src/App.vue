@@ -50,10 +50,7 @@
           </div>
         </div>
         <div class="centro">
-          <button class="btn-acao" data-acao="desfazer" aria-label="Desfazer">
-            <img src="/voltarIcone.png" alt="Desfazer" />
-            <span class="legenda">Desfazer</span>
-          </button>
+
           <button @click="saveProject" class="btn-acao" data-acao="salvar" aria-label="Salvar" :class="{ 'unsaved-changes': hasUnsavedChanges }">
             <img src="/salvarIcone.png" alt="Salvar" />
             <span class="legenda">{{ hasUnsavedChanges ? 'Salvar*' : 'Salvar' }}</span>
