@@ -2,7 +2,6 @@ import Video from "../models/Video";
 import Audio from "./Audio";
 import Image from "./Image";
 import Node from "../models/Node";
-// TimelineHistory removido
 
 export default class TimeLine {
   constructor() {

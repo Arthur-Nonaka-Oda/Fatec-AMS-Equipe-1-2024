@@ -543,6 +543,10 @@ export default {
             if (!layer.items) layer.items = [];
           });
           
+          // Força atualização do store e da UI
+          this.timelineStore.$patch((state) => {
+            state.layers = [...newLayers];
+          });
           this.updateLayers(newLayers);
           console.log('Layers antes:', layersBefore);
           console.log('Layers depois:', JSON.stringify(this.layers));
@@ -574,6 +578,10 @@ export default {
             if (!layer.items) layer.items = [];
           });
           
+          // Força atualização do store e da UI
+          this.timelineStore.$patch((state) => {
+            state.layers = [...newLayers];
+          });
           this.updateLayers(newLayers);
           console.log('Layers antes:', layersBefore);
           console.log('Layers depois:', JSON.stringify(this.layers));

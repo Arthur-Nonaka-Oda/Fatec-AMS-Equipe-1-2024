@@ -97,6 +97,10 @@ export class TimelineHistory {
         try {
             this.isExecutingAction = true;
             
+            // Notifica o início da operação de undo
+            if (window.timeline && window.timeline.updateVueLayers) {
+                window.timeline.updateVueLayers();
+            
             if (!action || typeof action.undo !== 'function') {
                 console.warn('Ação de undo inválida:', action);
                 return;
@@ -110,6 +114,9 @@ export class TimelineHistory {
                 // Depois verificamos se há vídeos que precisam ter seus blobs restaurados
                 const timeline = window.timeline;
                 if (timeline) {
+                    // Força atualização antes de processar os blobs
+                    timeline.updateVueLayers();
+                    
                     const layers = timeline.layers;
                     layers.forEach(layer => {
                         let current = layer.head;
@@ -126,7 +133,9 @@ export class TimelineHistory {
                             current = current.next;
                         }
                     });
-                }
+                    
+                    // Força outra atualização após processar os blobs
+                    timeline.updateVueLayers();
             };
 
             // Executa o undo com o tratamento especial
@@ -183,6 +192,9 @@ export class TimelineHistory {
             // Verifica e restaura os blobs dos vídeos
             const timeline = window.timeline;
             if (timeline) {
+                // Força atualização antes de processar os blobs
+                timeline.updateVueLayers();
+                
                 const layers = timeline.layers;
                 for (const layer of layers) {
                     let current = layer.head;
@@ -197,7 +209,9 @@ export class TimelineHistory {
                         current = current.next;
                     }
                 }
-            }
+                
+                // Força outra atualização após processar os blobs
+                timeline.updateVueLayers();
 
             this.undoStack.push(action);
             console.log('Redo executado com sucesso');
