@@ -1,6 +1,7 @@
 export default class Video {
-    constructor({ filePath, name, duration, size, blob, url, startTime = 0, endTime = null }) {
+    constructor({ filePath, blobPath, name, duration, size, blob, url, startTime = 0, endTime = null }) {
         this.filePath = filePath;
+        this.blobPath = blobPath; // Adicionar blobPath
         this.name = name;
         this.duration = duration;
         this.size = size;

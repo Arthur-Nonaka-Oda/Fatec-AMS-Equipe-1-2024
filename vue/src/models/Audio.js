@@ -1,6 +1,7 @@
 export default class Audio {
   constructor({
     filePath,
+    blobPath,
     name,
     duration,
     size,
@@ -9,6 +10,7 @@ export default class Audio {
     endTime = null,
   }) {
     this.filePath = filePath;
+    this.blobPath = blobPath; // Adicionar blobPath
     this.name = name;
     this.duration = duration;
     this.size = size;

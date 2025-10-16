@@ -25,8 +25,12 @@ contextBridge.exposeInMainWorld("electron", {
 
   ipcRenderer: {
     on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
-    send: (channel, ...args) => ipcRenderer.send(channel, ...args),
+    send: (channel, ...args) => {
+      console.log(`📤 IPC Send: ${channel}`, args);
+      ipcRenderer.send(channel, ...args);
+    },
     invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+    removeListener: (channel, func) => ipcRenderer.removeListener(channel, func),
   },
 
   saveRecording: async (chunks, filePath) => ipcRenderer.invoke('write-file', chunks, filePath),

@@ -376,6 +376,14 @@ function Recorder() {
             this.mediaRecorder.start(1000);
             this.currentStream = finalStream;
             
+            // Notificar o Electron que a gravação iniciou (para mostrar overlay)
+            try {
+                const ipcRenderer = this.getIpcRenderer();
+                ipcRenderer.send('recording-started');
+            } catch (e) {
+                console.warn('Não foi possível notificar início da gravação:', e);
+            }
+            
             console.log("✅ === GRAVAÇÃO DA TELA INICIADA COM SUCESSO ===");
             console.log("📊 Tracks no stream final:", finalStream.getTracks().map(t => t.kind));
             return true;
@@ -690,6 +698,14 @@ function Recorder() {
             // 13. Iniciar gravação
             this.mediaRecorder.start(1000);
             this.currentStream = mixedStream;
+
+            // Notificar o Electron que a gravação iniciou (para mostrar overlay)
+            try {
+                const ipcRenderer = this.getIpcRenderer();
+                ipcRenderer.send('recording-started');
+            } catch (e) {
+                console.warn('Não foi possível notificar início da gravação:', e);
+            }
 
             console.log("Gravação PIP iniciada com sucesso");
             return true;
@@ -1251,6 +1267,14 @@ function Recorder() {
             if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
                 console.log("Parando gravação...");
                 this.mediaRecorder.stop();
+
+                // Notificar o Electron que a gravação parou (para remover overlay)
+                try {
+                    const ipcRenderer = this.getIpcRenderer();
+                    ipcRenderer.send('recording-stopped');
+                } catch (e) {
+                    console.warn('Não foi possível notificar parada da gravação:', e);
+                }
 
                 // Aguarda um pouco para garantir que o evento onstop seja processado
                 await new Promise(resolve => setTimeout(resolve, 500));
