@@ -440,6 +440,16 @@ export default {
           
           this.isRecording = false;
           this.recordImageSrc = "/gravarIcone.png";
+          
+          // Notificar o Electron para remover o overlay
+          console.log("⏹️ Enviando evento 'recording-stopped' para o Electron...");
+          try {
+            window.electron.ipcRenderer.send('recording-stopped');
+            console.log("✅ Evento 'recording-stopped' enviado com sucesso");
+          } catch (error) {
+            console.error("❌ Erro ao enviar evento 'recording-stopped':", error);
+          }
+          
           console.log("Gravação parada com sucesso");
         }
       } catch (error) {
@@ -448,6 +458,13 @@ export default {
         // Restaura o estado em caso de erro
         this.isRecording = false;
         this.recordImageSrc = "/gravarIcone.png";
+        
+        // Garantir que o overlay seja removido em caso de erro
+        try {
+          window.electron.ipcRenderer.send('recording-stopped');
+        } catch (e) {
+          console.error("Erro ao remover overlay:", e);
+        }
         
         // Mostra uma mensagem de erro para o usuário
         alert(`Erro ao ${this.isRecording ? 'parar' : 'iniciar'} gravação: ${error.message || 'Erro desconhecido'}`);
@@ -459,6 +476,15 @@ export default {
       console.log("Gravação iniciada com configuração:", sourceConfig);
       this.isRecording = true;
       this.recordImageSrc = "/pararIcone.png";
+      
+      // Notificar o Electron para mostrar o overlay
+      console.log("🎬 Enviando evento 'recording-started' para o Electron...");
+      try {
+        window.electron.ipcRenderer.send('recording-started');
+        console.log("✅ Evento 'recording-started' enviado com sucesso");
+      } catch (error) {
+        console.error("❌ Erro ao enviar evento 'recording-started':", error);
+      }
     },
 
     // Callback para erros do modal de gravação

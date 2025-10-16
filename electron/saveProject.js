@@ -61,13 +61,14 @@ async function processBlobsInProjectData(projectData, blobsDir) {
                     // Processar blob se existir
                     if (fileItem.data && fileItem.data.blob) {
                         try {
-                            const blobPath = await saveBlobToFile(fileItem.data, blobsDir, fileIndex, layerIndex);
+                            const blobFileName = await saveBlobToFile(fileItem.data, blobsDir, fileIndex, layerIndex);
                             
-                            // Remover o blob do objeto e adicionar o caminho do blob salvo
+                            // Remover o blob e filePath, adicionar apenas o blobPath com o nome do arquivo
                             delete fileItem.data.blob;
-                            fileItem.data.blobPath = blobPath;
+                            delete fileItem.data.filePath; // Remove o caminho original
+                            fileItem.data.blobPath = blobFileName; // Salva apenas o nome do arquivo
                             
-                            console.log(`Blob salvo: ${blobPath}`);
+                            console.log(`Blob salvo: ${blobFileName}`);
                         } catch (error) {
                             console.error(`Erro ao salvar blob do arquivo ${fileItem.data.name}:`, error);
                             // Remove o blob se houver erro, mas mantém os outros dados
@@ -86,10 +87,10 @@ async function saveBlobToFile(fileData, blobsDir, fileIndex, layerIndex) {
     const timestamp = Date.now();
     const extension = getFileExtension(fileData.filePath || fileData.name);
     const fileName = `layer${layerIndex}_file${fileIndex}_${timestamp}${extension}`;
-    const blobPath = path.join(blobsDir, fileName);
+    const fullBlobPath = path.join(blobsDir, fileName);
     
     console.log(`💾 Salvando blob para: ${fileData.name}`);
-    console.log(`📂 Caminho de destino: ${blobPath}`);
+    console.log(`📂 Caminho de destino: ${fullBlobPath}`);
     console.log(`🏷️ Tipo do blob:`, typeof fileData.blob);
     
     // Se o blob for uma string base64, decodificar
@@ -97,14 +98,14 @@ async function saveBlobToFile(fileData, blobsDir, fileIndex, layerIndex) {
         console.log(`📝 Blob é uma string, processando como base64...`);
         const base64Data = fileData.blob.replace(/^data:[^;]+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
-        fs.writeFileSync(blobPath, buffer);
+        fs.writeFileSync(fullBlobPath, buffer);
         console.log(`✅ Blob string salvo: ${buffer.length} bytes`);
     } else if (fileData.blob && typeof fileData.blob === 'object') {
         console.log(`🔗 Blob é um objeto, tentando usar filePath: ${fileData.filePath}`);
         // Se for um objeto blob do navegador, não podemos salvá-lo diretamente no Electron
         // Neste caso, tentamos usar o filePath original se disponível
         if (fileData.filePath && fs.existsSync(fileData.filePath)) {
-            fs.copyFileSync(fileData.filePath, blobPath);
+            fs.copyFileSync(fileData.filePath, fullBlobPath);
             console.log(`✅ Arquivo copiado do filePath original`);
         } else {
             console.error(`❌ FilePath não disponível ou não existe: ${fileData.filePath}`);
@@ -115,7 +116,8 @@ async function saveBlobToFile(fileData, blobsDir, fileIndex, layerIndex) {
         throw new Error(`Tipo de blob não suportado: ${typeof fileData.blob}`);
     }
     
-    return blobPath;
+    // Retorna apenas o nome do arquivo, não o caminho completo
+    return fileName;
 }
 
 function getFileExtension(filePath) {
@@ -196,7 +198,9 @@ async function restoreBlobsInProjectData(projectData, projectDir) {
                     // Restaurar blob se blobPath existir
                     if (fileItem.data && fileItem.data.blobPath) {
                         try {
-                            const fullBlobPath = path.resolve(fileItem.data.blobPath);
+                            // Construir o caminho completo usando o diretório de blobs do projeto
+                            const blobsDir = path.join(projectDir, "blobs");
+                            const fullBlobPath = path.join(blobsDir, fileItem.data.blobPath);
                             
                             if (fs.existsSync(fullBlobPath)) {
                                 // Ler o arquivo blob e converter para base64
@@ -213,7 +217,9 @@ async function restoreBlobsInProjectData(projectData, projectDir) {
                                 console.log(`📋 Base64 length: ${base64Data.length} caracteres`);
                                 
                                 // Restaurar como blob base64 para compatibilidade com o frontend
-                                fileItem.data.blobBase64 = dataUrl;
+                                fileItem.data.blob = dataUrl; // Usar 'blob' ao invés de 'blobBase64'
+                                // Manter o blobPath para referência na renderização
+                                // fileItem.data.blobPath já existe
                                 
                                 console.log(`✅ Blob restaurado para: ${fileItem.data.name}`);
                             } else {

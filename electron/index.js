@@ -16,6 +16,7 @@ let mainWindow;
 
 let activeFFmpegProcesses = [];
 let renderCanceled = false;
+let recordingOverlay = null; // Janela de overlay para indicar gravação
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -90,6 +91,145 @@ function createWindow() {
     // Aceitar automaticamente pedidos de captura de tela
     callback({ video: request.video, audio: request.audio });
   });
+}
+
+// Função para criar overlay de gravação (borda vermelha)
+function createRecordingOverlay() {
+  if (recordingOverlay) {
+    console.log("⚠️ Overlay já existe, não criando novamente");
+    return; // Já existe
+  }
+
+  console.log("🎬 === CRIANDO OVERLAY DE GRAVAÇÃO ===");
+  
+  const { screen } = require('electron');
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.bounds;
+  
+  console.log(`📺 Dimensões da tela: ${width}x${height}`);
+
+  recordingOverlay = new BrowserWindow({
+    width: width,
+    height: height,
+    x: 0,
+    y: 0,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    closable: false,
+    focusable: false,
+    hasShadow: false,
+    type: 'toolbar', // Importante para overlay no Windows
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  // HTML com indicador de gravação minimalista
+  const overlayHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        body {
+          width: 100vw;
+          height: 100vh;
+          overflow: hidden;
+          pointer-events: none;
+          background: transparent;
+        }
+        .recording-indicator {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: rgba(255, 0, 0, 0.85);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 15px;
+          font-family: 'Segoe UI', Arial, sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          pointer-events: none;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          z-index: 10000;
+        }
+        .recording-dot {
+          width: 8px;
+          height: 8px;
+          background: white;
+          border-radius: 50%;
+          animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+          0%, 100% { 
+            opacity: 1;
+          }
+          50% { 
+            opacity: 0.3;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="recording-indicator">
+        <div class="recording-dot"></div>
+        <span>GRAVANDO</span>
+      </div>
+    </body>
+    </html>
+  `;
+
+  recordingOverlay.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(overlayHTML));
+  recordingOverlay.setIgnoreMouseEvents(true);
+  
+  // Garantir que o overlay fique sempre por cima
+  recordingOverlay.setAlwaysOnTop(true, 'screen-saver', 1);
+  
+  // Mostrar a janela
+  recordingOverlay.show();
+  
+  // Log para confirmar criação
+  recordingOverlay.webContents.on('did-finish-load', () => {
+    console.log("✅ Overlay HTML carregado com sucesso");
+  });
+  
+  recordingOverlay.on('closed', () => {
+    console.log("🔴 Overlay foi fechado");
+    recordingOverlay = null;
+  });
+  
+  console.log("✅ Overlay de gravação criado e exibido");
+}
+
+// Função para remover overlay de gravação
+function destroyRecordingOverlay() {
+  if (recordingOverlay) {
+    try {
+      recordingOverlay.destroy(); // Usar destroy ao invés de close
+      recordingOverlay = null;
+      console.log("❌ Overlay de gravação removido");
+    } catch (error) {
+      console.error("Erro ao destruir overlay:", error);
+      recordingOverlay = null;
+    }
+  } else {
+    console.log("⚠️ Nenhum overlay para remover");
+  }
 }
 
 const projectsDir = path.join(__dirname, 'projects');
@@ -479,19 +619,21 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
     console.log("Total media items to process:", mediaItems.length);
     sendProgress(5);
     // Helper functions to detect file types
-    function isImageFile(filePath) {
+    function isImageFile(item) {
+      const filePath = item.blobPath || item.filePath || '';
       const ext = path.extname(filePath).toLowerCase();
       return ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'].includes(ext);
     }
 
-    function isAudioFile(filePath) {
+    function isAudioFile(item) {
+      const filePath = item.blobPath || item.filePath || '';
       const ext = path.extname(filePath).toLowerCase();
       return ['.mp3', '.wav', '.ogg', '.aac', '.flac', '.m4a'].includes(ext);
     }
 
     // Step 1: Separate videos/images and audios
-    const visuals = mediaItems.filter(item => !isAudioFile(item.filePath));
-    const audios = mediaItems.filter(item => isAudioFile(item.filePath));
+    const visuals = mediaItems.filter(item => !isAudioFile(item));
+    const audios = mediaItems.filter(item => isAudioFile(item));
 
     console.log(`Processing ${visuals.length} visual items and ${audios.length} audio items`);
 
@@ -500,31 +642,29 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
       return new Promise((resolve, reject) => {
         const segmentPath = path.join(tempDir, `visual_segment_${index}.mp4`);
 
-        // Primeiro, tentar encontrar o arquivo blob salvo no projeto
-        let actualFilePath = item.filePath;
+        // Determinar o caminho do arquivo
+        let actualFilePath;
+        
         if (item.blobPath) {
-          // Se tem blobPath, usar ele (arquivo salvo no projeto)
-          actualFilePath = path.resolve(item.blobPath);
-          console.log(`Usando blob salvo: ${actualFilePath}`);
-        } else if (item.projectId) {
-          // Tentar encontrar o arquivo no diretório de blobs do projeto
-          const projectDir = path.join(__dirname, "projects", item.projectId);
-          const blobsDir = path.join(projectDir, "blobs");
-          
-          if (fs.existsSync(blobsDir)) {
-            // Procurar por arquivos que possam corresponder a este item
-            const blobFiles = fs.readdirSync(blobsDir);
-            const matchingFile = blobFiles.find(file => 
-              file.includes(item.name?.replace(/[^a-zA-Z0-9]/g, '_')) || 
-              file.includes(`_${index}_`) ||
-              file.includes(`layer0_file${index}_`)
-            );
-            
-            if (matchingFile) {
-              actualFilePath = path.join(blobsDir, matchingFile);
-              console.log(`Encontrado blob no projeto: ${actualFilePath}`);
-            }
+          // Se tem blobPath, construir o caminho completo usando o projectId
+          if (item.projectId) {
+            const projectDir = path.join(__dirname, "projects", item.projectId);
+            const blobsDir = path.join(projectDir, "blobs");
+            actualFilePath = path.join(blobsDir, item.blobPath);
+            console.log(`Usando blob do projeto: ${actualFilePath}`);
+          } else {
+            console.error(`Item tem blobPath mas não tem projectId:`, item);
+            reject(new Error(`Item tem blobPath mas não tem projectId`));
+            return;
           }
+        } else if (item.filePath) {
+          // Fallback para filePath se não tiver blobPath (retrocompatibilidade)
+          actualFilePath = item.filePath;
+          console.log(`Usando filePath original: ${actualFilePath}`);
+        } else {
+          console.error(`Item não tem blobPath nem filePath:`, item);
+          reject(new Error(`Item não tem blobPath nem filePath`));
+          return;
         }
 
         // Verificar se o arquivo realmente existe
@@ -536,7 +676,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
 
         console.log(`Processando arquivo: ${actualFilePath}`);
 
-        if (isImageFile(actualFilePath)) {
+        if (isImageFile(item)) {
           // Handle image conversion to video segment
           const duration = item.endTime - item.startTime || 5;
 
@@ -557,7 +697,8 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
             })
             .on('end', () => {
               console.log(`Created video from image: ${segmentPath}`);
-              sendProgress(10);
+              const progress = 10 + (index / visuals.length) * 15; // 10-25%
+              sendProgress(progress);
               resolve({
                 path: segmentPath,
                 startTime: item.startTime,
@@ -593,7 +734,8 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
             })
             .on('end', () => {
               console.log(`Trimmed video segment: ${segmentPath}`);
-              sendProgress(10);
+              const progress = 10 + (index / visuals.length) * 15; // 10-25%
+              sendProgress(progress);
               resolve({
                 path: segmentPath,
                 startTime: item.startTime,
@@ -616,35 +758,32 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
 
     // Step 3: Process all audio items - IMPROVED APPROACH
     const audioSegmentPromises = audios.map((item, index) => {
-      sendProgress(20);
       return new Promise((resolve, reject) => {
         const segmentPath = path.join(tempDir, `audio_segment_${index}.wav`); // Use WAV for better compatibility
 
-        // Primeiro, tentar encontrar o arquivo blob salvo no projeto
-        let actualFilePath = item.filePath;
+        // Determinar o caminho do arquivo
+        let actualFilePath;
+        
         if (item.blobPath) {
-          // Se tem blobPath, usar ele (arquivo salvo no projeto)
-          actualFilePath = path.resolve(item.blobPath);
-          console.log(`Usando blob de áudio salvo: ${actualFilePath}`);
-        } else if (item.projectId) {
-          // Tentar encontrar o arquivo no diretório de blobs do projeto
-          const projectDir = path.join(__dirname, "projects", item.projectId);
-          const blobsDir = path.join(projectDir, "blobs");
-          
-          if (fs.existsSync(blobsDir)) {
-            // Procurar por arquivos que possam corresponder a este item
-            const blobFiles = fs.readdirSync(blobsDir);
-            const matchingFile = blobFiles.find(file => 
-              file.includes(item.name?.replace(/[^a-zA-Z0-9]/g, '_')) || 
-              file.includes(`_${index}_`) ||
-              file.includes(`layer1_file${index}_`)
-            );
-            
-            if (matchingFile) {
-              actualFilePath = path.join(blobsDir, matchingFile);
-              console.log(`Encontrado blob de áudio no projeto: ${actualFilePath}`);
-            }
+          // Se tem blobPath, construir o caminho completo usando o projectId
+          if (item.projectId) {
+            const projectDir = path.join(__dirname, "projects", item.projectId);
+            const blobsDir = path.join(projectDir, "blobs");
+            actualFilePath = path.join(blobsDir, item.blobPath);
+            console.log(`Usando blob de áudio do projeto: ${actualFilePath}`);
+          } else {
+            console.error(`Item de áudio tem blobPath mas não tem projectId:`, item);
+            reject(new Error(`Item de áudio tem blobPath mas não tem projectId`));
+            return;
           }
+        } else if (item.filePath) {
+          // Fallback para filePath se não tiver blobPath (retrocompatibilidade)
+          actualFilePath = item.filePath;
+          console.log(`Usando filePath original de áudio: ${actualFilePath}`);
+        } else {
+          console.error(`Item de áudio não tem blobPath nem filePath:`, item);
+          reject(new Error(`Item de áudio não tem blobPath nem filePath`));
+          return;
         }
 
         // Verificar se o arquivo realmente existe
@@ -674,6 +813,8 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
           })
           .on('end', () => {
             console.log(`Processed audio segment: ${segmentPath}`);
+            const progress = 25 + (index / audios.length) * 15; // 25-40%
+            sendProgress(progress);
             resolve({
               path: segmentPath,
               startTime: item.startTime,
@@ -703,7 +844,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
       // Sort segments by start time to maintain timeline order
       visualSegments.sort((a, b) => a.startTime - b.startTime);
       audioSegments.sort((a, b) => a.startTime - b.startTime);
-      sendProgress(50);
+      sendProgress(40);
 
       return new Promise((resolve, reject) => {
         console.log("All segments processed. Creating final video...");
@@ -735,11 +876,13 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
           console.log(`Command: ${cmdLine}`);
         })
           .on('progress', (progress) => {
+            const percent = 40 + ((progress.percent || 0) / 100) * 20; // 40-60%
+            sendProgress(percent);
             console.log('Video concat: ' + (progress.percent || 0).toFixed(2) + '% done');
           })
           .on('end', () => {
             console.log('Visual segments concatenated.');
-            sendProgress(65);
+            sendProgress(60);
 
             // Step 7: Handle audio processing - IMPROVED APPROACH WITH NO SILENT AUDIO REQUIREMENT
             if (audioSegments.length > 0) {
@@ -783,6 +926,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                       .output(finalAudioPath)
                       .on('end', () => {
                         console.log('Positioned single audio segment');
+                        sendProgress(70);
                         combineVideoAndAudio();
                       })
                       .on('error', (err) => {
@@ -796,6 +940,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                     // Just copy the audio as is
                     fs.copyFileSync(audioSegment.path, finalAudioPath);
                     console.log('Copied single audio segment as final audio');
+                    sendProgress(70);
                     combineVideoAndAudio();
                   }
                 } else {
@@ -842,6 +987,7 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                     })
                     .on('end', () => {
                       console.log('Final audio mix created.');
+                      sendProgress(70);
                       combineVideoAndAudio();
                     })
 
@@ -869,7 +1015,8 @@ async function renderizeVideo(mediaItems, outputFilePath, webContents) { // Adic
                       console.log(`Command: ${cmdLine}`);
                     })
                     .on('progress', (progress) => {
-                      sendProgress(65 + ((progress.percent / 35)));
+                      const percent = 70 + ((progress.percent || 0) / 100) * 29; // 70-99%
+                      sendProgress(percent);
                       console.log('Final render: ' + (progress.percent || 0).toFixed(2) + '% done');
                     })
                     .on('error', (err, stdout, stderr) => {
@@ -1085,6 +1232,17 @@ ipcMain.handle("select-screen", async () => {
 
 ipcMain.on('cancel-renderization', (event) => {
   cancelAllProcesses();
+});
+
+// Handlers para controle do overlay de gravação
+ipcMain.on('recording-started', (event) => {
+  console.log("🔴 Gravação iniciada - mostrando overlay");
+  createRecordingOverlay();
+});
+
+ipcMain.on('recording-stopped', (event) => {
+  console.log("⏹️ Gravação parada - removendo overlay");
+  destroyRecordingOverlay();
 });
 
 // Handler para salvar arquivos de gravação
