@@ -2,6 +2,7 @@ import Video from "../models/Video";
 import Audio from "./Audio";
 import Image from "./Image";
 import Node from "../models/Node";
+import { TimelineHistory } from "./TimelineHistory";
 
 export default class TimeLine {
   constructor() {
@@ -11,13 +12,18 @@ export default class TimeLine {
     this.projectId = null;
     this.projectName = null;
     this.createdAt = null;
-    this.history = {
-      past: [],
-      future: []
-    };
+    this.history = new TimelineHistory(3); // Limite de 3 undos
+    
+    // Salva o estado inicial vazio como currentState
+    this.history.currentState = this.history.createSnapshot({
+      layers: this.layers,
+      currentSecond: this.currentSecond,
+      projectId: this.projectId,
+      projectName: this.projectName,
+      createdAt: this.createdAt
+    });
   }
 
-  // Método para atualizar as camadas da timeline com os dados do store
   setLayers(layers) {
     console.log('Atualizando camadas da timeline:', layers);
     try {
@@ -53,14 +59,6 @@ export default class TimeLine {
     }
   }
 
-  saveToHistory() {
-    const snapshot = this.getSnapshot();
-    this.history.past.push(snapshot);
-    this.history.future = []; // Limpa o histórico futuro ao fazer uma nova ação
-  }
-
-
-
   executeCommand(command) {
     if (!command || typeof command !== 'object') {
       console.error('Comando inválido:', command);
@@ -73,21 +71,81 @@ export default class TimeLine {
     }
     
     try {
-      // Salva o estado atual no histórico antes de executar o comando
-      this.saveToHistory();
-      
       console.log('Executando comando:', command);
       command.execute();
       console.log('Comando executado com sucesso');
+      
+      // Salva o estado DEPOIS de executar o comando
+      this.saveToHistory();
     } catch (error) {
       console.error('Erro ao executar comando:', error);
     }
   }
 
-  addFileToLayer(fileData, position = 'end') {
-    const execute = () => {
-      const layerIndex = fileData.layerIndex;
-      if (layerIndex >= 0 && layerIndex < this.layers.length) {
+  /**
+   * Salva o estado atual da timeline no histórico
+   */
+  saveToHistory() {
+    const currentState = {
+      layers: this.layers,
+      currentSecond: this.currentSecond,
+      projectId: this.projectId,
+      projectName: this.projectName,
+      createdAt: this.createdAt
+    };
+    
+    this.history.saveState(currentState);
+  }
+
+  /**
+   * Desfaz a última ação (Control+Z)
+   */
+  undo() {
+    const previousState = this.history.undo();
+    
+    if (previousState) {
+      this.restoreState(previousState);
+      console.log('✓ Undo aplicado com sucesso');
+    }
+  }
+
+  /**
+   * Refaz a última ação desfeita (Control+Shift+Z)
+   */
+  redo() {
+    const nextState = this.history.redo();
+    
+    if (nextState) {
+      this.restoreState(nextState);
+      console.log('✓ Redo aplicado com sucesso');
+    }
+  }
+
+  /**
+   * Restaura um estado completo da timeline
+   */
+  restoreState(state) {
+    this.layers = state.layers;
+    this.currentSecond = state.currentSecond;
+    this.projectId = state.projectId;
+    this.projectName = state.projectName;
+    this.createdAt = state.createdAt;
+    
+    // Atualiza a visualização
+    this.updateVueLayers();
+  }
+
+  /**
+   * Obtém informações sobre o histórico
+   */
+  getHistoryInfo() {
+    return this.history.getInfo();
+  }
+
+  // Versão interna que não salva snapshot (para uso em comandos compostos)
+  _addFileToLayerInternal(fileData, position = 'end') {
+    const layerIndex = fileData.layerIndex;
+    if (layerIndex >= 0 && layerIndex < this.layers.length) {
       const newNode = this.createNode(fileData);
       const layer = this.layers[layerIndex];
 
@@ -125,95 +183,15 @@ export default class TimeLine {
       }
       this.updateVueLayers();
     }
+  }
+
+  addFileToLayer(fileData, position = 'end') {
+    const execute = () => {
+      this._addFileToLayerInternal(fileData, position);
     };
     
     this.executeCommand({ execute });
   }
-
-        // Correção sugerida
-        getSnapshot() {
-            return {
-                layers: this.layers.map(layer => ({
-                    head: layer.head ? this.deepCloneNode(layer.head) : null,
-                    end: layer.end ? this.deepCloneNode(layer.end) : null
-                })),
-                currentSecond: this.currentSecond
-            };
-        }
-
-        deepCloneNode(node) {
-            if (!node) return null;
-            
-            // Clone profundo do item
-            const clonedItem = JSON.parse(JSON.stringify(node.item));
-            
-            // Restaurar os métodos do item clonado
-            this.restoreItemMethods(clonedItem);
-            
-            // Criar novo nó com o item restaurado
-            const clonedNode = new Node(clonedItem);
-            
-            // Clone recursivo do próximo nó
-            clonedNode.next = node.next ? this.deepCloneNode(node.next) : null;
-            
-            return clonedNode;
-        }
-
-// Correção para o método restoreSnapshot
-restoreSnapshot(snapshot) {
-    // Cria cópias profundas das camadas
-    this.layers = snapshot.layers.map(layer => ({
-        head: layer.head ? this.deepCloneNode(layer.head) : null,
-        end: layer.end ? this.deepCloneNode(layer.end) : null
-    }));
-    
-    // Restaurar outros estados importantes
-    this.currentSecond = snapshot.currentSecond;
-    
-    // Garantir que todos os itens nas camadas tenham seus métodos restaurados
-    this.layers.forEach(layer => {
-        let current = layer.head;
-        while (current) {
-            if (current.item) {
-                this.restoreItemMethods(current.item);
-            }
-            current = current.next;
-        }
-    });
-    
-    // Atualizar a visualização
-    this.updateVueLayers();
-}
-
-restoreItemMethods(item) {
-    if (!item) return;
-    
-    // Determinar o tipo do item e restaurar sua classe apropriada
-    let ItemClass;
-    if (item.type === 'video' || item instanceof Video) {
-        ItemClass = Video;
-    } else if (item.type === 'audio' || item instanceof Audio) {
-        ItemClass = Audio;
-    } else if (item.type === 'image' || item instanceof Image) {
-        ItemClass = Image;
-    }
-
-    if (ItemClass) {
-        // Preservar dados importantes
-        const data = { ...item };
-        
-        // Recriar o objeto com a classe correta
-        Object.setPrototypeOf(item, ItemClass.prototype);
-        
-        // Restaurar todos os dados
-        Object.assign(item, new ItemClass(data));
-    }
-
-    // Garantir que o volume seja restaurado
-    if (typeof item.volume === 'undefined') {
-        item.volume = 1.0;
-    }
-}
 
   // Atualizar outros métodos para usar executeCommand...
   moveItem(sourceLayerIndex, sourceIndex, targetLayerIndex, targetIndex) {
@@ -287,9 +265,9 @@ restoreItemMethods(item) {
     }
   }
 
-  removeFileFromLayer(fileData) {
-    const execute = () => {
-      if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
+  // Versão interna que não salva snapshot (para uso em comandos compostos)
+  _removeFileFromLayerInternal(fileData) {
+    if (fileData.layerIndex >= 0 && fileData.layerIndex < this.layers.length) {
       const layer = this.layers[fileData.layerIndex];
       if (layer.head !== null) {
         let current = layer.head;
@@ -322,6 +300,11 @@ restoreItemMethods(item) {
         }
       }
     }
+  }
+
+  removeFileFromLayer(fileData) {
+    const execute = () => {
+      this._removeFileFromLayerInternal(fileData);
     };
 
     this.executeCommand({ execute });
@@ -522,86 +505,97 @@ restoreItemMethods(item) {
   }
 
   async splitAudioAtTime(audio, splitTime) {
-    const start = audio.startTime || 0;
-    const end = audio.endTime || audio.duration;
+    const execute = () => {
+      const start = audio.startTime || 0;
+      const end = audio.endTime || audio.duration;
 
-    if (splitTime <= start || splitTime >= end) {
-      console.error("Tempo de divisão inválido.");
-      return;
-    }
+      if (splitTime <= start || splitTime >= end) {
+        console.error("Tempo de divisão inválido.");
+        return;
+      }
 
-    const segment1Duration = splitTime - start;
-    const segment2Duration = end - splitTime;
+      const segment1Duration = splitTime - start;
+      const segment2Duration = end - splitTime;
 
-    const audioPart1 = new Audio({
-      ...audio,
-      name: audio.name + " (Parte 1)",
-      duration: segment1Duration,
-      startTime: start,
-      endTime: splitTime,
-    });
+      const audioPart1 = new Audio({
+        ...audio,
+        name: audio.name + " (Parte 1)",
+        duration: segment1Duration,
+        startTime: start,
+        endTime: splitTime,
+      });
 
-    const audioPart2 = new Audio({
-      ...audio,
-      name: audio.name + " (Parte 2)",
-      duration: segment2Duration,
-      startTime: splitTime,
-      endTime: end,
-    });
+      const audioPart2 = new Audio({
+        ...audio,
+        name: audio.name + " (Parte 2)",
+        duration: segment2Duration,
+        startTime: splitTime,
+        endTime: end,
+      });
 
-    const layerIndex = this.layers.findIndex(layer =>
-      this.listFilesInLayer(this.layers.indexOf(layer)).includes(audio)
-    );
+      const layerIndex = this.layers.findIndex(layer =>
+        this.listFilesInLayer(this.layers.indexOf(layer)).includes(audio)
+      );
 
-    const originalIndex = this.listFilesInLayer(layerIndex).indexOf(audio);
-    this.removeFileFromLayer({ file: audio, layerIndex });
-    this.addFileToLayer({ file: audioPart1, type: "audio", layerIndex }, originalIndex);
-    this.addFileToLayer({ file: audioPart2, type: "audio", layerIndex }, originalIndex + 1);
+      const originalIndex = this.listFilesInLayer(layerIndex).indexOf(audio);
+      
+      // Usa versões internas para não salvar snapshot múltiplas vezes
+      this._removeFileFromLayerInternal({ file: audio, layerIndex });
+      this._addFileToLayerInternal({ file: audioPart1, type: "audio", layerIndex }, originalIndex);
+      this._addFileToLayerInternal({ file: audioPart2, type: "audio", layerIndex }, originalIndex + 1);
+    };
+
+    this.executeCommand({ execute });
   }
 
   async splitImageAtTime(image, splitTime) {
-    const start = image.startTime || 0;
-    const end = image.endTime || image.duration;
+    const execute = () => {
+      const start = image.startTime || 0;
+      const end = image.endTime || image.duration;
 
-    if (splitTime <= start || splitTime >= end) {
-      console.error("Tempo de divisão inválido para imagem.");
-      return;
-    }
+      if (splitTime <= start || splitTime >= end) {
+        console.error("Tempo de divisão inválido para imagem.");
+        return;
+      }
 
-    const segment1Duration = splitTime - start;
-    const segment2Duration = end - splitTime;
+      const segment1Duration = splitTime - start;
+      const segment2Duration = end - splitTime;
 
-    const imagePart1 = {
-      ...image,
-      name: image.name + " (Parte 1)",
-      duration: segment1Duration,
-      startTime: start,
-      endTime: splitTime,
+      const imagePart1 = {
+        ...image,
+        name: image.name + " (Parte 1)",
+        duration: segment1Duration,
+        startTime: start,
+        endTime: splitTime,
+      };
+
+      const imagePart2 = {
+        ...image,
+        name: image.name + " (Parte 2)",
+        duration: segment2Duration,
+        startTime: splitTime,
+        endTime: end,
+      };
+
+      const layerIndex = this.layers.findIndex(layer =>
+        this.listFilesInLayer(this.layers.indexOf(layer)).includes(image)
+      );
+
+      const filesInLayer = this.listFilesInLayer(layerIndex);
+      const originalIndex = filesInLayer.indexOf(image);
+
+      if (originalIndex === -1) {
+        console.error("Imagem original não encontrada na camada.");
+        return;
+      }
+
+      // Usa versões internas para não salvar snapshot múltiplas vezes
+      this._removeFileFromLayerInternal({ file: image, layerIndex });
+      this._addFileToLayerInternal({ file: imagePart1, type: "image", layerIndex }, originalIndex);
+      this._addFileToLayerInternal({ file: imagePart2, type: "image", layerIndex }, originalIndex + 1);
     };
 
-    const imagePart2 = {
-      ...image,
-      name: image.name + " (Parte 2)",
-      duration: segment2Duration,
-      startTime: splitTime,
-      endTime: end,
-    };
-
-    const layerIndex = this.layers.findIndex(layer =>
-      this.listFilesInLayer(this.layers.indexOf(layer)).includes(image)
-    );
-
-    const filesInLayer = this.listFilesInLayer(layerIndex);
-    const originalIndex = filesInLayer.indexOf(image);
-
-    if (originalIndex === -1) {
-      console.error("Imagem original não encontrada na camada.");
-      return;
-    }
-
-    this.removeFileFromLayer({ file: image, layerIndex });
-    this.addFileToLayer({ file: imagePart1, type: "image", layerIndex }, originalIndex);
-    this.addFileToLayer({ file: imagePart2, type: "image", layerIndex }, originalIndex + 1);
+    this.executeCommand({ execute });
   }
 
   getCumulativeDurationBeforeVideo(layerIndex, video) {
@@ -672,8 +666,9 @@ class SplitCommand {
       return;
     }
 
-    this.timeline.removeFileFromLayer({ file: video, layerIndex: this.layerIndex });
-    this.timeline.addFileToLayer({ file: videoPart1, type: "video", layerIndex: this.layerIndex }, originalIndex);
-    this.timeline.addFileToLayer({ file: videoPart2, type: "video", layerIndex: this.layerIndex }, originalIndex + 1);
+    // Usa versões internas para não salvar snapshot múltiplas vezes
+    this.timeline._removeFileFromLayerInternal({ file: video, layerIndex: this.layerIndex });
+    this.timeline._addFileToLayerInternal({ file: videoPart1, type: "video", layerIndex: this.layerIndex }, originalIndex);
+    this.timeline._addFileToLayerInternal({ file: videoPart2, type: "video", layerIndex: this.layerIndex }, originalIndex + 1);
   }
 }

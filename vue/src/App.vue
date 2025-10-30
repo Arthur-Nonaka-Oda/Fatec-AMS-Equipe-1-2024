@@ -345,7 +345,7 @@ export default {
       this.layers = newLayers || this.timeline.getLayersForVue();
       
       // Sincroniza com o store
-      this.timelineStore.updateTimeline(this.layers);
+      // this.timelineStore.updateTimeline(this.layers);
 
       const hasItems = this.layers.some((layer) => layer.items.length > 0);
       if (hasItems) {
@@ -518,10 +518,6 @@ export default {
         file: this.selectedItem.item,
         layerIndex: this.selectedItem.layerIndex,
       });
-      console.log("delete");
-      console.log(this.timeline.listFilesInLayer(0));
-      console.log(this.timeline.listFilesInLayer(1));
-      console.log(this.timeline.listFilesInLayer(2));
       this.updateLayers();
       // Marca que há alterações não salvas quando remove arquivo
       this.hasUnsavedChanges = true;
@@ -543,9 +539,47 @@ export default {
   });
 },
     handleKeyDown(event) {
+      // Control+Z - Undo
+      if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        this.handleUndo();
+        return;
+      }
+      
+      // Control+Shift+Z ou Control+Y - Redo
+      if ((event.ctrlKey && event.shiftKey && event.key === 'Z') || 
+          (event.ctrlKey && event.key === 'y')) {
+        event.preventDefault();
+        this.handleRedo();
+        return;
+      }
+      
+      // Delete key
       if (event.key === "Delete") {
         this.handleDeleteVideo();
       }
+    },
+    handleUndo() {
+      this.timeline.undo();
+      this.updateLayers();
+      
+      // Atualiza a visualização do vídeo
+      if (this.$refs.videoPreview) {
+        this.$refs.videoPreview.updateCurrentTime(this.timeline.currentSecond);
+      }
+      
+      console.log('Histórico:', this.timeline.getHistoryInfo());
+    },
+    handleRedo() {
+      this.timeline.redo();
+      this.updateLayers();
+      
+      // Atualiza a visualização do vídeo
+      if (this.$refs.videoPreview) {
+        this.$refs.videoPreview.updateCurrentTime(this.timeline.currentSecond);
+      }
+      
+      console.log('Histórico:', this.timeline.getHistoryInfo());
     },
     handleTrimVideo() {
       const selectedItem = this.selectedItem.item;

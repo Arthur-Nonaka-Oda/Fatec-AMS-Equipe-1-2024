@@ -19,8 +19,8 @@
       </div>
     </div>
     <div class="zoom-controls">
-      <button @click="undo" :disabled="!canUndo">↩ Undo</button>
-      <button @click="redo" :disabled="!canRedo">↪ Redo</button>
+      <!-- <button @click="undo" :disabled="!canUndo">↩ Undo</button> -->
+      <!-- <button @click="redo" :disabled="!canRedo">↪ Redo</button> -->
       <select id="zoom" v-model="selectedZoom" @change="updateZoom">
         <option value="0.1">10%</option>
         <option value="0.25">25%</option>
@@ -95,18 +95,15 @@ export default {
     timelineStore() {
       return useTimelineStore();
     },
-    canUndo() {
-      return this.timelineStore.canUndo;
-    },
-    canRedo() {
-      return this.timelineStore.canRedo;
-    },
     isItemSelected() {
       return this.selectedItem !== null;
     },
     totalVideoDuration() {
+      if (!this.layers || !this.layers[0] || !this.layers[0].items) {
+        return 0;
+      }
       return this.layers[0].items.reduce(
-        (total, video) => total + (video.duration || 0),
+        (total, video) => total + (video?.duration || 0),
         0
       );
     },
@@ -124,12 +121,10 @@ export default {
     this.timeline.registerUpdateLayers(this.updateLayers);
     document.addEventListener("mousemove", this.grabMove);
     document.addEventListener("mouseup", this.grabDone);
-    document.addEventListener('keydown', this.handleKeyEvents);
   },
   beforeDestroy() {
     document.removeEventListener("mousemove", this.grabMove);
     document.removeEventListener("mouseup", this.grabDone);
-    document.removeEventListener('keydown', this.handleKeyEvents);
   },
   methods: {
     
@@ -508,89 +503,6 @@ export default {
         5: 0.2,   // 500% zoom
       };
       this.config.minimumScaleTime = zoomMapping[this.selectedZoom];
-    },
-    handleKeyEvents(event) {
-      // Ctrl+Z para desfazer
-      if (event.ctrlKey && !event.shiftKey && (event.key === 'z' || event.key === 'Z')) {
-        event.preventDefault();
-        this.undo();
-      }
-      // Ctrl+Shift+Z ou Ctrl+Y para refazer
-      else if ((event.ctrlKey && event.shiftKey && (event.key === 'z' || event.key === 'Z')) || 
-               (event.ctrlKey && (event.key === 'y' || event.key === 'Y'))) {
-        event.preventDefault();
-        this.redo();
-      }
-    },
-    undo() {
-      console.log('Tentando desfazer. CanUndo:', this.canUndo);
-      if (this.canUndo) {
-        try {
-          console.log('Executando undo...');
-          const layersBefore = JSON.stringify(this.layers);
-          this.timelineStore.undo();
-          console.log('Estado após undo:', this.timelineStore.$state);
-          
-          const newLayers = this.timelineStore.getLayersForVue;
-          // Verifica se o novo estado é válido
-          if (!newLayers || !Array.isArray(newLayers)) {
-            console.error('Estado inválido após undo');
-            return;
-          }
-          
-          // Garante que todas as camadas tenham a propriedade items
-          newLayers.forEach(layer => {
-            if (!layer.items) layer.items = [];
-          });
-          
-          // Força atualização do store e da UI
-          this.timelineStore.$patch((state) => {
-            state.layers = [...newLayers];
-          });
-          this.updateLayers(newLayers);
-          console.log('Layers antes:', layersBefore);
-          console.log('Layers depois:', JSON.stringify(this.layers));
-          this.$emit('timeline-changed');
-          this.$emit('cursor-moved', 0);
-        } catch (error) {
-          console.error('Erro durante undo:', error);
-        }
-      }
-    },
-    redo() {
-      console.log('Tentando refazer. CanRedo:', this.canRedo);
-      if (this.canRedo) {
-        try {
-          console.log('Executando redo...');
-          const layersBefore = JSON.stringify(this.layers);
-          this.timelineStore.redo();
-          console.log('Estado após redo:', this.timelineStore.$state);
-          
-          const newLayers = this.timelineStore.getLayersForVue;
-          // Verifica se o novo estado é válido
-          if (!newLayers || !Array.isArray(newLayers)) {
-            console.error('Estado inválido após redo');
-            return;
-          }
-          
-          // Garante que todas as camadas tenham a propriedade items
-          newLayers.forEach(layer => {
-            if (!layer.items) layer.items = [];
-          });
-          
-          // Força atualização do store e da UI
-          this.timelineStore.$patch((state) => {
-            state.layers = [...newLayers];
-          });
-          this.updateLayers(newLayers);
-          console.log('Layers antes:', layersBefore);
-          console.log('Layers depois:', JSON.stringify(this.layers));
-          this.$emit('timeline-changed');
-          this.$emit('cursor-moved', 0);
-        } catch (error) {
-          console.error('Erro durante redo:', error);
-        }
-      }
     },
   },
 };
