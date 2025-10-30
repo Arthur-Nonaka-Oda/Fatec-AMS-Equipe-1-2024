@@ -391,32 +391,61 @@ export default {
         this.playPauseIcon = "/playIcon2.png";
       }
     },
-    updateVolume() {
+    async updateVolume() {
       const video = this.$refs.videoPlayer;
       const audio = this.$refs.audioPlayer;
       
+      const updateMediaVolume = async (mediaElement, item) => {
+        if (!mediaElement) return;
+        
+        try {
+          // Calcula o volume efetivo
+          const itemVolume = typeof item?.volume === 'number' ? item.volume : 1;
+          const masterVolume = typeof this.volume === 'number' ? this.volume : 1;
+          const effectiveVolume = Math.max(0, Math.min(1, itemVolume * masterVolume));
+          
+          // Aplica o volume com uma pequena transição
+          const currentVolume = mediaElement.volume;
+          const steps = 5;
+          const volumeDiff = (effectiveVolume - currentVolume) / steps;
+          
+          for (let i = 1; i <= steps; i++) {
+            mediaElement.volume = currentVolume + (volumeDiff * i);
+            await new Promise(resolve => setTimeout(resolve, 20));
+          }
+          
+          // Garante o valor final exato
+          mediaElement.volume = effectiveVolume;
+          console.log('Volume ajustado para:', effectiveVolume, 'em:', mediaElement);
+          
+          // Verifica se o volume foi realmente aplicado
+          if (Math.abs(mediaElement.volume - effectiveVolume) > 0.01) {
+            console.warn('Volume não foi aplicado corretamente!');
+          }
+        } catch (error) {
+          console.error('Erro ao atualizar volume:', error);
+        }
+      };
+      
+      // Atualiza vídeo
       if (video) {
         const videos = this.timeline.listFilesInLayer(0);
-        if (videos.length > 0) {
-          const currentItem = videos[this.currentIndex];
-          video.volume = (currentItem.volume ?? 1) * this.volume;
-        } else {
-          video.volume = this.volume;
-        }
+        const currentItem = videos[this.currentIndex];
+        await updateMediaVolume(video, currentItem);
       }
-
-      // Atualiza o volume do áudio também
+      
+      // Atualiza áudio
       if (audio) {
         const audios = this.timeline.listFilesInLayer(1);
-        if (audios.length > 0) {
-          const currentAudioItem = audios[this.currentAudioIndex];
-          audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
-        } else {
-          audio.volume = this.volume;
-        }
+        const currentAudioItem = audios[this.currentAudioIndex];
+        await updateMediaVolume(audio, currentAudioItem);
       }
-
-      this.volumeIcon = this.volume <= 0.0 ? "/mudo.png" : "/volume.png";
+      
+      // Atualiza ícone baseado no volume efetivo mais alto
+      const videoVolume = video?.volume || 0;
+      const audioVolume = audio?.volume || 0;
+      const maxVolume = Math.max(videoVolume, audioVolume);
+      this.volumeIcon = maxVolume <= 0.01 ? "/mudo.png" : "/volume.png";
     },
     toggleVolumeControl() {
       this.showVolumeControl = !this.showVolumeControl;

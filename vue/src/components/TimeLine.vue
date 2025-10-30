@@ -14,7 +14,7 @@
           <TimeLineItem v-for="(item, index) in layer.items" :key="index" :layerIndex="layerIndex" :item="item"
             :title="item.name" :minimumScaleTime="config.minimumScaleTime" :index="index" :selectedItem="selectedItem"
             :select-video="selectVideo" @item-clicked="handleItemClicked"
-            @context-menu-action="handleContextMenuAction" />
+            @context-menu-action="handleContextMenuAction" @update-volume="handleVolumeUpdate" />
         </div>
       </div>
     </div>
@@ -33,11 +33,7 @@
         <option value="5">500%</option>
       </select>
 
-      <div class="volume-controls">
-        <VolumeSlider v-if="isItemSelected && selectedItem.item" :volume="selectedItem.item.volume ?? 1"
-          @update-volume="updateItemVolume" />
 
-      </div>
     </div>
   </div>
 </template>
@@ -45,7 +41,6 @@
 <script>
 import TimeLineItem from "./TimeLineItem.vue";
 import VideoEditingTimeline from "video-editing-timeline-vue";
-import VolumeSlider from "./VolumeSlider.vue";
 import { useTimelineStore } from '../stores/timeline';
 
 export default {
@@ -74,7 +69,6 @@ export default {
   },
   components: {
     TimeLineItem,
-    VolumeSlider,
     VideoEditingTimeline,
   },
   data() {
@@ -133,9 +127,23 @@ export default {
   },
   methods: {
     
-    updateItemVolume(newVolume) {
-      if (this.selectedItem && this.selectedItem.item) {
-        this.$emit('update-item-volume', { ...this.selectedItem, volume: newVolume });
+    handleVolumeUpdate({ item, volume }) {
+      // Encontra o item e sua posição
+      const layerIndex = this.layers.findIndex(layer => 
+        layer.items.some(layerItem => layerItem === item)
+      );
+      
+      if (layerIndex !== -1) {
+        const itemIndex = this.layers[layerIndex].items.findIndex(layerItem => layerItem === item);
+        if (itemIndex !== -1) {
+          // Emite um evento para atualizar o volume ao invés de modificar diretamente
+          this.$emit('update-item-volume', { 
+            item,
+            volume,
+            layerIndex,
+            itemIndex
+          });
+        }
       }
     },
     handleContextMenuAction({ action, item, layerIndex }) {
@@ -606,15 +614,6 @@ export default {
   gap: 10px;
 }
 
-.volume-controls {
-  position: fixed;
-  bottom: 0px;
-  left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  /* background-color: #323C7D; */
-}
 
 .selected {
   border: 2px solid rgb(255, 238, 0);

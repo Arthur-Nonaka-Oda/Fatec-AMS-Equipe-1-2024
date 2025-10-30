@@ -229,11 +229,24 @@ export default {
   methods: {
     handleUpdateItemVolume(payload) {
       if (payload && payload.item) {
+        // Atualiza o volume diretamente no item
         payload.item.volume = payload.volume;
-        this.updateLayers();
-        this.$refs.videoPreview.updateVolume();
-        // Marca que há alterações não salvas quando altera volume
+        
+        // Força atualização das camadas para refletir a mudança
+        this.updateLayers([...this.layers]);
+        
+        // Força atualização do volume no player
+        this.$nextTick(() => {
+          if (this.$refs.videoPreview) {
+            this.$refs.videoPreview.updateVolume();
+          }
+        });
+        
+        // Marca como modificado
         this.hasUnsavedChanges = true;
+        
+        // Garante que o item permaneça selecionado
+        this.selectedItem = { item: payload.item };
       }
     },
     async saveProject() {
