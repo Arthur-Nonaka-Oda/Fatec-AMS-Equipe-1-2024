@@ -554,6 +554,12 @@ export default {
       let accumulated = 0;
       let targetIndex = 0;
 
+      if(videos.length === 0) {
+        console.warn('Nenhum vídeo disponível para seek.');
+        return;
+      }
+
+
       // Determine which video segment the global time corresponds to
       while (targetIndex < videos.length && (accumulated + videos[targetIndex].duration) < globalTime) {
         accumulated += videos[targetIndex].duration;

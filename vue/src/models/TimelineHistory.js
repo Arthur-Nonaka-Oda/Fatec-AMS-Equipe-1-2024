@@ -1,226 +1,322 @@
+import Video from './Video.js';
+import Audio from './Audio.js';
+import Image from './Image.js';
+
+/**
+ * TimelineHistory - Gerencia o histórico de undo/redo da timeline
+ * Usa estrutura de pilha (stack) para armazenar até 3 estados
+ */
 export class TimelineHistory {
-    constructor(maxStackSize = 100) {
-        this.undoStack = [];
-        this.redoStack = [];
-        this.maxStackSize = maxStackSize;
-        this.isExecutingAction = false;
+  constructor(maxHistorySize = 3) {
+    this.undoStack = []; // Pilha de estados para undo (máximo 3)
+    this.redoStack = []; // Pilha de estados para redo
+    this.maxHistorySize = maxHistorySize;
+    this.currentState = null; // Estado atual da timeline
+  }
+
+  /**
+   * Salva o estado completo da timeline no histórico
+   * @param {Object} timelineState - Estado completo da timeline {layers, currentSecond, projectId, etc}
+   */
+  saveState(timelineState) {
+    console.log('🎯 saveState() CHAMADO');
+    
+    // Se já existe um estado atual, move para a pilha de undo
+    if (this.currentState !== null) {
+      console.log('📝 Movendo estado atual para undo stack');
+      this.undoStack.push(this.currentState);
+      
+      // Limita a pilha de undo a 3 estados (remove o mais antigo)
+      if (this.undoStack.length > this.maxHistorySize) {
+        console.log('🗑️ Removendo estado mais antigo (limite atingido)');
+        this.undoStack.shift(); // Remove o primeiro (mais antigo)
+      }
     }
 
-    get canUndo() {
-        return this.undoStack.length > 0;
+    // O novo estado vira o estado atual
+    this.currentState = this.createSnapshot(timelineState);
+    
+    // Limpa a pilha de redo (nova ação invalida o histórico de redo)
+    this.redoStack = [];
+
+    console.log(`✓ Estado salvo. Undo stack: ${this.undoStack.length}, Redo stack: ${this.redoStack.length}, Current: ${this.currentState ? 'Sim' : 'Não'}`);
+  }
+
+  /**
+   * Desfaz a última ação (Control+Z)
+   * @returns {Object|null} Estado anterior da timeline ou null se não houver
+   */
+  undo() {
+    if (!this.canUndo()) {
+      console.log('⚠ Não há estados anteriores para desfazer');
+      return null;
     }
 
-    get canRedo() {
-        return this.redoStack.length > 0;
+    // Move o estado atual para a pilha de redo
+    this.redoStack.push(this.currentState);
+    
+    // Pega o último estado da pilha de undo
+    this.currentState = this.undoStack.pop();
+    
+    console.log(`↶ Undo executado. Undo stack: ${this.undoStack.length}, Redo stack: ${this.redoStack.length}`);
+    
+    // Retorna uma cópia do estado para restaurar
+    return this.restoreSnapshot(this.currentState);
+  }
+
+  /**
+   * Refaz a última ação desfeita (Control+Shift+Z ou Control+Y)
+   * @returns {Object|null} Próximo estado da timeline ou null se não houver
+   */
+  redo() {
+    if (!this.canRedo()) {
+      console.log('⚠ Não há estados futuros para refazer');
+      return null;
     }
 
-    // Método auxiliar para recarregar blobs de vídeo
-    async reloadVideoBlob(video) {
-        if (!video.filePath) return;
-        
-        try {
-            // Tenta carregar via fetch primeiro
-            const response = await fetch(`file://${video.filePath}`);
-            if (response.ok) {
-                const blob = await response.blob();
-                if (blob.size > 0) {
-                    video.blob = blob;
-                    video.url = URL.createObjectURL(blob);
-                    return;
-                }
-            }
+    // Move o estado atual para a pilha de undo
+    this.undoStack.push(this.currentState);
+    
+    // Pega o último estado da pilha de redo
+    this.currentState = this.redoStack.pop();
+    
+    console.log(`↷ Redo executado. Undo stack: ${this.undoStack.length}, Redo stack: ${this.redoStack.length}`);
+    
+    // Retorna uma cópia do estado para restaurar
+    return this.restoreSnapshot(this.currentState);
+  }
 
-            // Se fetch falhar, tenta via electron
-            if (window.electron && window.electron.ipcRenderer) {
-                const base64Data = await window.electron.ipcRenderer.invoke('load-video-file', { filePath: video.filePath });
-                if (base64Data) {
-                    const byteCharacters = atob(base64Data);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    const blob = new Blob([byteArray], { type: 'video/mp4' });
-                    if (blob.size > 0) {
-                        video.blob = blob;
-                        video.url = URL.createObjectURL(blob);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Erro ao recarregar blob:', error);
-        }
+  /**
+   * Verifica se é possível desfazer
+   * @returns {boolean}
+   */
+  canUndo() {
+    return this.undoStack.length > 0;
+  }
+
+  /**
+   * Verifica se é possível refazer
+   * @returns {boolean}
+   */
+  canRedo() {
+    return this.redoStack.length > 0;
+  }
+
+  /**
+   * Limpa todo o histórico
+   */
+  clear() {
+    this.undoStack = [];
+    this.redoStack = [];
+    this.currentState = null;
+    console.log('✓ Histórico limpo');
+  }
+
+  /**
+   * Cria um snapshot (cópia profunda) do estado da timeline
+   * @param {Object} timelineState
+   * @returns {Object}
+   */
+  createSnapshot(timelineState) {
+    const snapshot = {
+      layers: this.cloneLayers(timelineState.layers),
+      currentSecond: timelineState.currentSecond,
+      projectId: timelineState.projectId,
+      projectName: timelineState.projectName,
+      createdAt: timelineState.createdAt,
+      timestamp: Date.now() // Marca quando o snapshot foi criado
+    };
+    
+    // Log para debug: conta quantos itens há em cada camada
+    const itemCounts = snapshot.layers.map(layer => this.countItemsInLayer(layer));
+    console.log(`📸 Snapshot criado: ${itemCounts.join(', ')} itens por camada`);
+    
+    return snapshot;
+  }
+
+  /**
+   * Conta quantos itens há em uma camada (lista encadeada)
+   */
+  countItemsInLayer(layer) {
+    let count = 0;
+    let current = layer.head;
+    while (current) {
+      count++;
+      current = current.next;
+    }
+    return count;
+  }
+
+  /**
+   * Clona as camadas da timeline (estrutura de lista encadeada)
+   * @param {Array} layers
+   * @returns {Array}
+   */
+  cloneLayers(layers) {
+    return layers.map(layer => {
+      if (!layer.head) {
+        return { head: null, end: null };
+      }
+
+      // Clona toda a lista encadeada da camada
+      const clonedNodes = [];
+      let current = layer.head;
+      
+      while (current) {
+        clonedNodes.push(this.cloneNode(current));
+        current = current.next;
+      }
+
+      // Reconstrói a lista encadeada
+      for (let i = 0; i < clonedNodes.length - 1; i++) {
+        clonedNodes[i].next = clonedNodes[i + 1];
+      }
+
+      return {
+        head: clonedNodes[0] || null,
+        end: clonedNodes[clonedNodes.length - 1] || null
+      };
+    });
+  }
+
+  /**
+   * Clona um nó individual da lista encadeada
+   * @param {Object} node
+   * @returns {Object}
+   */
+  cloneNode(node) {
+    return {
+      item: this.cloneItem(node.item),
+      next: null // Será definido depois na reconstrução da lista
+    };
+  }
+
+  /**
+   * Clona um item (video, audio, image)
+   * Recria a instância da classe apropriada para manter os métodos
+   * @param {Object} item
+   * @returns {Object}
+   */
+  cloneItem(item) {
+    let cloned;
+    
+    // Detecta o tipo pelo constructor.name (funciona mesmo após serialização)
+    const typeName = item.constructor?.name;
+    
+    // Verifica também pelo blob.type se disponível
+    const blobType = item.blob?.type || '';
+    const isVideoBlob = blobType.startsWith('video/');
+    const isAudioBlob = blobType.startsWith('audio/');
+    const isImageBlob = blobType.startsWith('image/');
+    
+    if (item instanceof Video || typeName === 'Video' || isVideoBlob) {
+      // É um vídeo - recria como instância de Video
+      cloned = new Video({
+        filePath: item.filePath,
+        blobPath: item.blobPath,
+        name: item.name,
+        duration: item.duration,
+        size: item.size,
+        blob: item.blob, // Blob é mantido por referência (imutável)
+        url: item.url,
+        startTime: item.startTime,
+        endTime: item.endTime
+      });
+      cloned.volume = item.volume !== undefined ? item.volume : 1.0;
+    } 
+    else if (item instanceof Audio || typeName === 'Audio' || isAudioBlob) {
+      // É um áudio - recria como instância de Audio
+      cloned = new Audio({
+        filePath: item.filePath,
+        blobPath: item.blobPath,
+        name: item.name,
+        duration: item.duration,
+        size: item.size,
+        blob: item.blob,
+        url: item.url,
+        startTime: item.startTime,
+        endTime: item.endTime
+      });
+      cloned.volume = item.volume !== undefined ? item.volume : 1.0;
+    } 
+    else if (item instanceof Image || typeName === 'Image' || isImageBlob) {
+      // É uma imagem - recria como instância de Image
+      cloned = new Image({
+        filePath: item.filePath,
+        blobPath: item.blobPath,
+        name: item.name,
+        duration: item.duration,
+        size: item.size,
+        blob: item.blob,
+        url: item.url,
+        startTime: item.startTime,
+        endTime: item.endTime
+      });
+    }
+    else {
+      // Fallback: clona como objeto simples
+      console.warn('⚠️ Tipo de item desconhecido ao clonar:', typeName, item);
+      cloned = { ...item };
+      if (item.blob instanceof Blob) {
+        cloned.blob = item.blob;
+      }
     }
 
-    addAction(execute, undo) {
-        if (this.isExecutingAction) return;
+    return cloned;
+  }
 
-        this.redoStack = []; // Limpa o stack de redo
-        if (this.undoStack.length >= this.maxStackSize) {
-            this.undoStack.shift();
-        }
-        
-        // Cria uma cópia limpa das funções
-        const cleanExecute = async () => {
-            try {
-                await execute();
-            } catch (error) {
-                console.error('Erro na execução:', error);
-                throw error;
-            }
-        };
-        
-        const cleanUndo = async () => {
-            try {
-                await undo();
-            } catch (error) {
-                console.error('Erro no undo:', error);
-                throw error;
-            }
-        };
-        
-        this.undoStack.push({ 
-            execute: cleanExecute, 
-            undo: cleanUndo,
-            timestamp: Date.now() 
-        });
-    }
+  /**
+   * Restaura um snapshot (prepara para uso)
+   * @param {Object} snapshot
+   * @returns {Object}
+   */
+  restoreSnapshot(snapshot) {
+    console.log('🔄 Restaurando snapshot...');
+    const restored = {
+      layers: this.cloneLayers(snapshot.layers),
+      currentSecond: snapshot.currentSecond,
+      projectId: snapshot.projectId,
+      projectName: snapshot.projectName,
+      createdAt: snapshot.createdAt
+    };
+    
+    // Verifica se os itens foram recriados como instâncias corretas
+    restored.layers.forEach((layer, index) => {
+      let current = layer.head;
+      let itemCount = 0;
+      while (current) {
+        itemCount++;
+        const itemType = current.item?.constructor?.name || 'unknown';
+        console.log(`  Layer ${index}, Item ${itemCount}: ${itemType} (${current.item?.name})`);
+        current = current.next;
+      }
+    });
+    
+    return restored;
+  }
 
-    async undo() {
-        if (this.isExecutingAction || !this.canUndo) {
-            console.log('Não é possível desfazer: isExecutingAction=', this.isExecutingAction, 'canUndo=', this.canUndo);
-            return;
-        }
-        
-        const action = this.undoStack.pop();
-        
-        try {
-            this.isExecutingAction = true;
-            
-            // Notifica o início da operação de undo
-            if (window.timeline && window.timeline.updateVueLayers) {
-                window.timeline.updateVueLayers();
-            
-            if (!action || typeof action.undo !== 'function') {
-                console.warn('Ação de undo inválida:', action);
-                return;
-            }
-
-            // Prepara a função de undo com tratamento especial para blobs
-            const wrappedUndo = async () => {
-                // Primeiro tentamos executar a função undo normalmente
-                await action.undo();
-                
-                // Depois verificamos se há vídeos que precisam ter seus blobs restaurados
-                const timeline = window.timeline;
-                if (timeline) {
-                    // Força atualização antes de processar os blobs
-                    timeline.updateVueLayers();
-                    
-                    const layers = timeline.layers;
-                    layers.forEach(layer => {
-                        let current = layer.head;
-                        while (current) {
-                            if (current.item && current.item.type === 'video') {
-                                const video = current.item;
-                                
-                                // Se o vídeo tem um filePath mas não tem blob, tenta recarregar
-                                if (video.filePath && (!video.blob || !(video.blob instanceof Blob))) {
-                                    console.log('Recarregando blob para:', video.name);
-                                    this.reloadVideoBlob(video);
-                                }
-                            }
-                            current = current.next;
-                        }
-                    });
-                    
-                    // Força outra atualização após processar os blobs
-                    timeline.updateVueLayers();
-            };
-
-            // Executa o undo com o tratamento especial
-            await wrappedUndo();
-            this.redoStack.push(action);
-            console.log('Undo executado com sucesso');
-            
-        } catch (error) {
-            console.error('Erro ao desfazer ação:', error);
-            this.undoStack.push(action);
-        } finally {
-            this.isExecutingAction = false;
-        }
-    }
-
-
-    // Método auxiliar para encontrar vídeos em um estado
-    findVideosInState(state) {
-        const videos = [];
-        if (state && state.layers) {
-            for (const layer of state.layers) {
-                let current = layer.head;
-                while (current) {
-                    if (current.item && current.item.type === 'video') {
-                        videos.push(current.item);
-                    }
-                    current = current.next;
-                }
-            }
-        }
-        return videos;
-    }
-
-    async redo() {
-        if (this.isExecutingAction || !this.canRedo) {
-            console.log('Não é possível refazer: isExecutingAction=', this.isExecutingAction, 'canRedo=', this.canRedo);
-            return;
-        }
-
-        const action = this.redoStack.pop();
-
-        try {
-            this.isExecutingAction = true;
-
-            if (!action || typeof action.execute !== 'function') {
-                console.warn('Ação de redo inválida:', action);
-                return;
-            }
-
-            console.log('Iniciando redo...');
-            
-            await action.execute();
-            
-            // Verifica e restaura os blobs dos vídeos
-            const timeline = window.timeline;
-            if (timeline) {
-                // Força atualização antes de processar os blobs
-                timeline.updateVueLayers();
-                
-                const layers = timeline.layers;
-                for (const layer of layers) {
-                    let current = layer.head;
-                    while (current) {
-                        if (current.item && current.item.type === 'video') {
-                            const video = current.item;
-                            if (!video.blob || !(video.blob instanceof Blob)) {
-                                console.log('Restaurando blob para:', video.name);
-                                await this.reloadVideoBlob(video);
-                            }
-                        }
-                        current = current.next;
-                    }
-                }
-                
-                // Força outra atualização após processar os blobs
-                timeline.updateVueLayers();
-
-            this.undoStack.push(action);
-            console.log('Redo executado com sucesso');
-            
-        } catch (error) {
-            console.error('Erro ao refazer ação:', error);
-            this.redoStack.push(action);
-        } finally {
-            this.isExecutingAction = false;
-        }
-    }
+  /**
+   * Obtém informações sobre o estado do histórico
+   * @returns {Object}
+   */
+  getInfo() {
+    return {
+      undoStackSize: this.undoStack.length,
+      redoStackSize: this.redoStack.length,
+      canUndo: this.canUndo(),
+      canRedo: this.canRedo(),
+      maxSize: this.maxHistorySize,
+      hasCurrentState: this.currentState !== null,
+      undoStates: this.undoStack.map((state, index) => ({
+        index,
+        timestamp: state.timestamp,
+        projectName: state.projectName
+      })),
+      redoStates: this.redoStack.map((state, index) => ({
+        index,
+        timestamp: state.timestamp,
+        projectName: state.projectName
+      }))
+    };
+  }
 }
