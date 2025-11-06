@@ -570,14 +570,14 @@ export default {
 }
 
 .timeline::-webkit-scrollbar-track {
-  background: #5a6ac2 !important;
+  background: #0052CC !important;
 }
 
 .timeline::-webkit-scrollbar-thumb {
   height: 1.89vh;
-  background-color: #133a8d;
+  background-color: #0066FF;
   border-radius: 0px;
-  border: 2px solid #5a6ac2;
+  border: 2px solid #0052CC;
 }
 
 .time {
@@ -746,7 +746,7 @@ export default {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  background-color: #323C7D;
+  background-color: #0066FF;
   /* Fundo para melhor visibilidade */
 }
 

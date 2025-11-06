@@ -19,9 +19,50 @@ export default {
 .volume-slider {
     display: flex;
     align-items: center;
-    background-color: aliceblue;
+    background: #F5F7FA;
     width: 100%;
-    /* height: 5px; */
-    padding: 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+.volume-slider input[type="range"] {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #0066FF;
+    border-radius: 4px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.volume-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #0066FF;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.volume-slider input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.volume-slider input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #0066FF;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.volume-slider input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.1);
 }
 </style>

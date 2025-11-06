@@ -44,32 +44,44 @@ export default {
 .video-item {
   display: flex;
   flex-direction: column;
-  width: calc(50% - 10px); /* Ajusta para duas colunas com espaçamento */
-  box-sizing: border-box; /* Inclui padding e border no cálculo da largura */
+  width: calc(50% - 10px);
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .video-item:hover {
-  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.15);
 }
 
 .video-player {
   width: 100%;
   height: auto;
+  display: block;
+  background: #000;
 }
 
 .video-info { 
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  margin-top: 0.3125rem;  /* Margem superior */
-
+  padding: 8px 12px;
+  background: #F5F7FA;
 }
 
 .video-name {
   display: block;
-  max-width: 13.89vw;  /* Largura máxima */
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 400;
+  color: #2d3748;
 }
 </style>
