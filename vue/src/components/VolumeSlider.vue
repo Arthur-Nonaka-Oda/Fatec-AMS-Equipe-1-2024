@@ -1,18 +1,40 @@
 <template>
-    <div class="volume-slider">
-        <input type="range" min="0" max="1" step="0.01" :value="volume"
-            @input="$emit('update-volume', parseFloat($event.target.value))" />
-    </div>
+  <div class="volume-slider">
+    <input
+      type="range"
+      min="0"
+      max="100"
+      :value="displayVolume"
+      @input="onInput"
+    />
+  </div>
 </template>
+
 <script>
 export default {
-    props: {
-        volume: {
-            type: Number,
-            required: true
-        }
+  props: {
+    // se o componente usa `value` ou `volume`, adapte o nome
+    value: {
+      type: Number,
+      default: 100
     }
-}
+  },
+  computed: {
+    displayVolume() {
+      // preserva 0; só usa 100 quando value for null/undefined
+      return this.value == null ? 100 : this.value;
+      // ou, se seu ambiente suporta: return this.value ?? 100;
+    }
+  },
+  methods: {
+    onInput(e) {
+      const v = Number(e.target.value);
+      // emite para o pai; preserve 0
+      this.$emit('input', v);
+      this.$emit('change', v);
+    }
+  }
+};
 </script>
 
 <style scoped>

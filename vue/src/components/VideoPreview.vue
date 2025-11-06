@@ -68,6 +68,10 @@ export default {
       showVolumeControl: false,
       volumeIcon: "/volume.png",
       audioSyncMap: null
+  ,
+  // Se true, o preview NÃO respeita o volume individual dos itens — usa apenas master
+  // Isso evita que zerar o volume de uma mídia silencie o preview global.
+  ignoreItemVolumeInPreview: true,
 
     };
   },
@@ -163,7 +167,9 @@ export default {
             if (video) {
               this.$nextTick(() => {
                 video.currentTime = currentItem.startTime || 0;
-                video.volume = (currentItem.volume ?? 1) * this.volume;
+                    // Se estamos ignorando o volume dos itens no preview, usar apenas o master
+                    const itemVolForPreview = this.ignoreItemVolumeInPreview ? 1 : (currentItem.volume ?? 1);
+                    video.volume = itemVolForPreview * this.volume;
                 this.updatePlayPauseIcon();
               });
               video.load();
@@ -257,8 +263,9 @@ export default {
             if (audio) {
               this.$nextTick(() => {
                 audio.currentTime = currentAudioItem.startTime || 0;
-                // Aplica o volume combinado para o áudio
-                audio.volume = (currentAudioItem.volume ?? 1) * this.volume;
+                // Aplica o volume combinado para o áudio. Pode ignorar volume do item se configurado.
+                const audioItemVolForPreview = this.ignoreItemVolumeInPreview ? 1 : (currentAudioItem.volume ?? 1);
+                audio.volume = audioItemVolForPreview * this.volume;
                 this.updatePlayPauseIcon();
               });
               audio.load();
@@ -446,6 +453,49 @@ export default {
       const audioVolume = audio?.volume || 0;
       const maxVolume = Math.max(videoVolume, audioVolume);
       this.volumeIcon = maxVolume <= 0.01 ? "/mudo.png" : "/volume.png";
+    },
+    // Aplica apenas o volume do item especificado ao elemento de mídia carregado
+    applyItemVolume(item, itemVolume) {
+      try {
+        const video = this.$refs.videoPlayer;
+        const audio = this.$refs.audioPlayer;
+
+        const masterVolume = typeof this.volume === 'number' ? this.volume : 1;
+
+        // Se estamos configurados para ignorar volume dos itens no preview, não alteramos o volume
+        if (this.ignoreItemVolumeInPreview) {
+          // Ainda assim atualizamos o ícone com base no master + elemento atual
+          const videoVol = (this.$refs.videoPlayer && this.$refs.videoPlayer.volume) || 0;
+          const audioVol = (this.$refs.audioPlayer && this.$refs.audioPlayer.volume) || 0;
+          const maxVolume = Math.max(videoVol, audioVol);
+          this.volumeIcon = maxVolume <= 0.01 ? "/mudo.png" : "/volume.png";
+          return;
+        }
+
+        // Se o item corresponder ao vídeo atual, atualiza apenas o volume do vídeo
+        const videos = this.timeline.listFilesInLayer(0);
+        const currentVideoItem = videos[this.currentIndex];
+        if (currentVideoItem && item === currentVideoItem && video) {
+          const effectiveVolume = Math.max(0, Math.min(1, (typeof itemVolume === 'number' ? itemVolume : (currentVideoItem.volume ?? 1)) * masterVolume));
+          video.volume = effectiveVolume;
+        }
+
+        // Se o item corresponder ao áudio atual, atualiza apenas o volume do áudio
+        const audios = this.timeline.listFilesInLayer(1);
+        const currentAudioItem = audios[this.currentAudioIndex];
+        if (currentAudioItem && item === currentAudioItem && audio) {
+          const effectiveVolume = Math.max(0, Math.min(1, (typeof itemVolume === 'number' ? itemVolume : (currentAudioItem.volume ?? 1)) * masterVolume));
+          audio.volume = effectiveVolume;
+        }
+
+        // Atualiza ícone baseado no volume efetivo mais alto atual dos elementos
+        const videoVol = (this.$refs.videoPlayer && this.$refs.videoPlayer.volume) || 0;
+        const audioVol = (this.$refs.audioPlayer && this.$refs.audioPlayer.volume) || 0;
+        const maxVolume = Math.max(videoVol, audioVol);
+        this.volumeIcon = maxVolume <= 0.01 ? "/mudo.png" : "/volume.png";
+      } catch (error) {
+        console.error('Erro ao aplicar volume do item:', error);
+      }
     },
     toggleVolumeControl() {
       this.showVolumeControl = !this.showVolumeControl;

@@ -247,7 +247,8 @@ export default {
       return this.item instanceof Audio;
     },
     currentVolume() {
-      return this.item.volume || 1;
+      // Não tratar 0 como falsy — usar 1 apenas quando volume for null/undefined
+      return this.item.volume == null ? 1 : this.item.volume;
     }
   }
 };

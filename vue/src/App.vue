@@ -236,9 +236,15 @@ export default {
         this.updateLayers([...this.layers]);
         
         // Força atualização do volume no player
+        // Aplica apenas o volume do item alterado ao preview (não altera master)
         this.$nextTick(() => {
           if (this.$refs.videoPreview) {
-            this.$refs.videoPreview.updateVolume();
+            try {
+              this.$refs.videoPreview.applyItemVolume(payload.item, payload.volume);
+            } catch (e) {
+              // fallback genérico
+              this.$refs.videoPreview.updateVolume();
+            }
           }
         });
         
@@ -408,7 +414,8 @@ export default {
         name: video.name,
         startTime: video.startTime,
         endTime: video.endTime,
-        volume: video.volume || 1,
+        // Preserva 0 como valor válido
+        volume: video.volume == null ? 1 : video.volume,
       }));
       const audios = this.layers[1].items.map(audio => ({
         filePath: audio.filePath,
@@ -417,7 +424,8 @@ export default {
         name: audio.name,
         startTime: audio.startTime,
         endTime: audio.endTime,
-        volume: audio.volume || 1,
+        // Preserva 0 como valor válido
+        volume: audio.volume == null ? 1 : audio.volume,
       }));
 
       console.log('Enviando para renderização:', { videos, audios });
