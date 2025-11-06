@@ -9,9 +9,9 @@
 
           <div class="circular-progress-display">
             <svg class="progress-ring" width="120" height="120">
-              <circle class="progress-ring-bg" stroke="#e0e0e0" stroke-width="8" fill="transparent" r="52" cx="60"
+              <circle class="progress-ring-bg" stroke="#e9ecef" stroke-width="8" fill="transparent" r="52" cx="60"
                 cy="60" />
-              <circle class="progress-ring-fg" stroke="#4CAF50" stroke-width="8" fill="transparent" r="52" cx="60"
+              <circle class="progress-ring-fg" stroke="#0066FF" stroke-width="8" fill="transparent" r="52" cx="60"
                 cy="60" :style="{ 'stroke-dasharray': circumference, 'stroke-dashoffset': strokeDashoffset }" />
             </svg>
             <p class="progress-text-centered">{{ progressPercentage }}%</p>
@@ -708,9 +708,9 @@ export default {
   background-color: #fff;
   padding: 30px;
   border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   text-align: center;
-  color: #333;
+  color: #2d3748;
   min-width: 300px;
   max-width: 90%;
 }
@@ -774,9 +774,11 @@ export default {
 .progress-ring-bg,
 .progress-ring-fg {
   transition: stroke-dashoffset 0.35s ease-out;
-  /* Transição suave do preenchimento */
   transform-origin: 50% 50%;
-  /* Garante que a rotação seja a partir do centro */
+}
+
+.progress-ring-fg {
+  stroke: #0066FF;
 }
 
 .progress-text-centered {
@@ -814,42 +816,45 @@ export default {
 
 .progress-bar {
   height: 100%;
-  background-color: #4CAF50;
+  background: linear-gradient(90deg, #0066FF 0%, #0052CC 100%);
   width: 0%;
   /* Será controlado pelo Vue */
   border-radius: 5px;
   transition: width 0.3s ease-in-out;
   /* Animação suave no progresso */
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.3);
 }
 
 /* Estilos do botão Cancelar (mantidos) */
 .cancel-button {
-  background-color: #f44336;
+  background: #FF1F5A;
   color: white;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1em;
-  transition: background-color 0.2s;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .cancel-button:hover {
-  background-color: #d32f2f;
+  background: #E6004C;
 }
 
 .project-controls button {
-  padding: 10px 15px;
-  background-color: #323c7d;
+  padding: 12px 20px;
+  background: #0066FF;
   color: white;
   border: none;
   cursor: pointer;
-  border-radius: 5px;
-  transition: background-color 0.2s ease;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .project-controls button:hover {
-  background-color: #4a5aa1;
+  background: #0052CC;
 }
 
 .project-controls input[type="file"] {
@@ -901,22 +906,20 @@ export default {
   width: max-content;
   margin: 8px 0;
   color: #fff;
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-  padding: 0.375rem 0.75rem;
+  background: #0066FF;
+  border: none;
+  padding: 10px 20px;
   font-size: 1rem;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.5;
-  border: 1px solid transparent;
-  border-radius: 0.375rem;
-  transition: color 0.15s, background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .project-btn:hover,
 .project-btn:focus {
-  background-color: #0b5ed7;
-  border-color: #0a58ca;
+  background: #0052CC;
 }
 
 .close-btn {
@@ -935,9 +938,10 @@ export default {
 }
 
 .confirmation-modal-content h2 {
-  color: #d32f2f;
+  color: #FF1F5A;
   margin-bottom: 20px;
   font-size: 1.4em;
+  font-weight: 600;
 }
 
 .confirmation-modal-content p {
@@ -954,19 +958,19 @@ export default {
 }
 
 .confirm-btn {
-  background-color: #d32f2f;
+  background: #FF1F5A;
   color: white;
   padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1em;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .confirm-btn:hover {
-  background-color: #b71c1c;
+  background: #E6004C;
 }
 
 .cancel-btn {
@@ -998,7 +1002,7 @@ export default {
   right: -3px;
   width: 8px;
   height: 8px;
-  background-color: #ff4444;
+  background: #FF1F5A;
   border-radius: 50%;
   animation: blink 1.5s infinite;
 }
@@ -1025,9 +1029,10 @@ export default {
 }
 
 .name-modal-content h2 {
-  color: #323c7d;
+  color: #0066FF;
   margin-bottom: 15px;
   font-size: 1.4em;
+  font-weight: 600;
 }
 
 .name-modal-content p {
@@ -1049,7 +1054,7 @@ export default {
 
 .project-name-input:focus {
   outline: none;
-  border-color: #323c7d;
+  border-color: #0066FF;
 }
 
 .name-modal-buttons {
@@ -1059,19 +1064,19 @@ export default {
 }
 
 .save-btn {
-  background-color: #4CAF50;
+  background: #0066FF;
   color: white;
   padding: 12px 24px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1em;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .save-btn:hover:not(:disabled) {
-  background-color: #45a049;
+  background: #0052CC;
 }
 
 .save-btn:disabled {
@@ -1086,12 +1091,12 @@ export default {
   align-items: center;
   margin-left: 20px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #323c7d 0%, #4a5aa1 100%);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   min-width: 120px;
   max-width: 200px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .project-label {
@@ -1105,7 +1110,7 @@ export default {
 
 .project-name {
   font-size: 0.8em;
-  color: #ffffff;
+  color: black;
   font-weight: 600;
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -1131,10 +1136,9 @@ export default {
 
 /* Estilos para o cabeçalho do projeto */
 .project-header {
-  background: linear-gradient(135deg, #323c7d 0%, #4a5aa1 100%);
+  background: #0066FF;
   padding: 15px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-bottom: 3px solid #1e2a5e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .project-title {

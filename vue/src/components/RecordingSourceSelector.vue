@@ -783,31 +783,44 @@ export default {
   position: relative;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
-  padding: 20px;
-  border-bottom: 1px solid #eee;
+  padding: 24px;
+  border-bottom: 1px solid #E1E8ED;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #ffffff;
+  border-radius: 8px 8px 0 0;
 }
 
 .modal-header h3 {
   margin: 0;
-  color: #333;
+  color: #2d3748;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .close-btn {
-  background: none;
+  background: transparent;
   border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   font-size: 24px;
   cursor: pointer;
-  color: #999;
+  color: #718096;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close-btn:hover {
-  color: #333;
+  background: #EDF2F7;
+  color: #2D3748;
 }
 
 .modal-body {
@@ -819,31 +832,32 @@ export default {
 /* Novos estilos para PIP */
 .pip-info {
   text-align: center;
-  padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 16px;
+  background: #0066FF;
   color: white;
-  border-radius: 8px;
+  border-radius: 6px;
   margin-bottom: 20px;
 }
 
 .pip-info p {
   margin: 0;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .section {
-  margin-bottom: 30px;
-  padding: 20px;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: #fafbfc;
+  margin-bottom: 20px;
+  padding: 16px;
+  border: none;
+  border-radius: 6px;
+  background: #F5F7FA;
 }
 
 .section h4 {
-  margin: 0 0 15px 0;
-  color: #495057;
-  font-size: 18px;
+  margin: 0 0 14px 0;
+  color: #2D3748;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -856,25 +870,22 @@ export default {
 }
 
 .source-preview-item {
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .source-preview-item:hover {
-  border-color: #007bff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .source-preview-item.selected {
-  border-color: #007bff;
-  background: #f0f8ff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  background: #EBF5FF;
+  box-shadow: 0 0 0 2px #0066FF;
 }
 
 .source-thumbnail-container {
@@ -994,20 +1005,22 @@ export default {
 .source-item-list {
   display: flex;
   align-items: center;
-  padding: 15px;
-  border: 2px solid #eee;
-  border-radius: 8px;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s ease;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .source-item-list:hover {
-  border-color: #007bff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .source-item-list.selected {
-  border-color: #007bff;
-  background: #f0f8ff;
+  background: #EBF5FF;
+  box-shadow: 0 0 0 2px #0066FF;
 }
 
 .camera-icon {
@@ -1095,17 +1108,18 @@ export default {
 }
 
 .pip-controls {
-  margin-top: 20px;
-  padding: 15px;
-  background: #e8f4fd;
-  border-radius: 8px;
-  border: 1px solid #bee5eb;
+  margin-top: 16px;
+  padding: 16px;
+  background: #EBF5FF;
+  border-radius: 6px;
+  border: none;
 }
 
 .pip-controls h4 {
-  margin: 0 0 15px 0;
-  color: #0c5460;
-  font-size: 16px;
+  margin: 0 0 12px 0;
+  color: #2D3748;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .pip-settings {
@@ -1128,16 +1142,22 @@ export default {
 
 .setting-group select {
   padding: 8px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
+  border: none;
+  border-radius: 6px;
   background: white;
-  font-size: 14px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .setting-group select:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 2px #0066FF;
+}
+
+.setting-group select:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .section-description {
@@ -1162,37 +1182,46 @@ export default {
 }
 
 .modal-footer {
-  padding: 20px;
-  border-top: 1px solid #eee;
+  padding: 16px 24px;
+  border-top: 1px solid #E1E8ED;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  background: #ffffff;
+  border-radius: 0 0 8px 8px;
 }
 
 .btn {
   padding: 10px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .btn-secondary {
-  background: #6c757d;
-  color: white;
+  background: #E2E8F0;
+  color: #4A5568;
+}
+
+.btn-secondary:hover {
+  background: #CBD5E0;
 }
 
 .btn-primary {
-  background: #007bff;
+  background: #0066FF;
   color: white;
 }
 
-.btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+.btn-primary:hover:not(:disabled) {
+  background: #0052CC;
 }
 
-.btn:hover:not(:disabled) {
-  opacity: 0.9;
+.btn:disabled {
+  background: #E2E8F0;
+  color: #A0AEC0;
+  cursor: not-allowed;
 }
 </style>

@@ -736,12 +736,9 @@ export default {
 .controles {
   display: flex;
   align-items: center;
-  background-color: #444444;
+  background: #2D3748;
   height: 5vh;
-  /* Altura em vh, equivalente a aproximadamente 40px em uma tela padrão */
   padding: 0.625rem;
-  /* Preenchimento em rem, equivalente a 5px */
-
   margin-top: auto;
   position: relative;
 }
@@ -759,16 +756,29 @@ export default {
 }
 
 .left-controls button,
-.center-controls button {
-  background: none;
+.center-controls button,
+.right-controls button {
+  background: transparent;
   border: none;
   cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin: 0 4px;
+}
+
+.left-controls button:hover,
+.center-controls button:hover,
+.right-controls button:hover {
+  background: transparent;
+  opacity: 0.7;
 }
 
 .left-controls img,
 .center-controls .play-pause-icon {
   width: 2.5vw;
   height: auto;
+  filter: brightness(0) invert(1);
 }
 
 .center-controls p {
@@ -788,48 +798,48 @@ export default {
 }
 
 .play-pause-icon,
-.audio-icon {
+.audio-icon,
+.fullscreen-icon {
   width: 2.5vw;
-  /* Largura em vw (aproximadamente 24px) */
-  /*
-  height: 4vh;  
-  Altura em vh (aproximadamente 24px) */
+  filter: brightness(0) invert(1);
+  transition: opacity 0.2s ease;
+}
 
+.play-pause-icon:hover,
+.audio-icon:hover,
+.fullscreen-icon:hover {
+  opacity: 0.8;
 }
 
 .volume-control input[type=range] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 1vh;
-  background: #ce2323;
-  border-radius: 0.5rem;
-  /* Raio da borda em rem */
-
+  height: 4px;
+  background: #FF1F5A;
+  border-radius: 4px;
 }
 
 .volume-control input[type=range]::-webkit-slider-runnable-track {
   width: 100%;
-  height: 1vh;
-  background: #ce2323;
-  /* Cor da linha do controle de volume */
-  border-radius: 0.5rem;
-  /* Raio da borda em rem */
-
+  height: 4px;
+  background: #FF1F5A;
+  border-radius: 4px;
 }
 
 .volume-control input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  border: none;
-  height: 3vh;
-  /* Altura em vh */
-  width: 1.5vw;
-  /* Largura em vw */
-
+  border: 2px solid #ffffff;
+  height: 14px;
+  width: 14px;
   border-radius: 50%;
   background: #ffffff;
-  /* Cor da bolinha */
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.volume-control input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
 }
 
 .volume-control input[type=range]::-moz-range-track {
@@ -893,9 +903,12 @@ input[type=range] {
   appearance: none;
   margin: 0;
   width: 100%;
-  background: linear-gradient(to right, #ce2323 0%, #ce2323 calc((100% * var(--value)) / var(--max)),
-      #f0f9ff8e calc((100% * var(--value)) / var(--max)),
-      #f0f9ff8e 100%);
+  background: linear-gradient(to right, 
+      #FF1F5A 0%, 
+      #FF1F5A calc((100% * var(--value)) / var(--max)),
+      rgba(240, 249, 255, 0.3) calc((100% * var(--value)) / var(--max)),
+      rgba(240, 249, 255, 0.3) 100%);
+  border-radius: 4px;
 }
 
 input[type=range]:focus {
@@ -915,16 +928,20 @@ input[type=range]::-webkit-slider-runnable-track {
 }
 
 input[type=range]::-webkit-slider-thumb {
-  box-shadow: 0px 0px 0px #000000;
-  border: none;
-  /*contorno da bolinha*/
-  height: 18px;
-  width: 19px;
-  border-radius: 25px;
-  background: #ffffff;
+  box-shadow: none;
+  border: 2px solid #ffffff;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #FF1F5A;
   cursor: pointer;
   -webkit-appearance: none;
-  margin-top: -7px;
+  margin-top: -6px;
+  transition: all 0.2s ease;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
 }
 
 input[type=range]:focus::-webkit-slider-runnable-track {
@@ -1001,12 +1018,19 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 .fullscreen-button {
-  background: none;
+  background: rgba(255, 255, 255, 0.08);
   border: none;
   cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.fullscreen-button:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .fullscreen-icon {
-  width: 3vw;
+  width: 2.5vw;
 }
 </style>

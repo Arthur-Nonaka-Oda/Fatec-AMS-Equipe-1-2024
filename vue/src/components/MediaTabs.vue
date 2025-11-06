@@ -70,49 +70,80 @@ export default {
 </script>
 
 <style scoped>
+.media-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .tabs {
   display: flex;
   width: 100%;
-  padding: 1.11vh 2.22vh; /* ou 0.69vw 1.39vw, dependendo da orientação */
-  margin-bottom: 1.11vh; /* ou 0.69vw */
+  padding: 12px 16px;
+  margin-bottom: 12px;
   justify-content: center;
+  gap: 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #E1E8ED;
 }
 
 .tabs button {
   display: flex;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
-  background-color: #FFFFFF; 
-  color: #000000; 
+  background: transparent;
+  color: #4A5568;
   border: none;
-  padding: 0.3125rem 0.625rem;
-font-size: 0.8125rem;
-margin-right: 0.3125rem;
-border-radius: 0.5rem;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 400;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 90px;
+}
 
-  cursor: pointer; /* Cursor de mão ao passar sobre */
-  transition: background-color 0.3s; 
+.tabs button:hover {
+  background: transparent;
+  color: #0066FF;
 }
 
 .tabs button.active {
-  background-color: #4F8DFF; 
+  background: #0066FF;
   color: #FFFFFF;
+  border: none;
 }
 
-.video-container {
-  display: flex;
-  flex-wrap: wrap;
-  max-width: 22.92vw; /* Para max-width */
-  gap: 0.625rem;      /* Para o espaço entre os vídeos */
-  justify-content: space-between;
-}
-
-
+.video-container,
+.audio-container,
 .imagem-container {
   display: flex;
   flex-wrap: wrap;
-  max-width: 330px;
-  gap: 10px; /* Espaço entre os vídeos */
-  justify-content: space-between;
+  max-width: 100%;
+  gap: 12px;
+  justify-content: flex-start;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  max-height: calc(100% - 60px);
+}
+
+.video-container::-webkit-scrollbar,
+.audio-container::-webkit-scrollbar,
+.imagem-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.video-container::-webkit-scrollbar-track,
+.audio-container::-webkit-scrollbar-track,
+.imagem-container::-webkit-scrollbar-track {
+  background: #F5F7FA;
+}
+
+.video-container::-webkit-scrollbar-thumb,
+.audio-container::-webkit-scrollbar-thumb,
+.imagem-container::-webkit-scrollbar-thumb {
+  background: #CBD5E0;
+  border-radius: 4px;
 }
 </style>
