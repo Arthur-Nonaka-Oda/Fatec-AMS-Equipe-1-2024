@@ -776,6 +776,7 @@ export default {
 
 .modal-content {
   background: white;
+  z-index: 100;
   border-radius: 8px;
   width: 90%;
   max-width: 800px;
